@@ -1,0 +1,748 @@
+{
+  "seq": 237,
+  "endpoint": "GET /Items",
+  "time": "2026-10-05T22:27:13.622Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "fields": [
+        "AirTime",
+        "CanDelete",
+        "CanDownload",
+        "ChannelInfo",
+        "Chapters",
+        "Trickplay",
+        "ChildCount",
+        "CumulativeRunTimeTicks",
+        "CustomRating",
+        "DateCreated",
+        "DateLastMediaAdded",
+        "DisplayPreferencesId",
+        "Etag",
+        "ExternalUrls",
+        "Genres",
+        "ItemCounts",
+        "MediaSourceCount",
+        "MediaSources",
+        "OriginalTitle",
+        "Overview",
+        "ParentId",
+        "Path",
+        "People",
+        "PlayAccess",
+        "ProductionLocations",
+        "ProviderIds",
+        "PrimaryImageAspectRatio",
+        "RecursiveItemCount",
+        "Settings",
+        "SeriesStudio",
+        "SortName",
+        "SpecialEpisodeNumbers",
+        "Studios",
+        "Taglines",
+        "Tags",
+        "RemoteTrailers",
+        "MediaStreams",
+        "SeasonUserData",
+        "DateLastRefreshed",
+        "DateLastSaved",
+        "RefreshState",
+        "ChannelImage",
+        "EnableMediaSourceDisplay",
+        "Width",
+        "Height",
+        "ExtraIds",
+        "LocalTrailerCount",
+        "IsHD",
+        "SpecialFeatureCount"
+      ],
+      "ids": [
+        "d48b8adc50a77956fcee8210661176fb"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "14d465a49aab4a0098f199211b5cdaa0-8b2e425de1234f03-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=14d465a49aab4a0098f199211b5cdaa0,sentry-org_id=4509610343596032,sentry-transaction=%2Fitems%2Fpage,sentry-sampled=false,sentry-sample_rand=0.9596350989584191,sentry-sample_rate=0",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:26:06 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:27:13 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "92.5425"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Little Fockers",
+          "OriginalTitle": "Little Fockers",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "d48b8adc50a77956fcee8210661176fb",
+          "Etag": "00ad74d6848ad85ca352d048f821bf07",
+          "DateCreated": "2026-10-05T21:18:48.3388826Z",
+          "CanDelete": true,
+          "CanDownload": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "SortName": "little fockers",
+          "PremiereDate": "2010-12-21T00:00:00.0000000Z",
+          "ExternalUrls": [
+            {
+              "Name": "IMDb",
+              "Url": "https://www.imdb.com/title/tt0970866"
+            },
+            {
+              "Name": "TMDB",
+              "Url": "https://www.themoviedb.org/movie/39451"
+            }
+          ],
+          "MediaSources": [
+            {
+              "Protocol": "Http",
+              "Id": "d48b8adc50a77956fcee8210661176fb",
+              "Path": "http://redacted2:8097/stream/realdebrid/TORRENTID/1?sig=REDACTED",
+              "Type": "Default",
+              "Container": "mkv",
+              "Size": 80,
+              "Name": "Little Fockers (2010)",
+              "IsRemote": true,
+              "ETag": "215ef8d00986cb1ab69569bcc07b8928",
+              "RunTimeTicks": 58597330000,
+              "ReadAtNativeFramerate": false,
+              "IgnoreDts": false,
+              "IgnoreIndex": false,
+              "GenPtsInput": false,
+              "SupportsTranscoding": true,
+              "SupportsDirectStream": true,
+              "SupportsDirectPlay": true,
+              "IsInfiniteStream": false,
+              "UseMostCompatibleTranscodingProfile": false,
+              "RequiresOpening": false,
+              "RequiresClosing": false,
+              "RequiresLooping": false,
+              "SupportsProbing": true,
+              "VideoType": "VideoFile",
+              "MediaStreams": [
+                {
+                  "Codec": "hevc",
+                  "ColorSpace": "bt709",
+                  "ColorTransfer": "bt709",
+                  "ColorPrimaries": "bt709",
+                  "TimeBase": "1/1000",
+                  "VideoRange": "SDR",
+                  "VideoRangeType": "SDR",
+                  "AudioSpatialFormat": "None",
+                  "DisplayTitle": "1080p HEVC SDR",
+                  "IsInterlaced": false,
+                  "BitRate": 2633869,
+                  "BitDepth": 8,
+                  "IsDefault": true,
+                  "IsForced": false,
+                  "IsHearingImpaired": false,
+                  "IsOriginal": false,
+                  "Height": 1038,
+                  "Width": 1920,
+                  "AverageFrameRate": 23.976025,
+                  "RealFrameRate": 23.976025,
+                  "ReferenceFrameRate": 23.976025,
+                  "Profile": "Main",
+                  "Type": "Video",
+                  "AspectRatio": "1.85:1",
+                  "Index": 0,
+                  "IsExternal": false,
+                  "IsTextSubtitleStream": false,
+                  "SupportsExternalStream": false,
+                  "PixelFormat": "yuv420p",
+                  "Level": 120,
+                  "IsAnamorphic": false
+                },
+                {
+                  "Codec": "aac",
+                  "Language": "eng",
+                  "TimeBase": "1/1000",
+                  "VideoRange": "Unknown",
+                  "VideoRangeType": "Unknown",
+                  "AudioSpatialFormat": "None",
+                  "LocalizedDefault": "Default",
+                  "LocalizedExternal": "External",
+                  "LocalizedLanguage": "English",
+                  "LocalizedOriginal": "Original",
+                  "DisplayTitle": "English - AAC - 5.1 - Default",
+                  "IsInterlaced": false,
+                  "ChannelLayout": "5.1",
+                  "BitRate": 320000,
+                  "Channels": 6,
+                  "SampleRate": 48000,
+                  "IsDefault": true,
+                  "IsForced": false,
+                  "IsHearingImpaired": false,
+                  "IsOriginal": false,
+                  "Profile": "LC",
+                  "Type": "Audio",
+                  "Index": 1,
+                  "IsExternal": false,
+                  "IsTextSubtitleStream": false,
+                  "SupportsExternalStream": false
+                },
+                {
+                  "Codec": "PGSSUB",
+                  "Language": "eng",
+                  "TimeBase": "1/1000",
+                  "Title": "English SDH",
+                  "VideoRange": "Unknown",
+                  "VideoRangeType": "Unknown",
+                  "AudioSpatialFormat": "None",
+                  "LocalizedUndefined": "Undefined",
+                  "LocalizedDefault": "Default",
+                  "LocalizedForced": "Forced",
+                  "LocalizedExternal": "External",
+                  "LocalizedHearingImpaired": "Hearing Impaired",
+                  "LocalizedLanguage": "English",
+                  "DisplayTitle": "English SDH - PGSSUB",
+                  "IsInterlaced": false,
+                  "IsDefault": false,
+                  "IsForced": false,
+                  "IsHearingImpaired": false,
+                  "IsOriginal": false,
+                  "Height": 1080,
+                  "Width": 1920,
+                  "Type": "Subtitle",
+                  "Index": 2,
+                  "IsExternal": false,
+                  "IsTextSubtitleStream": false,
+                  "SupportsExternalStream": true
+                }
+              ],
+              "MediaAttachments": [],
+              "Formats": [],
+              "Bitrate": 2953869,
+              "RequiredHttpHeaders": {},
+              "TranscodingSubProtocol": "http",
+              "DefaultAudioStreamIndex": 1,
+              "DefaultSubtitleStreamIndex": -1,
+              "HasSegments": false
+            }
+          ],
+          "CriticRating": 9,
+          "ProductionLocations": [
+            "United States of America"
+          ],
+          "Path": "/media/Movies/Little Fockers (2010)/Little Fockers (2010).strm",
+          "EnableMediaSourceDisplay": true,
+          "OfficialRating": "PG-13",
+          "ChannelId": null,
+          "Overview": "It has taken 10 years, two little Fockers with wife Pam and countless hurdles for Greg to finally get in with his tightly wound father-in-law, Jack. After the cash-strapped dad takes a job moonlighting for a drug company, Jack's suspicions about his favorite male nurse come roaring back. When Greg and Pam's entire clan descends for the twins' birthday party, Greg must prove to the skeptical Jack that he's fully capable as the man of the house.",
+          "Taglines": [
+            "Kids bring everyone closer, right?"
+          ],
+          "Genres": [
+            "Comedy",
+            "Romance"
+          ],
+          "CommunityRating": 5.7,
+          "RunTimeTicks": 58597330000,
+          "PlayAccess": "Full",
+          "ProductionYear": 2010,
+          "RemoteTrailers": [
+            {
+              "Url": "https://www.youtube.com/watch?v=N09wTU1LiPk",
+              "Name": "Little Fockers - Theatrical Trailer"
+            },
+            {
+              "Url": "https://www.youtube.com/watch?v=Fs2MZIA4Sjc",
+              "Name": "Little Fockers - Trailer"
+            }
+          ],
+          "ProviderIds": {
+            "Imdb": "tt0970866",
+            "Tmdb": "39451",
+            "TmdbCollection": "51509"
+          },
+          "IsHD": true,
+          "IsFolder": false,
+          "ParentId": "e675012a1892a87530d2c0b0d14a9026",
+          "Type": "Movie",
+          "People": [
+            {
+              "Name": "Robert De Niro",
+              "Id": "390da78b6dc3e04b14278f448a6be5ac",
+              "Role": "Jack Byrnes",
+              "Type": "Actor",
+              "PrimaryImageTag": "378a6c944b3626cff4d2091c9c48a849",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "378a6c944b3626cff4d2091c9c48a849": "ddFh^wxt0KNGROj[%gofS~R*Vst6NHkCxaWBRjjsxukC"
+                }
+              }
+            },
+            {
+              "Name": "Ben Stiller",
+              "Id": "6e5e375bf0ab34e73d91bfd03f05afa3",
+              "Role": "Greg Focker",
+              "Type": "Actor",
+              "PrimaryImageTag": "7aa0df7d871094f760636a4cecb77caf",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "7aa0df7d871094f760636a4cecb77caf": "dNBCuxS#0z-;xuofS4kC9as:-VIpNckCxas:NdbH$*s:"
+                }
+              }
+            },
+            {
+              "Name": "Owen Wilson",
+              "Id": "9c96afc0860132cd6c6187694c5260eb",
+              "Role": "Kevin Rawley",
+              "Type": "Actor",
+              "PrimaryImageTag": "c5c0f054f4eee9f071b911700a77cde6",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "c5c0f054f4eee9f071b911700a77cde6": "dgI4O.s90fR%#jRix]xttmM|$$xtxbNGoyt6xZNGbbt7"
+                }
+              }
+            },
+            {
+              "Name": "Dustin Hoffman",
+              "Id": "0b9f2a65bf7f1ec5169e714cb39b495a",
+              "Role": "Bernie Focker",
+              "Type": "Actor",
+              "PrimaryImageTag": "0454f7ade6efbdad1aff68a0dac6e99d",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "0454f7ade6efbdad1aff68a0dac6e99d": "dWB{+FX80yxtnNWUbwozEhs:,:M{IpayxakDf+kBaee."
+                }
+              }
+            },
+            {
+              "Name": "Barbra Streisand",
+              "Id": "0aa327a213aeb4e31eaff628583226ba",
+              "Role": "Rozalin Focker",
+              "Type": "Actor",
+              "PrimaryImageTag": "1d3d9c0cabef51e1f956c931a7c12aa3",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "1d3d9c0cabef51e1f956c931a7c12aa3": "dJAvk5xu0LE1t7R+M{WBE2s.%Ls:D*NG%2xaM|Rk%1xt"
+                }
+              }
+            },
+            {
+              "Name": "Blythe Danner",
+              "Id": "dcd4c4b02c766ade933e10d487bc557d",
+              "Role": "Dina Byrnes",
+              "Type": "Actor",
+              "PrimaryImageTag": "f0094ad4cc62dc635d3f525b6db0e8c1",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "f0094ad4cc62dc635d3f525b6db0e8c1": "dPLMX]%10zoeEk-.j[oLyBxt-Us:9bt7oMR*S2%1xZWV"
+                }
+              }
+            },
+            {
+              "Name": "Teri Polo",
+              "Id": "8cac7035b42e7cc82e3500922f36c7d4",
+              "Role": "Pam Byrnes-Focker",
+              "Type": "Actor",
+              "PrimaryImageTag": "bbd7a2c8e0aac0593ae29f22ce8d32ad",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "bbd7a2c8e0aac0593ae29f22ce8d32ad": "dSJsa,~A0#R*b]R*%1t7o}R+xas:xujtxFjsNeR*ofWW"
+                }
+              }
+            },
+            {
+              "Name": "Jessica Alba",
+              "Id": "c277849a7883dfa34a943d483e35476b",
+              "Role": "Andi Garcia",
+              "Type": "Actor",
+              "PrimaryImageTag": "4a9f9b71b3ee67e06c96db2aa46e5d8e",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "4a9f9b71b3ee67e06c96db2aa46e5d8e": "dPJ@8*-q1OtS1QbItSS5_3Rj=|%2OtS4xat7XUxaxZbI"
+                }
+              }
+            },
+            {
+              "Name": "Laura Dern",
+              "Id": "4e9e40b89b374ac92acf812887179b89",
+              "Role": "Prudence",
+              "Type": "Actor",
+              "PrimaryImageTag": "8451cb39e38996fd5f26def1e038fda0",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "8451cb39e38996fd5f26def1e038fda0": "dLEyG8^*0hE2_4t7NLkW59Io%Mx]NHR%xu%MS5WXt6t7"
+                }
+              }
+            },
+            {
+              "Name": "Kevin Hart",
+              "Id": "1a299a2de5ced2523af11436fa3d69da",
+              "Role": "Nurse Louis",
+              "Type": "Actor",
+              "PrimaryImageTag": "e04f67f30279bc6eba0f048d05f87539",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "e04f67f30279bc6eba0f048d05f87539": "dOEWL5xu.T%h_2of.8xux]f+MxWAXnkCn%ofxuofxtt7"
+                }
+              }
+            },
+            {
+              "Name": "Daisy Tahan",
+              "Id": "6cfaf8809528931721dcee9734684521",
+              "Role": "Samantha Focker",
+              "Type": "Actor",
+              "PrimaryImageTag": "baed59a5b8f728a2b6cc4be433509caa",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "baed59a5b8f728a2b6cc4be433509caa": "dRFhn=?b0fE1%ht7ROM_AbNx$%s:NGV@n$t7NHV@s8s."
+                }
+              }
+            },
+            {
+              "Name": "Colin Baiocchi",
+              "Id": "15fdc9ae6e53aae1d3ee9f7374f7beb3",
+              "Role": "Henry Focker",
+              "Type": "Actor",
+              "PrimaryImageTag": "51fb59ecd4c045bd5524a4ca034d089b",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "51fb59ecd4c045bd5524a4ca034d089b": "dgIz-gxuJoxu$Lofxus.0KX6n3sSxuozjrs.-oax%gxZ"
+                }
+              }
+            },
+            {
+              "Name": "Tom McCarthy",
+              "Id": "b32a6e7c21bfd6e71474b77e3b73b62b",
+              "Role": "Dr. Bob",
+              "Type": "Actor",
+              "PrimaryImageTag": "0b35a3772cc5acce2affa324cc8a36e0",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "0b35a3772cc5acce2affa324cc8a36e0": "dhH.NbEM*0_3_4ogtSxuIns:ROM{%hWYkCW=tmxaofWX"
+                }
+              }
+            },
+            {
+              "Name": "Harvey Keitel",
+              "Id": "953533a8404a0f84b42eca5499c26969",
+              "Role": "Randy Weir",
+              "Type": "Actor",
+              "PrimaryImageTag": "3d2011b8343e43ae4282d29f3365c6d3",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "3d2011b8343e43ae4282d29f3365c6d3": "dqHUkDxabwxu~Wt6tRxaS5j[xZoff+jtWBkC%Mj[t7t7"
+                }
+              }
+            },
+            {
+              "Name": "Yul Vazquez",
+              "Id": "e11c9c67925512be28e32dccb3ba78e4",
+              "Role": "Junior",
+              "Type": "Actor",
+              "PrimaryImageTag": "ebbcc7ade6f63f5a999ef5d1e06236c6",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "ebbcc7ade6f63f5a999ef5d1e06236c6": "dlHK^TwJ0zELbvRPx]oMEjRjxZjYNHWCt7t7NIbHxZof"
+                }
+              }
+            },
+            {
+              "Name": "Paul Weitz",
+              "Id": "cd394145cb02cf12a307e398afdecf97",
+              "Role": "Director",
+              "Type": "Director",
+              "PrimaryImageTag": "98ace45eaee10a5f32afb2688e61ebdc",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "98ace45eaee10a5f32afb2688e61ebdc": "dhH0^skBVts:}[bbnjofIpbboyj[WCoMf+oew|fkt6oL"
+                }
+              }
+            },
+            {
+              "Name": "John Hamburg",
+              "Id": "13f1824d3d2909e837849b67b4bb52f2",
+              "Role": "Writer",
+              "Type": "Writer",
+              "PrimaryImageTag": "048445d2abb67b39bdbd0d1cb00193c8",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "048445d2abb67b39bdbd0d1cb00193c8": "drIEOn?Go|xu~U%1t7t7M{WAaKV@NGWAe.V@tQoft7j["
+                }
+              }
+            },
+            {
+              "Name": "Larry Stuckey",
+              "Id": "96ac830c67c7cf3a947e73ecbab16ecf",
+              "Role": "Writer",
+              "Type": "Writer",
+              "ImageBlurHashes": {
+                "Primary": {}
+              }
+            },
+            {
+              "Name": "Robert De Niro",
+              "Id": "390da78b6dc3e04b14278f448a6be5ac",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "378a6c944b3626cff4d2091c9c48a849",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "378a6c944b3626cff4d2091c9c48a849": "ddFh^wxt0KNGROj[%gofS~R*Vst6NHkCxaWBRjjsxukC"
+                }
+              }
+            },
+            {
+              "Name": "Jay Roach",
+              "Id": "ba51f3b67ec9eedbde3a10a67b0ebbff",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "6560bb188ea726ffb485b5c41056ec82",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "6560bb188ea726ffb485b5c41056ec82": "dLA,8.WB0fxu?GayE2kCI;j[xGWCNGj[t7jtRkoLt7ay"
+                }
+              }
+            },
+            {
+              "Name": "John Hamburg",
+              "Id": "13f1824d3d2909e837849b67b4bb52f2",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "048445d2abb67b39bdbd0d1cb00193c8",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "048445d2abb67b39bdbd0d1cb00193c8": "drIEOn?Go|xu~U%1t7t7M{WAaKV@NGWAe.V@tQoft7j["
+                }
+              }
+            },
+            {
+              "Name": "Jane Rosenthal",
+              "Id": "b3007ae999ad869ef9b998b34dcf516a",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "7cdeb18e9596d29d9740df5903486688",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "7cdeb18e9596d29d9740df5903486688": "dgGbxH-;%Mt7~qt7-;xuayRjt7xuj[Rjj[ofxuj[xut7"
+                }
+              }
+            }
+          ],
+          "Studios": [
+            {
+              "Name": "Universal Pictures",
+              "Id": "e56aaac7ab0bb0f5f48371be0252bab4"
+            },
+            {
+              "Name": "Paramount Pictures",
+              "Id": "2672ed34a3f2b0bb6b4257c2ab9875b7"
+            },
+            {
+              "Name": "Relativity Media",
+              "Id": "e7f283ffd9a3c0c9f1d78aadede25b7f"
+            },
+            {
+              "Name": "Tribeca Productions",
+              "Id": "cb5eadde41d4358bbe75d4dfb7f010e0"
+            },
+            {
+              "Name": "Everyman Pictures",
+              "Id": "9cff0cef84576cc3466754c1f7c3ad21"
+            },
+            {
+              "Name": "Nancy Tenenbaum Films",
+              "Id": "99c7164597673d28f5525f1a577a438f"
+            },
+            {
+              "Name": "DreamWorks Pictures",
+              "Id": "8dfcb072fade7ffde98ce192dc2d66bb"
+            }
+          ],
+          "GenreItems": [
+            {
+              "Name": "Comedy",
+              "Id": "08d31605d366d63a7a924f944b4417f1"
+            },
+            {
+              "Name": "Romance",
+              "Id": "1ffc72e19987e5fa4047c6a6870646cf"
+            }
+          ],
+          "LocalTrailerCount": 0,
+          "UserData": {
+            "PlayedPercentage": 44.99295445713994,
+            "PlaybackPositionTicks": 26364670000,
+            "PlayCount": 6,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:25:17.4253737Z",
+            "Played": false,
+            "Key": "d48b8adc-50a7-7956-fcee-8210661176fb",
+            "ItemId": "d48b8adc50a77956fcee8210661176fb"
+          },
+          "SpecialFeatureCount": 0,
+          "DisplayPreferencesId": "dbf7709c41faaa746463d67978eb863d",
+          "Tags": [
+            "nurse",
+            "cat",
+            "father-in-law",
+            "vomit",
+            "sequel",
+            "viagra",
+            "overbearing father",
+            "duringcreditsstinger"
+          ],
+          "PrimaryImageAspectRatio": 0.6666666666666666,
+          "MediaStreams": [
+            {
+              "Codec": "hevc",
+              "ColorSpace": "bt709",
+              "ColorTransfer": "bt709",
+              "ColorPrimaries": "bt709",
+              "TimeBase": "1/1000",
+              "VideoRange": "SDR",
+              "VideoRangeType": "SDR",
+              "AudioSpatialFormat": "None",
+              "DisplayTitle": "1080p HEVC SDR",
+              "IsInterlaced": false,
+              "BitRate": 2633869,
+              "BitDepth": 8,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 1038,
+              "Width": 1920,
+              "AverageFrameRate": 23.976025,
+              "RealFrameRate": 23.976025,
+              "ReferenceFrameRate": 23.976025,
+              "Profile": "Main",
+              "Type": "Video",
+              "AspectRatio": "1.85:1",
+              "Index": 0,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false,
+              "PixelFormat": "yuv420p",
+              "Level": 120,
+              "IsAnamorphic": false
+            },
+            {
+              "Codec": "aac",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "English",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "English - AAC - 5.1 - Default",
+              "IsInterlaced": false,
+              "ChannelLayout": "5.1",
+              "BitRate": 320000,
+              "Channels": 6,
+              "SampleRate": 48000,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Profile": "LC",
+              "Type": "Audio",
+              "Index": 1,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            },
+            {
+              "Codec": "PGSSUB",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "Title": "English SDH",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedUndefined": "Undefined",
+              "LocalizedDefault": "Default",
+              "LocalizedForced": "Forced",
+              "LocalizedExternal": "External",
+              "LocalizedHearingImpaired": "Hearing Impaired",
+              "LocalizedLanguage": "English",
+              "DisplayTitle": "English SDH - PGSSUB",
+              "IsInterlaced": false,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 1080,
+              "Width": 1920,
+              "Type": "Subtitle",
+              "Index": 2,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": true
+            }
+          ],
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "d4b6a694a799811a5de4806201fec13a",
+            "Thumb": "3adf6a330f10b3c9d57498be6541c003",
+            "Logo": "240eb4d4be0863d139f98fd2128d6e48"
+          },
+          "BackdropImageTags": [
+            "3a6bf2bce119fbad29a0cf419169fe0e"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "3a6bf2bce119fbad29a0cf419169fe0e": "WqR3H0%M_N.8D%-p?bofjtjuoft7-=kCIAaKxuj[_3oMbHt7WBWB"
+            },
+            "Primary": {
+              "d4b6a694a799811a5de4806201fec13a": "dnOf.E-U?b-;~qt7IoW=_4W=M{t7s:aK%LxtxvofV[WW"
+            },
+            "Thumb": {
+              "3adf6a330f10b3c9d57498be6541c003": "WsN9|H-pH=xt.8sl~qxuE1WBozoeE2t7W=Rjadbb-;X8RjjZt7WB"
+            },
+            "Logo": {
+              "240eb4d4be0863d139f98fd2128d6e48": "NCCL[RfQ6g$6a|SM2DsUN[jtSLSLJkSMwyN[SMWp"
+            }
+          },
+          "Chapters": [],
+          "Trickplay": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "LockedFields": [],
+          "LockData": false,
+          "Width": 1920,
+          "Height": 1038,
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 99
+}

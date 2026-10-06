@@ -1,0 +1,865 @@
+{
+  "seq": 303,
+  "endpoint": "POST /Items/{id}/PlaybackInfo",
+  "time": "2026-10-05T22:39:19.126Z",
+  "request": {
+    "method": "POST",
+    "path": "/Items/1f77a87a-9603-bff7-d158-9d1e076f060c/PlaybackInfo",
+    "query": {},
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0002\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 via jellyfin-sdk-kotlin (OkHttp/4.12.0)",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "10529",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0002",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": {
+      "MaxStreamingBitrate": 140000000,
+      "AudioStreamIndex": 1,
+      "SubtitleStreamIndex": -1,
+      "MediaSourceId": "1f77a87a9603bff7d1589d1e076f060c",
+      "DeviceProfile": {
+        "Name": "Jellyfin for Android",
+        "MaxStreamingBitrate": 120000000,
+        "MaxStaticBitrate": 100000000,
+        "MusicStreamingTranscodingBitrate": 384000,
+        "DirectPlayProfiles": [
+          {
+            "Container": "mp4",
+            "AudioCodec": "mp3,aac,alac,ac3,opus",
+            "VideoCodec": "mpeg2video,h263,mpeg4,h264,hevc,av1,vp9",
+            "Type": "Video"
+          },
+          {
+            "Container": "mp4",
+            "AudioCodec": "mp3,aac,alac,ac3,opus",
+            "Type": "Audio"
+          },
+          {
+            "Container": "fmp4",
+            "AudioCodec": "mp3,aac,ac3,eac3",
+            "VideoCodec": "mpeg2video,h263,mpeg4,h264,hevc,av1,vp9",
+            "Type": "Video"
+          },
+          {
+            "Container": "fmp4",
+            "AudioCodec": "mp3,aac,ac3,eac3",
+            "Type": "Audio"
+          },
+          {
+            "Container": "webm",
+            "AudioCodec": "vorbis,opus",
+            "VideoCodec": "vp8,vp9,av1",
+            "Type": "Video"
+          },
+          {
+            "Container": "webm",
+            "AudioCodec": "vorbis,opus",
+            "Type": "Audio"
+          },
+          {
+            "Container": "mkv",
+            "AudioCodec": "pcm_s8,pcm_s16be,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_alaw,pcm_mulaw,mp3,aac,vorbis,opus,flac,alac,ac3,eac3,dts,mlp,truehd",
+            "VideoCodec": "mpeg2video,h263,mpeg4,h264,hevc,av1,vp8,vp9",
+            "Type": "Video"
+          },
+          {
+            "Container": "mkv",
+            "AudioCodec": "pcm_s8,pcm_s16be,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_alaw,pcm_mulaw,mp3,aac,vorbis,opus,flac,alac,ac3,eac3,dts,mlp,truehd",
+            "Type": "Audio"
+          },
+          {
+            "Container": "mp3",
+            "AudioCodec": "mp3",
+            "Type": "Audio"
+          },
+          {
+            "Container": "ogg",
+            "AudioCodec": "vorbis,opus,flac",
+            "Type": "Audio"
+          },
+          {
+            "Container": "wav",
+            "AudioCodec": "pcm_s8,pcm_s16be,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_alaw,pcm_mulaw",
+            "Type": "Audio"
+          },
+          {
+            "Container": "mpegts",
+            "AudioCodec": "pcm_s8,pcm_s16be,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_alaw,pcm_mulaw,mp3,aac,ac3,eac3,dts,mlp,truehd",
+            "VideoCodec": "mpeg2video,mpeg4,h264,hevc",
+            "Type": "Video"
+          },
+          {
+            "Container": "mpegts",
+            "AudioCodec": "pcm_s8,pcm_s16be,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_alaw,pcm_mulaw,mp3,aac,ac3,eac3,dts,mlp,truehd",
+            "Type": "Audio"
+          },
+          {
+            "Container": "flv",
+            "AudioCodec": "mp3,aac",
+            "VideoCodec": "mpeg4,h264",
+            "Type": "Video"
+          },
+          {
+            "Container": "flv",
+            "AudioCodec": "mp3,aac",
+            "Type": "Audio"
+          },
+          {
+            "Container": "aac",
+            "AudioCodec": "aac",
+            "Type": "Audio"
+          },
+          {
+            "Container": "flac",
+            "AudioCodec": "flac",
+            "Type": "Audio"
+          },
+          {
+            "Container": "3gp",
+            "AudioCodec": "3gpp,aac,flac",
+            "VideoCodec": "h263,mpeg4,h264,hevc",
+            "Type": "Video"
+          },
+          {
+            "Container": "3gp",
+            "AudioCodec": "3gpp,aac,flac",
+            "Type": "Audio"
+          }
+        ],
+        "TranscodingProfiles": [
+          {
+            "Container": "ts",
+            "Type": "Video",
+            "VideoCodec": "h264",
+            "AudioCodec": "mp1,mp2,mp3,aac,ac3,eac3,dts,mlp,truehd",
+            "Protocol": "hls",
+            "Conditions": []
+          },
+          {
+            "Container": "mkv",
+            "Type": "Video",
+            "VideoCodec": "h264",
+            "AudioCodec": "pcm_s8,pcm_s16be,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_alaw,pcm_mulaw,mp1,mp2,mp3,aac,vorbis,opus,flac,alac,ac3,eac3,dts,mlp,truehd",
+            "Protocol": "hls",
+            "Conditions": []
+          },
+          {
+            "Container": "mp3",
+            "Type": "Audio",
+            "VideoCodec": "",
+            "AudioCodec": "mp3",
+            "Protocol": "http",
+            "Conditions": []
+          }
+        ],
+        "ContainerProfiles": [
+          {
+            "Type": "Video",
+            "Conditions": [],
+            "Container": "mp4"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "mp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [],
+            "Container": "fmp4"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "fmp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [],
+            "Container": "webm"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "webm"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [],
+            "Container": "mkv"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "mkv"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "mp3"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "ogg"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "wav"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [],
+            "Container": "mpegts"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "mpegts"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [],
+            "Container": "flv"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "flv"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "aac"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "flac"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [],
+            "Container": "3gp"
+          },
+          {
+            "Type": "Audio",
+            "Conditions": [],
+            "Container": "3gp"
+          }
+        ],
+        "CodecProfiles": [
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "main profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg2video",
+            "Container": "mp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "baseline|isw v2",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h263",
+            "Container": "mp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "advanced simple profile|simple profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg4",
+            "Container": "mp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "high|constrained baseline|main|baseline|high 10|constrained high",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h264",
+            "Container": "mp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Main Still|Main 10|Main 10 HDR 10|Main",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "hevc",
+            "Container": "mp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Profile 0|Profile 1|Profile 2",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "vp9",
+            "Container": "mp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "main profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg2video",
+            "Container": "fmp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "baseline|isw v2",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h263",
+            "Container": "fmp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "advanced simple profile|simple profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg4",
+            "Container": "fmp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "high|constrained baseline|main|baseline|high 10|constrained high",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h264",
+            "Container": "fmp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Main Still|Main 10|Main 10 HDR 10|Main",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "hevc",
+            "Container": "fmp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Profile 0|Profile 1|Profile 2",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "vp9",
+            "Container": "fmp4"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "main",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "vp8",
+            "Container": "webm"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Profile 0|Profile 1|Profile 2",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "vp9",
+            "Container": "webm"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "main profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg2video",
+            "Container": "mkv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "baseline|isw v2",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h263",
+            "Container": "mkv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "advanced simple profile|simple profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg4",
+            "Container": "mkv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "high|constrained baseline|main|baseline|high 10|constrained high",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h264",
+            "Container": "mkv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Main Still|Main 10|Main 10 HDR 10|Main",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "hevc",
+            "Container": "mkv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "main",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "vp8",
+            "Container": "mkv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Profile 0|Profile 1|Profile 2",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "vp9",
+            "Container": "mkv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "main profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg2video",
+            "Container": "mpegts"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "advanced simple profile|simple profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg4",
+            "Container": "mpegts"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "high|constrained baseline|main|baseline|high 10|constrained high",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h264",
+            "Container": "mpegts"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Main Still|Main 10|Main 10 HDR 10|Main",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "hevc",
+            "Container": "mpegts"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "advanced simple profile|simple profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg4",
+            "Container": "flv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "high|constrained baseline|main|baseline|high 10|constrained high",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h264",
+            "Container": "flv"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "baseline|isw v2",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h263",
+            "Container": "3gp"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "advanced simple profile|simple profile",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "mpeg4",
+            "Container": "3gp"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "high|constrained baseline|main|baseline|high 10|constrained high",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "h264",
+            "Container": "3gp"
+          },
+          {
+            "Type": "Video",
+            "Conditions": [
+              {
+                "Condition": "EqualsAny",
+                "Property": "VideoProfile",
+                "Value": "Main Still|Main 10|Main 10 HDR 10|Main",
+                "IsRequired": false
+              }
+            ],
+            "ApplyConditions": [],
+            "Codec": "hevc",
+            "Container": "3gp"
+          }
+        ],
+        "SubtitleProfiles": [
+          {
+            "Format": "dvbsub",
+            "Method": "Embed"
+          },
+          {
+            "Format": "pgssub",
+            "Method": "Embed"
+          },
+          {
+            "Format": "srt",
+            "Method": "Embed"
+          },
+          {
+            "Format": "subrip",
+            "Method": "Embed"
+          },
+          {
+            "Format": "ttml",
+            "Method": "Embed"
+          },
+          {
+            "Format": "srt",
+            "Method": "External"
+          },
+          {
+            "Format": "subrip",
+            "Method": "External"
+          },
+          {
+            "Format": "ttml",
+            "Method": "External"
+          },
+          {
+            "Format": "vtt",
+            "Method": "External"
+          },
+          {
+            "Format": "webvtt",
+            "Method": "External"
+          }
+        ]
+      },
+      "AutoOpenLiveStream": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:39:19 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "142.5321"
+    },
+    "body": {
+      "MediaSources": [
+        {
+          "Protocol": "File",
+          "Id": "1f77a87a9603bff7d1589d1e076f060c",
+          "Path": "/media/Movies/Mortal Kombat II (2026)/Mortal Kombat II (2026).mp4",
+          "Type": "Default",
+          "Container": "mp4",
+          "Size": 7654835338,
+          "Name": "Mortal Kombat II (2026)",
+          "IsRemote": false,
+          "ETag": "95c3644a7f226bcbcc8f8f306cfe3448",
+          "RunTimeTicks": 63585920000,
+          "ReadAtNativeFramerate": false,
+          "IgnoreDts": false,
+          "IgnoreIndex": false,
+          "GenPtsInput": false,
+          "SupportsTranscoding": true,
+          "SupportsDirectStream": true,
+          "SupportsDirectPlay": true,
+          "IsInfiniteStream": false,
+          "UseMostCompatibleTranscodingProfile": false,
+          "RequiresOpening": false,
+          "RequiresClosing": false,
+          "RequiresLooping": false,
+          "SupportsProbing": true,
+          "VideoType": "VideoFile",
+          "MediaStreams": [
+            {
+              "Codec": "av1",
+              "Language": "und",
+              "ColorSpace": "bt709",
+              "ColorTransfer": "bt709",
+              "ColorPrimaries": "bt709",
+              "TimeBase": "1/90000",
+              "VideoRange": "SDR",
+              "VideoRangeType": "SDR",
+              "AudioSpatialFormat": "None",
+              "DisplayTitle": "1080p AV1 SDR",
+              "IsInterlaced": false,
+              "BitRate": 9464833,
+              "BitDepth": 8,
+              "RefFrames": 1,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 804,
+              "Width": 1920,
+              "AverageFrameRate": 24,
+              "RealFrameRate": 24,
+              "ReferenceFrameRate": 24,
+              "Profile": "Main",
+              "Type": "Video",
+              "AspectRatio": "2.40:1",
+              "Index": 0,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false,
+              "PixelFormat": "yuv420p",
+              "Level": 8,
+              "IsAnamorphic": false
+            },
+            {
+              "Codec": "aac",
+              "Language": "eng",
+              "TimeBase": "1/48000",
+              "Title": "Stereo",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "English",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "Stereo - English - AAC - Default",
+              "IsInterlaced": false,
+              "ChannelLayout": "stereo",
+              "BitRate": 160461,
+              "Channels": 2,
+              "SampleRate": 48000,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Profile": "LC",
+              "Type": "Audio",
+              "Index": 1,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            }
+          ],
+          "MediaAttachments": [],
+          "Formats": [],
+          "Bitrate": 9630855,
+          "RequiredHttpHeaders": {},
+          "TranscodingSubProtocol": "http",
+          "DefaultAudioStreamIndex": 1,
+          "DefaultSubtitleStreamIndex": -1,
+          "HasSegments": false
+        }
+      ],
+      "PlaySessionId": "ac44b57a99ee4af7bdd0fe6bf562d89b"
+    }
+  },
+  "duration_ms": 152
+}

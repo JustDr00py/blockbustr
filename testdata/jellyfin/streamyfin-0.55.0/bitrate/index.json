@@ -1,0 +1,596 @@
+{
+  "client": "streamyfin-0.55.0",
+  "scenario": "bitrate",
+  "source": "streamyfin-0.55.0-bitrate.mitm",
+  "generated": "2026-10-05T22:52:00.076Z",
+  "flows": 401,
+  "skipped_user_agents": 0,
+  "skipped_other_clients": 0,
+  "filters": {
+    "keep_client": "^Streamyfin$",
+    "keep_ua": "^(okhttp|Dalvik|libmpv)"
+  },
+  "endpoints": [
+    {
+      "endpoint": "GET /Items",
+      "variants": [
+        "GET /Items"
+      ],
+      "count": 18,
+      "statuses": {
+        "200": 18
+      },
+      "files": [
+        "0023-GET-Items.json",
+        "0026-GET-Items.json",
+        "0027-GET-Items.json",
+        "0120-GET-Items.json",
+        "0122-GET-Items.json",
+        "0123-GET-Items.json",
+        "0159-GET-Items.json",
+        "0160-GET-Items.json",
+        "0162-GET-Items.json",
+        "0290-GET-Items.json",
+        "0291-GET-Items.json",
+        "0292-GET-Items.json",
+        "0322-GET-Items.json",
+        "0324-GET-Items.json",
+        "0325-GET-Items.json",
+        "0336-GET-Items.json",
+        "0337-GET-Items.json",
+        "0339-GET-Items.json"
+      ]
+    },
+    {
+      "endpoint": "GET /Items/Latest",
+      "variants": [
+        "GET /Items/Latest"
+      ],
+      "count": 36,
+      "statuses": {
+        "200": 36
+      },
+      "files": [
+        "0029-GET-Items-Latest.json",
+        "0031-GET-Items-Latest.json",
+        "0033-GET-Items-Latest.json",
+        "0034-GET-Items-Latest.json",
+        "0051-GET-Items-Latest.json",
+        "0053-GET-Items-Latest.json",
+        "0058-GET-Items-Latest.json",
+        "0059-GET-Items-Latest.json",
+        "0125-GET-Items-Latest.json",
+        "0126-GET-Items-Latest.json",
+        "0129-GET-Items-Latest.json",
+        "0130-GET-Items-Latest.json",
+        "0164-GET-Items-Latest.json",
+        "0165-GET-Items-Latest.json",
+        "0168-GET-Items-Latest.json",
+        "0170-GET-Items-Latest.json",
+        "0195-GET-Items-Latest.json",
+        "0197-GET-Items-Latest.json",
+        "0200-GET-Items-Latest.json",
+        "0203-GET-Items-Latest.json",
+        "0295-GET-Items-Latest.json",
+        "0296-GET-Items-Latest.json",
+        "0299-GET-Items-Latest.json",
+        "0300-GET-Items-Latest.json",
+        "0328-GET-Items-Latest.json",
+        "0329-GET-Items-Latest.json",
+        "0332-GET-Items-Latest.json",
+        "0333-GET-Items-Latest.json",
+        "0342-GET-Items-Latest.json",
+        "0343-GET-Items-Latest.json",
+        "0346-GET-Items-Latest.json",
+        "0347-GET-Items-Latest.json",
+        "0373-GET-Items-Latest.json",
+        "0374-GET-Items-Latest.json",
+        "0379-GET-Items-Latest.json",
+        "0382-GET-Items-Latest.json"
+      ]
+    },
+    {
+      "endpoint": "GET /Items/Suggestions",
+      "variants": [
+        "GET /Items/Suggestions"
+      ],
+      "count": 9,
+      "statuses": {
+        "200": 9
+      },
+      "files": [
+        "0036-GET-Items-Suggestions.json",
+        "0060-GET-Items-Suggestions.json",
+        "0131-GET-Items-Suggestions.json",
+        "0173-GET-Items-Suggestions.json",
+        "0205-GET-Items-Suggestions.json",
+        "0301-GET-Items-Suggestions.json",
+        "0334-GET-Items-Suggestions.json",
+        "0349-GET-Items-Suggestions.json",
+        "0383-GET-Items-Suggestions.json"
+      ]
+    },
+    {
+      "endpoint": "GET /Items/{id}",
+      "variants": [
+        "GET /Items/{id}"
+      ],
+      "count": 7,
+      "statuses": {
+        "200": 7
+      },
+      "files": [
+        "0004-GET-Items-id.json",
+        "0035-GET-Items-id.json",
+        "0146-GET-Items-id.json",
+        "0172-GET-Items-id.json",
+        "0312-GET-Items-id.json",
+        "0335-GET-Items-id.json",
+        "0348-GET-Items-id.json"
+      ]
+    },
+    {
+      "endpoint": "POST /Items/{id}/PlaybackInfo",
+      "variants": [
+        "POST /Items/{id}/PlaybackInfo"
+      ],
+      "count": 6,
+      "statuses": {
+        "200": 6
+      },
+      "files": [
+        "0005-POST-Items-id-PlaybackInfo.json",
+        "0041-POST-Items-id-PlaybackInfo.json",
+        "0149-POST-Items-id-PlaybackInfo.json",
+        "0176-POST-Items-id-PlaybackInfo.json",
+        "0315-POST-Items-id-PlaybackInfo.json",
+        "0354-POST-Items-id-PlaybackInfo.json"
+      ]
+    },
+    {
+      "endpoint": "GET /MediaSegments/{id}",
+      "variants": [
+        "GET /MediaSegments/{id}"
+      ],
+      "count": 6,
+      "statuses": {
+        "200": 6
+      },
+      "files": [
+        "0006-GET-MediaSegments-id.json",
+        "0042-GET-MediaSegments-id.json",
+        "0150-GET-MediaSegments-id.json",
+        "0177-GET-MediaSegments-id.json",
+        "0316-GET-MediaSegments-id.json",
+        "0355-GET-MediaSegments-id.json"
+      ]
+    },
+    {
+      "endpoint": "GET /Sessions",
+      "variants": [
+        "GET /Sessions"
+      ],
+      "count": 186,
+      "statuses": {
+        "200": 186
+      },
+      "files": [
+        "0002-GET-Sessions.json",
+        "0003-GET-Sessions.json",
+        "0009-GET-Sessions.json",
+        "0010-GET-Sessions.json",
+        "0015-GET-Sessions.json",
+        "0016-GET-Sessions.json",
+        "0017-GET-Sessions.json",
+        "0018-GET-Sessions.json",
+        "0020-GET-Sessions.json",
+        "0021-GET-Sessions.json",
+        "0037-GET-Sessions.json",
+        "0038-GET-Sessions.json",
+        "0047-GET-Sessions.json",
+        "0048-GET-Sessions.json",
+        "0061-GET-Sessions.json",
+        "0062-GET-Sessions.json",
+        "0063-GET-Sessions.json",
+        "0064-GET-Sessions.json",
+        "0066-GET-Sessions.json",
+        "0067-GET-Sessions.json",
+        "0068-GET-Sessions.json",
+        "0069-GET-Sessions.json",
+        "0071-GET-Sessions.json",
+        "0072-GET-Sessions.json",
+        "0073-GET-Sessions.json",
+        "0074-GET-Sessions.json",
+        "0076-GET-Sessions.json",
+        "0077-GET-Sessions.json",
+        "0078-GET-Sessions.json",
+        "0079-GET-Sessions.json",
+        "0081-GET-Sessions.json",
+        "0082-GET-Sessions.json",
+        "0083-GET-Sessions.json",
+        "0084-GET-Sessions.json",
+        "0086-GET-Sessions.json",
+        "0087-GET-Sessions.json",
+        "0088-GET-Sessions.json",
+        "0089-GET-Sessions.json",
+        "0091-GET-Sessions.json",
+        "0092-GET-Sessions.json",
+        "0093-GET-Sessions.json",
+        "0094-GET-Sessions.json",
+        "0096-GET-Sessions.json",
+        "0097-GET-Sessions.json",
+        "0098-GET-Sessions.json",
+        "0099-GET-Sessions.json",
+        "0101-GET-Sessions.json",
+        "0102-GET-Sessions.json",
+        "0103-GET-Sessions.json",
+        "0104-GET-Sessions.json",
+        "0106-GET-Sessions.json",
+        "0107-GET-Sessions.json",
+        "0109-GET-Sessions.json",
+        "0110-GET-Sessions.json",
+        "0111-GET-Sessions.json",
+        "0112-GET-Sessions.json",
+        "0114-GET-Sessions.json",
+        "0115-GET-Sessions.json",
+        "0116-GET-Sessions.json",
+        "0117-GET-Sessions.json",
+        "0132-GET-Sessions.json",
+        "0133-GET-Sessions.json",
+        "0136-GET-Sessions.json",
+        "0137-GET-Sessions.json",
+        "0138-GET-Sessions.json",
+        "0139-GET-Sessions.json",
+        "0140-GET-Sessions.json",
+        "0141-GET-Sessions.json",
+        "0142-GET-Sessions.json",
+        "0143-GET-Sessions.json",
+        "0144-GET-Sessions.json",
+        "0145-GET-Sessions.json",
+        "0147-GET-Sessions.json",
+        "0148-GET-Sessions.json",
+        "0169-GET-Sessions.json",
+        "0171-GET-Sessions.json",
+        "0182-GET-Sessions.json",
+        "0183-GET-Sessions.json",
+        "0186-GET-Sessions.json",
+        "0187-GET-Sessions.json",
+        "0188-GET-Sessions.json",
+        "0189-GET-Sessions.json",
+        "0191-GET-Sessions.json",
+        "0192-GET-Sessions.json",
+        "0193-GET-Sessions.json",
+        "0194-GET-Sessions.json",
+        "0206-GET-Sessions.json",
+        "0207-GET-Sessions.json",
+        "0208-GET-Sessions.json",
+        "0209-GET-Sessions.json",
+        "0211-GET-Sessions.json",
+        "0212-GET-Sessions.json",
+        "0213-GET-Sessions.json",
+        "0214-GET-Sessions.json",
+        "0216-GET-Sessions.json",
+        "0217-GET-Sessions.json",
+        "0218-GET-Sessions.json",
+        "0219-GET-Sessions.json",
+        "0221-GET-Sessions.json",
+        "0222-GET-Sessions.json",
+        "0223-GET-Sessions.json",
+        "0224-GET-Sessions.json",
+        "0226-GET-Sessions.json",
+        "0227-GET-Sessions.json",
+        "0228-GET-Sessions.json",
+        "0229-GET-Sessions.json",
+        "0231-GET-Sessions.json",
+        "0232-GET-Sessions.json",
+        "0233-GET-Sessions.json",
+        "0234-GET-Sessions.json",
+        "0236-GET-Sessions.json",
+        "0237-GET-Sessions.json",
+        "0238-GET-Sessions.json",
+        "0239-GET-Sessions.json",
+        "0241-GET-Sessions.json",
+        "0242-GET-Sessions.json",
+        "0243-GET-Sessions.json",
+        "0244-GET-Sessions.json",
+        "0246-GET-Sessions.json",
+        "0247-GET-Sessions.json",
+        "0248-GET-Sessions.json",
+        "0249-GET-Sessions.json",
+        "0251-GET-Sessions.json",
+        "0252-GET-Sessions.json",
+        "0253-GET-Sessions.json",
+        "0254-GET-Sessions.json",
+        "0258-GET-Sessions.json",
+        "0259-GET-Sessions.json",
+        "0260-GET-Sessions.json",
+        "0261-GET-Sessions.json",
+        "0263-GET-Sessions.json",
+        "0264-GET-Sessions.json",
+        "0265-GET-Sessions.json",
+        "0266-GET-Sessions.json",
+        "0268-GET-Sessions.json",
+        "0269-GET-Sessions.json",
+        "0270-GET-Sessions.json",
+        "0271-GET-Sessions.json",
+        "0273-GET-Sessions.json",
+        "0274-GET-Sessions.json",
+        "0275-GET-Sessions.json",
+        "0276-GET-Sessions.json",
+        "0278-GET-Sessions.json",
+        "0279-GET-Sessions.json",
+        "0280-GET-Sessions.json",
+        "0281-GET-Sessions.json",
+        "0283-GET-Sessions.json",
+        "0284-GET-Sessions.json",
+        "0285-GET-Sessions.json",
+        "0286-GET-Sessions.json",
+        "0302-GET-Sessions.json",
+        "0303-GET-Sessions.json",
+        "0306-GET-Sessions.json",
+        "0307-GET-Sessions.json",
+        "0308-GET-Sessions.json",
+        "0309-GET-Sessions.json",
+        "0310-GET-Sessions.json",
+        "0311-GET-Sessions.json",
+        "0313-GET-Sessions.json",
+        "0314-GET-Sessions.json",
+        "0352-GET-Sessions.json",
+        "0353-GET-Sessions.json",
+        "0360-GET-Sessions.json",
+        "0361-GET-Sessions.json",
+        "0364-GET-Sessions.json",
+        "0365-GET-Sessions.json",
+        "0367-GET-Sessions.json",
+        "0368-GET-Sessions.json",
+        "0369-GET-Sessions.json",
+        "0370-GET-Sessions.json",
+        "0380-GET-Sessions.json",
+        "0381-GET-Sessions.json",
+        "0384-GET-Sessions.json",
+        "0385-GET-Sessions.json",
+        "0387-GET-Sessions.json",
+        "0388-GET-Sessions.json",
+        "0389-GET-Sessions.json",
+        "0390-GET-Sessions.json",
+        "0392-GET-Sessions.json",
+        "0393-GET-Sessions.json",
+        "0394-GET-Sessions.json",
+        "0395-GET-Sessions.json",
+        "0397-GET-Sessions.json",
+        "0398-GET-Sessions.json",
+        "0399-GET-Sessions.json",
+        "0400-GET-Sessions.json"
+      ]
+    },
+    {
+      "endpoint": "POST /Sessions/Playing",
+      "variants": [
+        "POST /Sessions/Playing"
+      ],
+      "count": 6,
+      "statuses": {
+        "204": 6
+      },
+      "files": [
+        "0007-POST-Sessions-Playing.json",
+        "0043-POST-Sessions-Playing.json",
+        "0151-POST-Sessions-Playing.json",
+        "0178-POST-Sessions-Playing.json",
+        "0317-POST-Sessions-Playing.json",
+        "0356-POST-Sessions-Playing.json"
+      ]
+    },
+    {
+      "endpoint": "POST /Sessions/Playing/Progress",
+      "variants": [
+        "POST /Sessions/Playing/Progress"
+      ],
+      "count": 51,
+      "statuses": {
+        "204": 51
+      },
+      "files": [
+        "0008-POST-Sessions-Playing-Progress.json",
+        "0013-POST-Sessions-Playing-Progress.json",
+        "0014-POST-Sessions-Playing-Progress.json",
+        "0019-POST-Sessions-Playing-Progress.json",
+        "0044-POST-Sessions-Playing-Progress.json",
+        "0049-POST-Sessions-Playing-Progress.json",
+        "0050-POST-Sessions-Playing-Progress.json",
+        "0065-POST-Sessions-Playing-Progress.json",
+        "0070-POST-Sessions-Playing-Progress.json",
+        "0075-POST-Sessions-Playing-Progress.json",
+        "0080-POST-Sessions-Playing-Progress.json",
+        "0085-POST-Sessions-Playing-Progress.json",
+        "0090-POST-Sessions-Playing-Progress.json",
+        "0095-POST-Sessions-Playing-Progress.json",
+        "0100-POST-Sessions-Playing-Progress.json",
+        "0105-POST-Sessions-Playing-Progress.json",
+        "0108-POST-Sessions-Playing-Progress.json",
+        "0113-POST-Sessions-Playing-Progress.json",
+        "0152-POST-Sessions-Playing-Progress.json",
+        "0155-POST-Sessions-Playing-Progress.json",
+        "0156-POST-Sessions-Playing-Progress.json",
+        "0179-POST-Sessions-Playing-Progress.json",
+        "0184-POST-Sessions-Playing-Progress.json",
+        "0185-POST-Sessions-Playing-Progress.json",
+        "0190-POST-Sessions-Playing-Progress.json",
+        "0204-POST-Sessions-Playing-Progress.json",
+        "0210-POST-Sessions-Playing-Progress.json",
+        "0215-POST-Sessions-Playing-Progress.json",
+        "0220-POST-Sessions-Playing-Progress.json",
+        "0225-POST-Sessions-Playing-Progress.json",
+        "0230-POST-Sessions-Playing-Progress.json",
+        "0235-POST-Sessions-Playing-Progress.json",
+        "0240-POST-Sessions-Playing-Progress.json",
+        "0245-POST-Sessions-Playing-Progress.json",
+        "0250-POST-Sessions-Playing-Progress.json",
+        "0257-POST-Sessions-Playing-Progress.json",
+        "0262-POST-Sessions-Playing-Progress.json",
+        "0267-POST-Sessions-Playing-Progress.json",
+        "0272-POST-Sessions-Playing-Progress.json",
+        "0277-POST-Sessions-Playing-Progress.json",
+        "0282-POST-Sessions-Playing-Progress.json",
+        "0287-POST-Sessions-Playing-Progress.json",
+        "0318-POST-Sessions-Playing-Progress.json",
+        "0357-POST-Sessions-Playing-Progress.json",
+        "0362-POST-Sessions-Playing-Progress.json",
+        "0363-POST-Sessions-Playing-Progress.json",
+        "0366-POST-Sessions-Playing-Progress.json",
+        "0371-POST-Sessions-Playing-Progress.json",
+        "0386-POST-Sessions-Playing-Progress.json",
+        "0391-POST-Sessions-Playing-Progress.json",
+        "0396-POST-Sessions-Playing-Progress.json"
+      ]
+    },
+    {
+      "endpoint": "POST /Sessions/Playing/Stopped",
+      "variants": [
+        "POST /Sessions/Playing/Stopped"
+      ],
+      "count": 5,
+      "statuses": {
+        "204": 5
+      },
+      "files": [
+        "0022-POST-Sessions-Playing-Stopped.json",
+        "0118-POST-Sessions-Playing-Stopped.json",
+        "0157-POST-Sessions-Playing-Stopped.json",
+        "0288-POST-Sessions-Playing-Stopped.json",
+        "0321-POST-Sessions-Playing-Stopped.json"
+      ]
+    },
+    {
+      "endpoint": "GET /Shows/NextUp",
+      "variants": [
+        "GET /Shows/NextUp"
+      ],
+      "count": 30,
+      "statuses": {
+        "200": 30
+      },
+      "files": [
+        "0011-GET-Shows-NextUp.json",
+        "0028-GET-Shows-NextUp.json",
+        "0030-GET-Shows-NextUp.json",
+        "0039-GET-Shows-NextUp.json",
+        "0045-GET-Shows-NextUp.json",
+        "0052-GET-Shows-NextUp.json",
+        "0056-GET-Shows-NextUp.json",
+        "0124-GET-Shows-NextUp.json",
+        "0127-GET-Shows-NextUp.json",
+        "0134-GET-Shows-NextUp.json",
+        "0153-GET-Shows-NextUp.json",
+        "0161-GET-Shows-NextUp.json",
+        "0166-GET-Shows-NextUp.json",
+        "0174-GET-Shows-NextUp.json",
+        "0180-GET-Shows-NextUp.json",
+        "0198-GET-Shows-NextUp.json",
+        "0201-GET-Shows-NextUp.json",
+        "0255-GET-Shows-NextUp.json",
+        "0294-GET-Shows-NextUp.json",
+        "0297-GET-Shows-NextUp.json",
+        "0304-GET-Shows-NextUp.json",
+        "0319-GET-Shows-NextUp.json",
+        "0327-GET-Shows-NextUp.json",
+        "0331-GET-Shows-NextUp.json",
+        "0341-GET-Shows-NextUp.json",
+        "0344-GET-Shows-NextUp.json",
+        "0350-GET-Shows-NextUp.json",
+        "0358-GET-Shows-NextUp.json",
+        "0372-GET-Shows-NextUp.json",
+        "0377-GET-Shows-NextUp.json"
+      ]
+    },
+    {
+      "endpoint": "GET /socket",
+      "variants": [
+        "GET /socket"
+      ],
+      "count": 1,
+      "statuses": {
+        "101": 1
+      },
+      "files": [
+        "0401-GET-socket.json"
+      ]
+    },
+    {
+      "endpoint": "GET /Streamyfin/config",
+      "variants": [
+        "GET /Streamyfin/config"
+      ],
+      "count": 1,
+      "statuses": {
+        "404": 1
+      },
+      "files": [
+        "0001-GET-Streamyfin-config.json"
+      ]
+    },
+    {
+      "endpoint": "GET /UserItems/Resume",
+      "variants": [
+        "GET /UserItems/Resume"
+      ],
+      "count": 30,
+      "statuses": {
+        "200": 30
+      },
+      "files": [
+        "0012-GET-UserItems-Resume.json",
+        "0025-GET-UserItems-Resume.json",
+        "0032-GET-UserItems-Resume.json",
+        "0040-GET-UserItems-Resume.json",
+        "0046-GET-UserItems-Resume.json",
+        "0055-GET-UserItems-Resume.json",
+        "0057-GET-UserItems-Resume.json",
+        "0121-GET-UserItems-Resume.json",
+        "0128-GET-UserItems-Resume.json",
+        "0135-GET-UserItems-Resume.json",
+        "0154-GET-UserItems-Resume.json",
+        "0163-GET-UserItems-Resume.json",
+        "0167-GET-UserItems-Resume.json",
+        "0175-GET-UserItems-Resume.json",
+        "0181-GET-UserItems-Resume.json",
+        "0199-GET-UserItems-Resume.json",
+        "0202-GET-UserItems-Resume.json",
+        "0256-GET-UserItems-Resume.json",
+        "0293-GET-UserItems-Resume.json",
+        "0298-GET-UserItems-Resume.json",
+        "0305-GET-UserItems-Resume.json",
+        "0320-GET-UserItems-Resume.json",
+        "0326-GET-UserItems-Resume.json",
+        "0330-GET-UserItems-Resume.json",
+        "0340-GET-UserItems-Resume.json",
+        "0345-GET-UserItems-Resume.json",
+        "0351-GET-UserItems-Resume.json",
+        "0359-GET-UserItems-Resume.json",
+        "0376-GET-UserItems-Resume.json",
+        "0378-GET-UserItems-Resume.json"
+      ]
+    },
+    {
+      "endpoint": "GET /UserViews",
+      "variants": [
+        "GET /UserViews"
+      ],
+      "count": 9,
+      "statuses": {
+        "200": 9
+      },
+      "files": [
+        "0024-GET-UserViews.json",
+        "0054-GET-UserViews.json",
+        "0119-GET-UserViews.json",
+        "0158-GET-UserViews.json",
+        "0196-GET-UserViews.json",
+        "0289-GET-UserViews.json",
+        "0323-GET-UserViews.json",
+        "0338-GET-UserViews.json",
+        "0375-GET-UserViews.json"
+      ]
+    }
+  ]
+}

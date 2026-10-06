@@ -1,0 +1,41 @@
+{
+  "seq": 76,
+  "endpoint": "GET /web/28567.6db9992959ca2eff26e4.chunk.js",
+  "time": "2026-10-05T22:30:29.584Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/28567.6db9992959ca2eff26e4.chunk.js",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "*/*",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/javascript",
+      "Date": "Mon, 05 Oct 2026 22:30:29 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb35a\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.4405"
+    },
+    "body": {
+      "_text": "\"use strict\";(self.webpackChunk=self.webpackChunk||[]).push([[28567],{28567:function(e,a,t){t.r(a),t(84734),t(86584),t(78557);var n=t(68221);t(44797).A.on(n.f,\"playerchange\",(function(e,a,t,o){o&&a&&(o.isLocalPlayer?a.isLocalPlayer?console.debug(\"Skipping remote control autoplay because newPlayer is a local player\"):function(e,a){var t=n.f.getPlayerState(e),o=t.NowPlayingItem;o&&n.f.getPlaylist(e).then((function(l){var i=l.map((function(e){return e.Id})),r=(t.PlayState||{}).PositionTicks||0,s=i.indexOf(o.Id)||0;n.f.stop(e).then((function(){n.f.play({ids:i,serverId:o.ServerId,startPositionTicks:r,startIndex:s},a)}))}))}(o,a):console.debug(\"Skipping remote control autoplay because oldPlayer is not a local player\"))}))}}]);"
+    }
+  },
+  "duration_ms": 10
+}

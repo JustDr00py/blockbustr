@@ -1,0 +1,41 @@
+{
+  "seq": 54,
+  "endpoint": "GET /web/pdfPlayer-plugin.812f879bb0acfa8ae50f.css",
+  "time": "2026-10-05T22:30:29.440Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/pdfPlayer-plugin.812f879bb0acfa8ae50f.css",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "text/css,*/*;q=0.1",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/css",
+      "Date": "Mon, 05 Oct 2026 22:30:29 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb537\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.2231"
+    },
+    "body": {
+      "_text": ".bookOsd{bottom:0;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:space-between;justify-content:space-between;left:0;pointer-events:none;position:absolute;right:0;top:0;z-index:1002}.bookOsd,.bookOsdRow{display:-webkit-flex;display:flex}.bookOsdRow{-webkit-align-items:center;align-items:center;background-color:var(--jf-palette-AppBar-defaultBg);height:5vh;-webkit-justify-content:flex-start;justify-content:flex-start;padding:0 .8vw;pointer-events:auto;-webkit-transform:translateZ(0);transform:translateZ(0);transition:all .2s linear}@media(orientation:landscape)and (max-width:60em){.bookOsdRow{height:10vh}}.bookOsdSpacer{-webkit-flex:1;flex:1}.bookOsdTitle{font-size:1.1rem;font-weight:600;margin-left:.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n#container{-webkit-align-items:center;align-items:center;display:grid;height:100%;height:calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));justify-items:center;place-items:center;position:relative;top:env(safe-area-inset-top)}#pdfPlayer{background:#fff;height:100%;overflow:hidden;position:relative;width:100%;z-index:100}#pdfPlayer #canvas{display:block;margin:auto;position:relative}\n"
+    }
+  },
+  "duration_ms": 14
+}

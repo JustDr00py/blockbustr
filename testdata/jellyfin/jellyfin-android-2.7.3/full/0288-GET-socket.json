@@ -1,0 +1,278 @@
+{
+  "seq": 288,
+  "endpoint": "GET /socket",
+  "time": "2026-10-05T22:30:59.442Z",
+  "request": {
+    "method": "GET",
+    "path": "/socket",
+    "query": {
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "Upgrade",
+      "Pragma": "no-cache",
+      "Cache-Control": "no-cache",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Upgrade": "websocket",
+      "Origin": "http://192.0.2.2:8096",
+      "Sec-WebSocket-Version": "13",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Sec-WebSocket-Key": "jc9pKNh10V3WH3d+lSVqWg==",
+      "Sec-WebSocket-Extensions": "permessage-deflate; client_max_window_bits"
+    },
+    "auth": {
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "query:apikey"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 101,
+    "headers": {
+      "Connection": "Upgrade",
+      "Date": "Mon, 05 Oct 2026 22:30:59 GMT",
+      "Server": "Kestrel",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Language": "en-US",
+      "Upgrade": "websocket",
+      "Sec-WebSocket-Accept": "3quz11j4haZJY20Y6JfDCCsAP1o=",
+      "X-Response-Time-ms": "22.8847"
+    },
+    "body": null
+  },
+  "duration_ms": 32,
+  "websocket": {
+    "messages": [
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:30:59.484Z",
+        "data": {
+          "MessageId": "0bf7d4df755c486fa44be7383ab97cf9",
+          "Data": 60,
+          "MessageType": "ForceKeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:30:59.492Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:30:59.494Z",
+        "data": {
+          "MessageId": "52569ebee95545fda91aebe180d35daf",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:31:29.530Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:31:29.535Z",
+        "data": {
+          "MessageId": "4b166e4888f3498eb30989458c3f10c2",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:32:00.462Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:32:00.465Z",
+        "data": {
+          "MessageId": "5c9fdb44e7b04a4eb8e46984bc066a0d",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:32:11.623Z",
+        "data": {
+          "MessageId": "05310a1cf87f4402a039e94348995bb3",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "931285",
+                "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:32:29.493Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:32:29.498Z",
+        "data": {
+          "MessageId": "bbd56282a224450a89772d604e8508ed",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:32:32.911Z",
+        "data": {
+          "MessageId": "b049a2966ce54c28b8c5c76a46858a39",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "931285",
+                "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:32:41.806Z",
+        "data": {
+          "MessageId": "f6aafbe7f5af40af85f1f30430827d23",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 1,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:32:41.1404894Z",
+                "Played": false,
+                "Key": "931285",
+                "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:32:59.493Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:32:59.497Z",
+        "data": {
+          "MessageId": "3cea01f83ca04424ac0f5ca0338c0bd5",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:33:05.809Z",
+        "data": {
+          "MessageId": "ac91dee96631404c85a51dc6873f7ffc",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 1,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:32:41.1404894Z",
+                "Played": false,
+                "Key": "931285",
+                "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:33:29.646Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:33:29.649Z",
+        "data": {
+          "MessageId": "3051c3f5b4be46d9b5bf1f809bfb59ac",
+          "MessageType": "KeepAlive"
+        }
+      }
+    ],
+    "truncated": false
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "seq": 7,
+  "endpoint": "POST /Sessions/Capabilities/Full",
+  "time": "2026-10-05T22:52:53.920Z",
+  "request": {
+    "method": "POST",
+    "path": "/Sessions/Capabilities/Full",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "Content-Length": "567",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Content-Type": "application/json",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Accept": "*/*",
+      "Origin": "http://192.0.2.2:8096",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": {
+      "PlayableMediaTypes": [
+        "Audio",
+        "Video"
+      ],
+      "SupportedCommands": [
+        "MoveUp",
+        "MoveDown",
+        "MoveLeft",
+        "MoveRight",
+        "PageUp",
+        "PageDown",
+        "PreviousLetter",
+        "NextLetter",
+        "ToggleOsd",
+        "ToggleContextMenu",
+        "Select",
+        "Back",
+        "SendKey",
+        "SendString",
+        "GoHome",
+        "GoToSettings",
+        "VolumeUp",
+        "VolumeDown",
+        "Mute",
+        "Unmute",
+        "ToggleMute",
+        "SetVolume",
+        "SetAudioStreamIndex",
+        "SetSubtitleStreamIndex",
+        "DisplayContent",
+        "GoToSearch",
+        "DisplayMessage",
+        "SetRepeatMode",
+        "SetShuffleQueue",
+        "ChannelUp",
+        "ChannelDown",
+        "PlayMediaSource",
+        "PlayTrailers"
+      ],
+      "SupportsPersistentIdentifier": false,
+      "SupportsMediaControl": true
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "Date": "Mon, 05 Oct 2026 22:52:53 GMT",
+      "Server": "Kestrel",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "39.2098"
+    },
+    "body": null
+  },
+  "duration_ms": 46
+}

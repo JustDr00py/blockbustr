@@ -1,0 +1,39 @@
+{
+  "seq": 46,
+  "endpoint": "GET /Items/{id}/Images/Primary",
+  "time": "2026-10-05T22:25:13.358Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/9c96afc0860132cd6c6187694c5260eb/Images/Primary",
+    "query": {},
+    "headers": {
+      "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 14; Device Build/REDACTED)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "921716",
+      "Content-Type": "image/jpeg",
+      "Date": "Mon, 05 Oct 2026 22:25:13 GMT",
+      "Server": "Kestrel",
+      "Age": "3924",
+      "Cache-Control": "public",
+      "Content-Language": "en-US",
+      "Last-Modified": "Mon, 05 Oct 2026 21:19:49 GMT",
+      "Vary": "Accept",
+      "transferMode.dlna.org": "Interactive",
+      "realTimeInfo.dlna.org": "DLNA.ORG_TLAG=*",
+      "Content-Disposition": "attachment",
+      "X-Response-Time-ms": "3.4797"
+    },
+    "body": null,
+    "body_omitted": "image/jpeg 921716 B"
+  },
+  "duration_ms": 9
+}

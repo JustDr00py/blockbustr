@@ -1,0 +1,332 @@
+{
+  "seq": 337,
+  "endpoint": "GET /Items",
+  "time": "2026-10-05T22:50:52.404Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "fields": [
+        "People"
+      ],
+      "ids": [
+        "84088e11eb6351255c08507602d79a0f"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "bcf34a8cfdff4850b42eb7e1cc99d404-9d6e66d083a51354-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=bcf34a8cfdff4850b42eb7e1cc99d404,sentry-org_id=4509610343596032,sentry-transaction=%2Fplayer%2Fdirect-player,sentry-sampled=false,sentry-sample_rand=0.4545416865638447,sentry-sample_rate=0",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:50:51 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:50:52 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "110.2289"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Luca",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "84088e11eb6351255c08507602d79a0f",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2021-06-17T00:00:00.0000000Z",
+          "CriticRating": 91,
+          "OfficialRating": "PG",
+          "ChannelId": null,
+          "CommunityRating": 7.772,
+          "RunTimeTicks": 57152000000,
+          "ProductionYear": 2021,
+          "IsFolder": false,
+          "Type": "Movie",
+          "People": [
+            {
+              "Name": "Jacob Tremblay",
+              "Id": "213e6eec3104b6fea2a71d852e0269a9",
+              "Role": "Luca Paguro (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "756e7dcfa9c53c7119e883819c166490",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "756e7dcfa9c53c7119e883819c166490": "dONcvf~W*0_3I=j@-;WXt,oyn3s:~qkW-;%M?cWBn$t7"
+                }
+              }
+            },
+            {
+              "Name": "Jack Dylan Grazer",
+              "Id": "27335d2ab87e372ab725203623ee4ee5",
+              "Role": "Alberto Scorfano (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "1c67ed914ce34e8df86da761d9d0ac62",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "1c67ed914ce34e8df86da761d9d0ac62": "daGbCz%L0#Nx00M|%0oIcFkC$*s:RjayofazWBjZnij@"
+                }
+              }
+            },
+            {
+              "Name": "Emma Berman",
+              "Id": "2d264f8edc453108e1afb40036384622",
+              "Role": "Giulia Marcovaldo (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "b0cc802d310ece78e3943769344e1427",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "b0cc802d310ece78e3943769344e1427": "dBIgr?~Wb.-n~Vs9?b-:KOIV?Hxax[%L~V?HE0Ioxtj["
+                }
+              }
+            },
+            {
+              "Name": "Saverio Raimondo",
+              "Id": "ea7e062bb0719e3157f9cb8367140a3d",
+              "Role": "Ercole Visconti (voice)",
+              "Type": "Actor",
+              "ImageBlurHashes": {
+                "Primary": {}
+              }
+            },
+            {
+              "Name": "Maya Rudolph",
+              "Id": "45e6165110074d239774924d9fb6b833",
+              "Role": "Daniela Paguro (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "1f985fab0e45372f5a87d42cb1e8048e",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "1f985fab0e45372f5a87d42cb1e8048e": "dhNIKi}@F{%guOXSS#x[?Io3-U%M%}t7t7xus;WCaJn$"
+                }
+              }
+            },
+            {
+              "Name": "Marco Barricelli",
+              "Id": "ff091e5eaaa95e35e098b547d51f359e",
+              "Role": "Massimo Marcovaldo (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "82311e41ba1c54ad24b4d0717b560638",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "82311e41ba1c54ad24b4d0717b560638": "dDBfz_xZ0ftS_4n%t6oz5QNI=|ofS$W=s.xa%3ofWXt7"
+                }
+              }
+            },
+            {
+              "Name": "Jim Gaffigan",
+              "Id": "7fc2a6edbcfb6116e523a327cf774eb7",
+              "Role": "Lorenzo Paguro (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "41a252c2f5d417208c703d789384aced",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "41a252c2f5d417208c703d789384aced": "dSECB_%157R+~Vs:E1R*I:WVaejZNGayxuofM|WCxtof"
+                }
+              }
+            },
+            {
+              "Name": "Peter Sohn",
+              "Id": "bd3b385cbaaf67ab961880ce6c4dc519",
+              "Role": "Ciccio (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "aa622e3c36c69953bd7b5a75870a2fbb",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "aa622e3c36c69953bd7b5a75870a2fbb": "dJFP1{RP9z-=?HWA?wo#56t7-TR-yZ%N%1xvn$%N-=-;"
+                }
+              }
+            },
+            {
+              "Name": "Lorenzo Crisci",
+              "Id": "98032db35fb1fa6b319a2b877ea213b9",
+              "Role": "Guido (voice)",
+              "Type": "Actor",
+              "ImageBlurHashes": {
+                "Primary": {}
+              }
+            },
+            {
+              "Name": "Marina Massironi",
+              "Id": "ccd0372df8720b86332fd53f0e0d78b8",
+              "Role": "Signora Marsigliese (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "899c873147d3a2b5cbc77c2d80cefb3a",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "899c873147d3a2b5cbc77c2d80cefb3a": "dVGuH|IUK5%2~qRj%Mt7Xnozsmxu%gtRj[t7x]t7%2kC"
+                }
+              }
+            },
+            {
+              "Name": "Gino La Monica",
+              "Id": "8d383718f7e275774f137595e18549ef",
+              "Role": "Tomasso (Old Fisherman) (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "fb3de86fd61d6f1a84d40ad990dc08c5",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "fb3de86fd61d6f1a84d40ad990dc08c5": "dZD04Lxu0KM_wHRiNytRozt7aeRPNIRjs8t7Ioaexuog"
+                }
+              }
+            },
+            {
+              "Name": "Sandy Martin",
+              "Id": "7b6f34834fa585c52fe099b3cf731585",
+              "Role": "Grandma Paguro (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "846f477977bfe01fba4cb89c9207dd3e",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "846f477977bfe01fba4cb89c9207dd3e": "dQJ%h1=|1cx]?bs:=|xu0zWVw{Rj%Ma#%Lxu-;oz%2xa"
+                }
+              }
+            },
+            {
+              "Name": "Giacomo Gianniotti",
+              "Id": "1a09416655850a30aae09d5cc329529f",
+              "Role": "Giacomo (Young Fisherman) (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "47a449f2aa1811f5636b7a5db5eeb704",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "47a449f2aa1811f5636b7a5db5eeb704": "dJJjrO~CL2.9?ERjT0WA7hE1-6fl?bkC^+%Lx^Shr;%2"
+                }
+              }
+            },
+            {
+              "Name": "Elisa Gabrielli",
+              "Id": "37a5329a129c882f07a4ab41568b6e7d",
+              "Role": "Concetta Aragosta (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "54edc2beac17ca419a468d4c49d88493",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "54edc2beac17ca419a468d4c49d88493": "dRMrlH-pP9%M0KE1VsRkE2R*sXNGbuof%2of9vS#IoW="
+                }
+              }
+            },
+            {
+              "Name": "Mimi Maynard",
+              "Id": "33a97520fa5e0477e053b359893fd82f",
+              "Role": "Pinuccia Aragosta (voice)",
+              "Type": "Actor",
+              "ImageBlurHashes": {
+                "Primary": {}
+              }
+            },
+            {
+              "Name": "Enrico Casarosa",
+              "Id": "29cac7afdf29421ef9a35512c0d42438",
+              "Role": "Director",
+              "Type": "Director",
+              "PrimaryImageTag": "e07de3818f5897fc74a046818f30e31d",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "e07de3818f5897fc74a046818f30e31d": "dQBp#6t70fI@;Gn$EMWAA0Ws-oxa5SWA-ot7M_ays,ae"
+                }
+              }
+            },
+            {
+              "Name": "Mike Jones",
+              "Id": "7effec62d496d4aeb509fb3ea21aa376",
+              "Role": "Screenplay",
+              "Type": "Writer",
+              "PrimaryImageTag": "18d46743d14e3ac64458cd80be9a51b4",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "18d46743d14e3ac64458cd80be9a51b4": "dND]9[~WT0Iq,+s*NaM_9$IpWBt8Rij?n%e.V?e-V?n*"
+                }
+              }
+            },
+            {
+              "Name": "Jesse Andrews",
+              "Id": "684b71cfe12fa95cc1743a05c98c3452",
+              "Role": "Screenplay",
+              "Type": "Writer",
+              "PrimaryImageTag": "39457c0e701cce8cf6d7e0763d1f6714",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "39457c0e701cce8cf6d7e0763d1f6714": "dLLxS=^Qz@]:}[o}=eso58XSTcOD=zxaofw|,[t7xtxG"
+                }
+              }
+            },
+            {
+              "Name": "Andrea Warren",
+              "Id": "d77a77e5629828d2c540b3519d731998",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "4850defca6ec394f070cdb47b16e8c85",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "4850defca6ec394f070cdb47b16e8c85": "dXD]3oxb0eR%xtt7X8RjEMjs$*flS5axjFkCIoWBxuof"
+                }
+              }
+            }
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 8,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:50:49.0637211Z",
+            "Played": false,
+            "Key": "84088e11-eb63-5125-5c08-507602d79a0f",
+            "ItemId": "84088e11eb6351255c08507602d79a0f"
+          },
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Logo": "609cce5f84918f5400e1cb942144686a",
+            "Thumb": "0a5b46e408f8db9f056bb2263054b886",
+            "Primary": "ad87e578b85b2f6a6c71fc16131a3049"
+          },
+          "BackdropImageTags": [
+            "dca946bc61eed45a3973e668c7255e33"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "dca946bc61eed45a3973e668c7255e33": "WQGR^@.APAo#J:XnGJO_pKa%S6X9PDOwp0t8sDs;pxx^ozS2r?of"
+            },
+            "Logo": {
+              "609cce5f84918f5400e1cb942144686a": "VOK1%f?b-;-;-;M{M{xut7t700xuof-;RjIURjt7ofWB"
+            },
+            "Thumb": {
+              "0a5b46e408f8db9f056bb2263054b886": "W?9AXLo#bbbci_j^ysbIkCozslofbwWBoMofoeoyoifjn$RkR+kD"
+            },
+            "Primary": {
+              "ad87e578b85b2f6a6c71fc16131a3049": "dnE;4ct3V]xv?wo#oxozF~R.xCR.GdR*sDR:j1WZbwaf"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 114
+}

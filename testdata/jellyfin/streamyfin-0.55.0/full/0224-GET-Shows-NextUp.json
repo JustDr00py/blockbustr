@@ -1,0 +1,126 @@
+{
+  "seq": 224,
+  "endpoint": "GET /Shows/NextUp",
+  "time": "2026-10-05T22:27:08.371Z",
+  "request": {
+    "method": "GET",
+    "path": "/Shows/NextUp",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "startIndex": [
+        "0"
+      ],
+      "limit": [
+        "10"
+      ],
+      "enableImageTypes": [
+        "Primary",
+        "Backdrop",
+        "Thumb"
+      ],
+      "enableResumable": [
+        "false"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "bb6bc4cc23b34ad2b154616b653c40f5-822105b591bf9851",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=bb6bc4cc23b34ad2b154616b653c40f5,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:27:07 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:27:08 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "34.2508"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "The Challenger from England",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "551ae82823de5533467c046377c55afb",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+          "ChannelId": null,
+          "CommunityRating": 6.6,
+          "RunTimeTicks": 14219650000,
+          "ProductionYear": 2023,
+          "IndexNumber": 1,
+          "ParentIndexNumber": 1,
+          "IsFolder": false,
+          "Type": "Episode",
+          "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropImageTags": [
+            "a7e894c96d34ed85682e44601acd088f"
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 2,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:26:14.2689887Z",
+            "Played": false,
+            "Key": "551ae828-23de-5533-467c-046377c55afb",
+            "ItemId": "551ae82823de5533467c046377c55afb"
+          },
+          "SeriesName": "MF GHOST",
+          "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "SeasonId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+          "SeasonName": "Season 1",
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "b21120d25f459814d07a081444120eb0"
+          },
+          "BackdropImageTags": [],
+          "ImageBlurHashes": {
+            "Primary": {
+              "b21120d25f459814d07a081444120eb0": "WoFiJf~q-;x^xvx]RQWEWBRkWCV@D*IURjNGM{adj?WBRjWCfRfk",
+              "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7",
+              "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4"
+            },
+            "Thumb": {
+              "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+            },
+            "Backdrop": {
+              "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+            }
+          },
+          "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+          "ParentPrimaryImageItemId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "ParentPrimaryImageTag": "3429f9000cfcd41b31987973ba55e382",
+          "LocationType": "FileSystem",
+          "MediaType": "Video"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 43
+}

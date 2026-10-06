@@ -1,0 +1,41 @@
+{
+  "seq": 109,
+  "endpoint": "GET /web/47472.ead193e1e4096120377c.css",
+  "time": "2026-10-05T22:30:30.371Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/47472.ead193e1e4096120377c.css",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "text/css,*/*;q=0.1",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/css",
+      "Date": "Mon, 05 Oct 2026 22:30:30 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb3ce\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.4676"
+    },
+    "body": {
+      "_text": ".emby-tab-button{background:transparent;border-radius:0;box-shadow:none;box-sizing:border-box;cursor:pointer;display:inline-block;-webkit-flex-shrink:0;flex-shrink:0;font-family:inherit;font-size:inherit;font-weight:600;height:auto;line-height:1.25;margin:0;min-width:0;min-width:auto;outline:none;overflow:hidden;padding:1.5em 1.5em;position:relative;vertical-align:middle;width:auto}.emby-tab-button.show-focus:focus{background:0!important;-webkit-transform:scale(1.3)!important;transform:scale(1.3)!important}.emby-tabs-slider{position:relative}.tabContent:not(.is-active){display:none}\n"
+    }
+  },
+  "duration_ms": 9
+}

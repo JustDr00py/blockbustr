@@ -1,0 +1,1022 @@
+{
+  "seq": 27,
+  "endpoint": "GET /Items",
+  "time": "2026-10-05T22:44:26.903Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "fields": [
+        "AirTime",
+        "CanDelete",
+        "CanDownload",
+        "ChannelInfo",
+        "Chapters",
+        "Trickplay",
+        "ChildCount",
+        "CumulativeRunTimeTicks",
+        "CustomRating",
+        "DateCreated",
+        "DateLastMediaAdded",
+        "DisplayPreferencesId",
+        "Etag",
+        "ExternalUrls",
+        "Genres",
+        "ItemCounts",
+        "MediaSourceCount",
+        "MediaSources",
+        "OriginalTitle",
+        "Overview",
+        "ParentId",
+        "Path",
+        "People",
+        "PlayAccess",
+        "ProductionLocations",
+        "ProviderIds",
+        "PrimaryImageAspectRatio",
+        "RecursiveItemCount",
+        "Settings",
+        "SeriesStudio",
+        "SortName",
+        "SpecialEpisodeNumbers",
+        "Studios",
+        "Taglines",
+        "Tags",
+        "RemoteTrailers",
+        "MediaStreams",
+        "SeasonUserData",
+        "DateLastRefreshed",
+        "DateLastSaved",
+        "RefreshState",
+        "ChannelImage",
+        "EnableMediaSourceDisplay",
+        "Width",
+        "Height",
+        "ExtraIds",
+        "LocalTrailerCount",
+        "IsHD",
+        "SpecialFeatureCount"
+      ],
+      "ids": [
+        "84088e11eb6351255c08507602d79a0f"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "8326d7c94995436f8ee4892e021b8914-914d7376a25e4803-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=8326d7c94995436f8ee4892e021b8914,sentry-org_id=4509610343596032,sentry-transaction=%2Fplayer%2Fdirect-player,sentry-sampled=false,sentry-sample_rand=0.12628935954970127,sentry-sample_rate=0",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:41:28 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:44:26 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "163.2349"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Luca",
+          "OriginalTitle": "Luca",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "84088e11eb6351255c08507602d79a0f",
+          "Etag": "bb62bc3ff7058452184fea057eee0cf2",
+          "DateCreated": "2026-10-05T21:15:23.7570943Z",
+          "CanDelete": true,
+          "CanDownload": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "SortName": "luca",
+          "PremiereDate": "2021-06-17T00:00:00.0000000Z",
+          "ExternalUrls": [
+            {
+              "Name": "IMDb",
+              "Url": "https://www.imdb.com/title/tt12801262"
+            },
+            {
+              "Name": "TMDB",
+              "Url": "https://www.themoviedb.org/movie/508943"
+            }
+          ],
+          "MediaSources": [
+            {
+              "Protocol": "Http",
+              "Id": "84088e11eb6351255c08507602d79a0f",
+              "Path": "http://redacted1:8097/stream/realdebrid/TORRENTID/1?sig=REDACTED",
+              "Type": "Default",
+              "Container": "mkv",
+              "Size": 80,
+              "Name": "Luca (2021)",
+              "IsRemote": true,
+              "ETag": "33e0ab41b6c4ccd5458eb199fcae8a01",
+              "RunTimeTicks": 57152000000,
+              "ReadAtNativeFramerate": false,
+              "IgnoreDts": false,
+              "IgnoreIndex": false,
+              "GenPtsInput": false,
+              "SupportsTranscoding": true,
+              "SupportsDirectStream": true,
+              "SupportsDirectPlay": true,
+              "IsInfiniteStream": false,
+              "UseMostCompatibleTranscodingProfile": false,
+              "RequiresOpening": false,
+              "RequiresClosing": false,
+              "RequiresLooping": false,
+              "SupportsProbing": true,
+              "VideoType": "VideoFile",
+              "MediaStreams": [
+                {
+                  "Codec": "hevc",
+                  "Language": "ita",
+                  "ColorSpace": "bt2020nc",
+                  "ColorTransfer": "smpte2084",
+                  "ColorPrimaries": "bt2020",
+                  "DvVersionMajor": 1,
+                  "DvVersionMinor": 0,
+                  "DvProfile": 8,
+                  "DvLevel": 6,
+                  "RpuPresentFlag": 1,
+                  "ElPresentFlag": 0,
+                  "BlPresentFlag": 1,
+                  "DvBlSignalCompatibilityId": 1,
+                  "TimeBase": "1/1000",
+                  "Title": "Video 2160p",
+                  "VideoRange": "HDR",
+                  "VideoRangeType": "DOVIWithHDR10",
+                  "VideoDoViTitle": "Dolby Vision Profile 8.1 (HDR10)",
+                  "AudioSpatialFormat": "None",
+                  "DisplayTitle": "Video 2160p - 4K - HEVC - Dolby Vision Profile 8.1 (HDR10)",
+                  "IsInterlaced": false,
+                  "BitRate": 6621773,
+                  "BitDepth": 10,
+                  "IsDefault": true,
+                  "IsForced": false,
+                  "IsHearingImpaired": false,
+                  "IsOriginal": false,
+                  "Height": 2076,
+                  "Width": 3840,
+                  "AverageFrameRate": 23.976025,
+                  "RealFrameRate": 23.976025,
+                  "ReferenceFrameRate": 23.976025,
+                  "Profile": "Main 10",
+                  "Type": "Video",
+                  "AspectRatio": "1.85:1",
+                  "Index": 0,
+                  "IsExternal": false,
+                  "IsTextSubtitleStream": false,
+                  "SupportsExternalStream": false,
+                  "PixelFormat": "yuv420p10le",
+                  "Level": 150,
+                  "IsAnamorphic": false
+                },
+                {
+                  "Codec": "ac3",
+                  "Language": "ita",
+                  "TimeBase": "1/1000",
+                  "Title": "Italiano AC-3 5.1",
+                  "VideoRange": "Unknown",
+                  "VideoRangeType": "Unknown",
+                  "AudioSpatialFormat": "None",
+                  "LocalizedDefault": "Default",
+                  "LocalizedExternal": "External",
+                  "LocalizedLanguage": "Italian",
+                  "LocalizedOriginal": "Original",
+                  "DisplayTitle": "Italiano AC-3 5.1 - Dolby Digital - Default",
+                  "IsInterlaced": false,
+                  "ChannelLayout": "5.1",
+                  "BitRate": 640000,
+                  "Channels": 6,
+                  "SampleRate": 48000,
+                  "IsDefault": true,
+                  "IsForced": false,
+                  "IsHearingImpaired": false,
+                  "IsOriginal": false,
+                  "Type": "Audio",
+                  "Index": 1,
+                  "IsExternal": false,
+                  "IsTextSubtitleStream": false,
+                  "SupportsExternalStream": false
+                },
+                {
+                  "Codec": "ac3",
+                  "Language": "eng",
+                  "TimeBase": "1/1000",
+                  "Title": "English AC-3 5.1",
+                  "VideoRange": "Unknown",
+                  "VideoRangeType": "Unknown",
+                  "AudioSpatialFormat": "None",
+                  "LocalizedDefault": "Default",
+                  "LocalizedExternal": "External",
+                  "LocalizedLanguage": "English",
+                  "LocalizedOriginal": "Original",
+                  "DisplayTitle": "English AC-3 5.1 - Dolby Digital",
+                  "IsInterlaced": false,
+                  "ChannelLayout": "5.1",
+                  "BitRate": 640000,
+                  "Channels": 6,
+                  "SampleRate": 48000,
+                  "IsDefault": false,
+                  "IsForced": false,
+                  "IsHearingImpaired": false,
+                  "IsOriginal": false,
+                  "Type": "Audio",
+                  "Index": 2,
+                  "IsExternal": false,
+                  "IsTextSubtitleStream": false,
+                  "SupportsExternalStream": false
+                },
+                {
+                  "Codec": "subrip",
+                  "Language": "ita",
+                  "TimeBase": "1/1000",
+                  "Title": "Italiano",
+                  "VideoRange": "Unknown",
+                  "VideoRangeType": "Unknown",
+                  "AudioSpatialFormat": "None",
+                  "LocalizedUndefined": "Undefined",
+                  "LocalizedDefault": "Default",
+                  "LocalizedForced": "Forced",
+                  "LocalizedExternal": "External",
+                  "LocalizedHearingImpaired": "Hearing Impaired",
+                  "LocalizedLanguage": "Italian",
+                  "DisplayTitle": "Italiano - SUBRIP",
+                  "IsInterlaced": false,
+                  "IsDefault": false,
+                  "IsForced": false,
+                  "IsHearingImpaired": false,
+                  "IsOriginal": false,
+                  "Type": "Subtitle",
+                  "Index": 3,
+                  "IsExternal": false,
+                  "IsTextSubtitleStream": true,
+                  "SupportsExternalStream": true
+                },
+                {
+                  "Codec": "subrip",
+                  "Language": "eng",
+                  "TimeBase": "1/1000",
+                  "Title": "English",
+                  "VideoRange": "Unknown",
+                  "VideoRangeType": "Unknown",
+                  "AudioSpatialFormat": "None",
+                  "LocalizedUndefined": "Undefined",
+                  "LocalizedDefault": "Default",
+                  "LocalizedForced": "Forced",
+                  "LocalizedExternal": "External",
+                  "LocalizedHearingImpaired": "Hearing Impaired",
+                  "LocalizedLanguage": "English",
+                  "DisplayTitle": "English - SUBRIP",
+                  "IsInterlaced": false,
+                  "IsDefault": false,
+                  "IsForced": false,
+                  "IsHearingImpaired": false,
+                  "IsOriginal": false,
+                  "Type": "Subtitle",
+                  "Index": 4,
+                  "IsExternal": false,
+                  "IsTextSubtitleStream": true,
+                  "SupportsExternalStream": true
+                }
+              ],
+              "MediaAttachments": [],
+              "Formats": [],
+              "Bitrate": 7904052,
+              "RequiredHttpHeaders": {},
+              "TranscodingSubProtocol": "http",
+              "DefaultAudioStreamIndex": 2,
+              "DefaultSubtitleStreamIndex": -1,
+              "HasSegments": false
+            }
+          ],
+          "CriticRating": 91,
+          "ProductionLocations": [
+            "United States of America"
+          ],
+          "Path": "/media/Movies/Luca (2021)/Luca (2021).strm",
+          "EnableMediaSourceDisplay": true,
+          "OfficialRating": "PG",
+          "ChannelId": null,
+          "Overview": "Luca and his best friend Alberto experience an unforgettable summer on the Italian Riviera. But all the fun is threatened by a deeply-held secret: they are sea monsters from another world just below the water’s surface.",
+          "Taglines": [
+            "Prepare for an unforgettable trip."
+          ],
+          "Genres": [
+            "Animation",
+            "Family",
+            "Fantasy",
+            "Drama",
+            "Comedy"
+          ],
+          "CommunityRating": 7.772,
+          "RunTimeTicks": 57152000000,
+          "PlayAccess": "Full",
+          "ProductionYear": 2021,
+          "RemoteTrailers": [
+            {
+              "Url": "https://www.youtube.com/watch?v=mYfJxlgR2jw",
+              "Name": "Official Trailer"
+            },
+            {
+              "Url": "https://www.youtube.com/watch?v=YdAIBlPVe9s",
+              "Name": "Teaser Trailer"
+            },
+            {
+              "Url": "https://www.youtube.com/watch?v=ROr8hasIqRY",
+              "Name": "Now Streaming"
+            }
+          ],
+          "ProviderIds": {
+            "Imdb": "tt12801262",
+            "Tmdb": "508943"
+          },
+          "IsHD": true,
+          "IsFolder": false,
+          "ParentId": "e675012a1892a87530d2c0b0d14a9026",
+          "Type": "Movie",
+          "People": [
+            {
+              "Name": "Jacob Tremblay",
+              "Id": "213e6eec3104b6fea2a71d852e0269a9",
+              "Role": "Luca Paguro (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "756e7dcfa9c53c7119e883819c166490",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "756e7dcfa9c53c7119e883819c166490": "dONcvf~W*0_3I=j@-;WXt,oyn3s:~qkW-;%M?cWBn$t7"
+                }
+              }
+            },
+            {
+              "Name": "Jack Dylan Grazer",
+              "Id": "27335d2ab87e372ab725203623ee4ee5",
+              "Role": "Alberto Scorfano (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "1c67ed914ce34e8df86da761d9d0ac62",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "1c67ed914ce34e8df86da761d9d0ac62": "daGbCz%L0#Nx00M|%0oIcFkC$*s:RjayofazWBjZnij@"
+                }
+              }
+            },
+            {
+              "Name": "Emma Berman",
+              "Id": "2d264f8edc453108e1afb40036384622",
+              "Role": "Giulia Marcovaldo (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "b0cc802d310ece78e3943769344e1427",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "b0cc802d310ece78e3943769344e1427": "dBIgr?~Wb.-n~Vs9?b-:KOIV?Hxax[%L~V?HE0Ioxtj["
+                }
+              }
+            },
+            {
+              "Name": "Saverio Raimondo",
+              "Id": "ea7e062bb0719e3157f9cb8367140a3d",
+              "Role": "Ercole Visconti (voice)",
+              "Type": "Actor",
+              "ImageBlurHashes": {
+                "Primary": {}
+              }
+            },
+            {
+              "Name": "Maya Rudolph",
+              "Id": "45e6165110074d239774924d9fb6b833",
+              "Role": "Daniela Paguro (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "1f985fab0e45372f5a87d42cb1e8048e",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "1f985fab0e45372f5a87d42cb1e8048e": "dhNIKi}@F{%guOXSS#x[?Io3-U%M%}t7t7xus;WCaJn$"
+                }
+              }
+            },
+            {
+              "Name": "Marco Barricelli",
+              "Id": "ff091e5eaaa95e35e098b547d51f359e",
+              "Role": "Massimo Marcovaldo (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "82311e41ba1c54ad24b4d0717b560638",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "82311e41ba1c54ad24b4d0717b560638": "dDBfz_xZ0ftS_4n%t6oz5QNI=|ofS$W=s.xa%3ofWXt7"
+                }
+              }
+            },
+            {
+              "Name": "Jim Gaffigan",
+              "Id": "7fc2a6edbcfb6116e523a327cf774eb7",
+              "Role": "Lorenzo Paguro (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "41a252c2f5d417208c703d789384aced",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "41a252c2f5d417208c703d789384aced": "dSECB_%157R+~Vs:E1R*I:WVaejZNGayxuofM|WCxtof"
+                }
+              }
+            },
+            {
+              "Name": "Peter Sohn",
+              "Id": "bd3b385cbaaf67ab961880ce6c4dc519",
+              "Role": "Ciccio (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "aa622e3c36c69953bd7b5a75870a2fbb",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "aa622e3c36c69953bd7b5a75870a2fbb": "dJFP1{RP9z-=?HWA?wo#56t7-TR-yZ%N%1xvn$%N-=-;"
+                }
+              }
+            },
+            {
+              "Name": "Lorenzo Crisci",
+              "Id": "98032db35fb1fa6b319a2b877ea213b9",
+              "Role": "Guido (voice)",
+              "Type": "Actor",
+              "ImageBlurHashes": {
+                "Primary": {}
+              }
+            },
+            {
+              "Name": "Marina Massironi",
+              "Id": "ccd0372df8720b86332fd53f0e0d78b8",
+              "Role": "Signora Marsigliese (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "899c873147d3a2b5cbc77c2d80cefb3a",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "899c873147d3a2b5cbc77c2d80cefb3a": "dVGuH|IUK5%2~qRj%Mt7Xnozsmxu%gtRj[t7x]t7%2kC"
+                }
+              }
+            },
+            {
+              "Name": "Gino La Monica",
+              "Id": "8d383718f7e275774f137595e18549ef",
+              "Role": "Tomasso (Old Fisherman) (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "fb3de86fd61d6f1a84d40ad990dc08c5",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "fb3de86fd61d6f1a84d40ad990dc08c5": "dZD04Lxu0KM_wHRiNytRozt7aeRPNIRjs8t7Ioaexuog"
+                }
+              }
+            },
+            {
+              "Name": "Sandy Martin",
+              "Id": "7b6f34834fa585c52fe099b3cf731585",
+              "Role": "Grandma Paguro (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "846f477977bfe01fba4cb89c9207dd3e",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "846f477977bfe01fba4cb89c9207dd3e": "dQJ%h1=|1cx]?bs:=|xu0zWVw{Rj%Ma#%Lxu-;oz%2xa"
+                }
+              }
+            },
+            {
+              "Name": "Giacomo Gianniotti",
+              "Id": "1a09416655850a30aae09d5cc329529f",
+              "Role": "Giacomo (Young Fisherman) (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "47a449f2aa1811f5636b7a5db5eeb704",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "47a449f2aa1811f5636b7a5db5eeb704": "dJJjrO~CL2.9?ERjT0WA7hE1-6fl?bkC^+%Lx^Shr;%2"
+                }
+              }
+            },
+            {
+              "Name": "Elisa Gabrielli",
+              "Id": "37a5329a129c882f07a4ab41568b6e7d",
+              "Role": "Concetta Aragosta (voice)",
+              "Type": "Actor",
+              "PrimaryImageTag": "54edc2beac17ca419a468d4c49d88493",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "54edc2beac17ca419a468d4c49d88493": "dRMrlH-pP9%M0KE1VsRkE2R*sXNGbuof%2of9vS#IoW="
+                }
+              }
+            },
+            {
+              "Name": "Mimi Maynard",
+              "Id": "33a97520fa5e0477e053b359893fd82f",
+              "Role": "Pinuccia Aragosta (voice)",
+              "Type": "Actor",
+              "ImageBlurHashes": {
+                "Primary": {}
+              }
+            },
+            {
+              "Name": "Enrico Casarosa",
+              "Id": "29cac7afdf29421ef9a35512c0d42438",
+              "Role": "Director",
+              "Type": "Director",
+              "PrimaryImageTag": "e07de3818f5897fc74a046818f30e31d",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "e07de3818f5897fc74a046818f30e31d": "dQBp#6t70fI@;Gn$EMWAA0Ws-oxa5SWA-ot7M_ays,ae"
+                }
+              }
+            },
+            {
+              "Name": "Mike Jones",
+              "Id": "7effec62d496d4aeb509fb3ea21aa376",
+              "Role": "Screenplay",
+              "Type": "Writer",
+              "PrimaryImageTag": "18d46743d14e3ac64458cd80be9a51b4",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "18d46743d14e3ac64458cd80be9a51b4": "dND]9[~WT0Iq,+s*NaM_9$IpWBt8Rij?n%e.V?e-V?n*"
+                }
+              }
+            },
+            {
+              "Name": "Jesse Andrews",
+              "Id": "684b71cfe12fa95cc1743a05c98c3452",
+              "Role": "Screenplay",
+              "Type": "Writer",
+              "PrimaryImageTag": "39457c0e701cce8cf6d7e0763d1f6714",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "39457c0e701cce8cf6d7e0763d1f6714": "dLLxS=^Qz@]:}[o}=eso58XSTcOD=zxaofw|,[t7xtxG"
+                }
+              }
+            },
+            {
+              "Name": "Andrea Warren",
+              "Id": "d77a77e5629828d2c540b3519d731998",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "4850defca6ec394f070cdb47b16e8c85",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "4850defca6ec394f070cdb47b16e8c85": "dXD]3oxb0eR%xtt7X8RjEMjs$*flS5axjFkCIoWBxuof"
+                }
+              }
+            }
+          ],
+          "Studios": [
+            {
+              "Name": "Pixar",
+              "Id": "a1384420050b89ea581e04c0dd9a83a8"
+            }
+          ],
+          "GenreItems": [
+            {
+              "Name": "Animation",
+              "Id": "074229225b7254292f131f9f49f8dcd6"
+            },
+            {
+              "Name": "Family",
+              "Id": "ccbd8d9008aab2b5e749e1cc4bc458a4"
+            },
+            {
+              "Name": "Fantasy",
+              "Id": "a30dcc65be22eb3c21c03f7c1c7a57d1"
+            },
+            {
+              "Name": "Drama",
+              "Id": "090eac6e9de4fe1fbc194e5b96691277"
+            },
+            {
+              "Name": "Comedy",
+              "Id": "08d31605d366d63a7a924f944b4417f1"
+            }
+          ],
+          "LocalTrailerCount": 0,
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 4,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:44:06.7495057Z",
+            "Played": false,
+            "Key": "84088e11-eb63-5125-5c08-507602d79a0f",
+            "ItemId": "84088e11eb6351255c08507602d79a0f"
+          },
+          "SpecialFeatureCount": 0,
+          "DisplayPreferencesId": "dbf7709c41faaa746463d67978eb863d",
+          "Tags": [
+            "friendship",
+            "monster",
+            "italy",
+            "villain",
+            "coming of age",
+            "friends",
+            "bromance",
+            "sea monster",
+            "vespa",
+            "aftercreditsstinger",
+            "seaside town",
+            "1950s",
+            "pasta",
+            "water",
+            "3d animation",
+            "italian riviera",
+            "pesto",
+            "admiring",
+            "pixar"
+          ],
+          "PrimaryImageAspectRatio": 0.6666666666666666,
+          "MediaStreams": [
+            {
+              "Codec": "hevc",
+              "Language": "ita",
+              "ColorSpace": "bt2020nc",
+              "ColorTransfer": "smpte2084",
+              "ColorPrimaries": "bt2020",
+              "DvVersionMajor": 1,
+              "DvVersionMinor": 0,
+              "DvProfile": 8,
+              "DvLevel": 6,
+              "RpuPresentFlag": 1,
+              "ElPresentFlag": 0,
+              "BlPresentFlag": 1,
+              "DvBlSignalCompatibilityId": 1,
+              "TimeBase": "1/1000",
+              "Title": "Video 2160p",
+              "VideoRange": "HDR",
+              "VideoRangeType": "DOVIWithHDR10",
+              "VideoDoViTitle": "Dolby Vision Profile 8.1 (HDR10)",
+              "AudioSpatialFormat": "None",
+              "DisplayTitle": "Video 2160p - 4K - HEVC - Dolby Vision Profile 8.1 (HDR10)",
+              "IsInterlaced": false,
+              "BitRate": 6621773,
+              "BitDepth": 10,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 2076,
+              "Width": 3840,
+              "AverageFrameRate": 23.976025,
+              "RealFrameRate": 23.976025,
+              "ReferenceFrameRate": 23.976025,
+              "Profile": "Main 10",
+              "Type": "Video",
+              "AspectRatio": "1.85:1",
+              "Index": 0,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false,
+              "PixelFormat": "yuv420p10le",
+              "Level": 150,
+              "IsAnamorphic": false
+            },
+            {
+              "Codec": "ac3",
+              "Language": "ita",
+              "TimeBase": "1/1000",
+              "Title": "Italiano AC-3 5.1",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "Italian",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "Italiano AC-3 5.1 - Dolby Digital - Default",
+              "IsInterlaced": false,
+              "ChannelLayout": "5.1",
+              "BitRate": 640000,
+              "Channels": 6,
+              "SampleRate": 48000,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Audio",
+              "Index": 1,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            },
+            {
+              "Codec": "ac3",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "Title": "English AC-3 5.1",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "English",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "English AC-3 5.1 - Dolby Digital",
+              "IsInterlaced": false,
+              "ChannelLayout": "5.1",
+              "BitRate": 640000,
+              "Channels": 6,
+              "SampleRate": 48000,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Audio",
+              "Index": 2,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            },
+            {
+              "Codec": "subrip",
+              "Language": "ita",
+              "TimeBase": "1/1000",
+              "Title": "Italiano",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedUndefined": "Undefined",
+              "LocalizedDefault": "Default",
+              "LocalizedForced": "Forced",
+              "LocalizedExternal": "External",
+              "LocalizedHearingImpaired": "Hearing Impaired",
+              "LocalizedLanguage": "Italian",
+              "DisplayTitle": "Italiano - SUBRIP",
+              "IsInterlaced": false,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Subtitle",
+              "Index": 3,
+              "IsExternal": false,
+              "IsTextSubtitleStream": true,
+              "SupportsExternalStream": true
+            },
+            {
+              "Codec": "subrip",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "Title": "English",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedUndefined": "Undefined",
+              "LocalizedDefault": "Default",
+              "LocalizedForced": "Forced",
+              "LocalizedExternal": "External",
+              "LocalizedHearingImpaired": "Hearing Impaired",
+              "LocalizedLanguage": "English",
+              "DisplayTitle": "English - SUBRIP",
+              "IsInterlaced": false,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Subtitle",
+              "Index": 4,
+              "IsExternal": false,
+              "IsTextSubtitleStream": true,
+              "SupportsExternalStream": true
+            }
+          ],
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "ad87e578b85b2f6a6c71fc16131a3049",
+            "Logo": "609cce5f84918f5400e1cb942144686a",
+            "Thumb": "0a5b46e408f8db9f056bb2263054b886"
+          },
+          "BackdropImageTags": [
+            "dca946bc61eed45a3973e668c7255e33"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "dca946bc61eed45a3973e668c7255e33": "WQGR^@.APAo#J:XnGJO_pKa%S6X9PDOwp0t8sDs;pxx^ozS2r?of"
+            },
+            "Primary": {
+              "ad87e578b85b2f6a6c71fc16131a3049": "dnE;4ct3V]xv?wo#oxozF~R.xCR.GdR*sDR:j1WZbwaf"
+            },
+            "Logo": {
+              "609cce5f84918f5400e1cb942144686a": "VOK1%f?b-;-;-;M{M{xut7t700xuof-;RjIURjt7ofWB"
+            },
+            "Thumb": {
+              "0a5b46e408f8db9f056bb2263054b886": "W?9AXLo#bbbci_j^ysbIkCozslofbwWBoMofoeoyoifjn$RkR+kD"
+            }
+          },
+          "Chapters": [
+            {
+              "StartPositionTicks": 0,
+              "Name": "Capitolo 01",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 1478980000,
+              "Name": "Capitolo 02",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 3872200000,
+              "Name": "Capitolo 03",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 5098840000,
+              "Name": "Capitolo 04",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 6795120000,
+              "Name": "Capitolo 05",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 8752910000,
+              "Name": "Capitolo 06",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 9901970000,
+              "Name": "Capitolo 07",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 10277350000,
+              "Name": "Capitolo 08",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 12794860000,
+              "Name": "Capitolo 09",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 14119940000,
+              "Name": "Capitolo 10",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 15613930000,
+              "Name": "Capitolo 11",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 16918150000,
+              "Name": "Capitolo 12",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 19755150000,
+              "Name": "Capitolo 13",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 21399710000,
+              "Name": "Capitolo 14",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 22493720000,
+              "Name": "Capitolo 15",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 24982040000,
+              "Name": "Capitolo 16",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 25458760000,
+              "Name": "Capitolo 17",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 27041180000,
+              "Name": "Capitolo 18",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 27666800000,
+              "Name": "Capitolo 19",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 29336390000,
+              "Name": "Capitolo 20",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 30600980000,
+              "Name": "Capitolo 21",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 31247460000,
+              "Name": "Capitolo 22",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 32735620000,
+              "Name": "Capitolo 23",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 33788340000,
+              "Name": "Capitolo 24",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 35103400000,
+              "Name": "Capitolo 25",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 36075200000,
+              "Name": "Capitolo 26",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 36435980000,
+              "Name": "Capitolo 27",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 37300590000,
+              "Name": "Capitolo 28",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 38919290000,
+              "Name": "Capitolo 29",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 40090880000,
+              "Name": "Capitolo 30",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 41738360000,
+              "Name": "Capitolo 31",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 43999780000,
+              "Name": "Capitolo 32",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 46074770000,
+              "Name": "Capitolo 33",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 47734770000,
+              "Name": "Capitolo 34",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 48537230000,
+              "Name": "Capitolo 35",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 50749440000,
+              "Name": "Capitolo 36",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 56215320000,
+              "Name": "Capitolo 37",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            }
+          ],
+          "Trickplay": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "LockedFields": [],
+          "LockData": false,
+          "Width": 3840,
+          "Height": 2076,
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 169
+}

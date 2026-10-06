@@ -1,0 +1,56 @@
+# Recon stack (TASKS P0.1): stock Jellyfin behind mitmproxy, used to record
+# real client traffic as fixtures. Not part of blockbustr itself.
+#
+#   clients ──► :8096 mitmproxy (reverse) ──► jellyfin:8096
+#               :8081 mitmweb UI (localhost only)
+#               :8097 jellyfin direct, for admin setup without capture noise (localhost only)
+#
+# Jellyfin version pinned here is the version blockbustr reports (DESIGN §11 Q1).
+
+name: blockbustr-recon
+
+services:
+  jellyfin:
+    image: docker.io/jellyfin/jellyfin:12.1.20260915-010956
+    restart: unless-stopped
+    environment:
+      TZ: UTC
+    # Lets the container read ~/Videos without relabelling it (a :z mount would
+    # rewrite the SELinux context on every file in the user's home media).
+    security_opt:
+      - label=disable
+    # Intel QSV/VAAPI (Arc 130V/140V on this host). renderD128 is world-rw here,
+    # so rootless podman needs no group_add; on hosts where it's 0660 add the
+    # render group (see jollyrogarr's RENDER_GID pattern).
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - ./data/jellyfin/config:/config
+      - ./data/jellyfin/cache:/cache
+      # Host media library, read-only. Libraries: /media/Movies, /media/Series
+      - ${MEDIA_DIR:-${HOME}/Videos}:/media:ro
+    ports:
+      - "127.0.0.1:8097:8096"
+
+  mitmproxy:
+    image: docker.io/mitmproxy/mitmproxy:12.2.3
+    restart: unless-stopped
+    depends_on: [jellyfin]
+    command:
+      - mitmweb
+      - --mode=reverse:http://jellyfin:8096
+      - --listen-port=8096
+      - --web-host=0.0.0.0
+      - --web-port=8081
+      - --no-web-open-browser
+      - --set=web_password=recon
+      # Don't buffer video bodies in memory; headers are still recorded.
+      - --set=stream_large_bodies=1m
+      # Append every flow to one file; scripts/capture (P0.4) turns it into fixtures.
+      - --save-stream-file=+/captures/flows.mitm
+    volumes:
+      - ./data/mitmproxy:/home/mitmproxy/.mitmproxy:Z
+      - ./captures:/captures:Z
+    ports:
+      - "8096:8096"
+      - "127.0.0.1:8081:8081"

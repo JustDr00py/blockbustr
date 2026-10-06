@@ -1,0 +1,40 @@
+{
+  "seq": 213,
+  "endpoint": "GET /web/assets/img/fresh.svg",
+  "time": "2026-10-05T22:32:05.836Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/assets/img/fresh.svg",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Referer": "http://192.0.2.2:8096/web/itemDetails.c8609767f06ba1b9d6a9.css",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "1422",
+      "Content-Type": "image/svg+xml",
+      "Date": "Mon, 05 Oct 2026 22:32:05 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb40e\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "X-Response-Time-ms": "1.4374"
+    },
+    "body": {
+      "_text": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<!-- Created with Inkscape (http://www.inkscape.org/) -->\n<svg id=\"svg3390\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" xmlns=\"http://www.w3.org/2000/svg\" height=\"141.25\" viewBox=\"0 0 138.75 141.25\" width=\"138.75\" version=\"1.1\" xmlns:cc=\"http://creativecommons.org/ns#\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n <metadata id=\"metadata3396\">\n  <rdf:RDF>\n   <cc:Work rdf:about=\"\">\n    <dc:format>image/svg+xml</dc:format>\n    <dc:type rdf:resource=\"http://purl.org/dc/dcmitype/StillImage\"/>\n    <dc:title/>\n   </cc:Work>\n  </rdf:RDF>\n </metadata>\n <g id=\"layer1\" fill=\"#f93208\">\n  <path id=\"path3412\" d=\"m20.154 40.829c-28.149 27.622-13.657 61.011-5.734 71.931 35.254 41.954 92.792 25.339 111.89-5.9071 4.7608-8.2027 22.554-53.467-23.976-78.009z\"/>\n  <path id=\"path3471\" d=\"m39.613 39.265 4.7778-8.8607 28.406-5.0384 11.119 9.2082z\"/>\n </g>\n <g id=\"layer2\">\n  <path id=\"path3437\" d=\"m39.436 8.5696 8.9682-5.2826 6.7569 15.479c3.7925-6.3226 13.79-16.316 24.939-4.6684-4.7281 1.2636-7.5161 3.8553-7.7397 8.4768 15.145-4.1697 31.343 3.2127 33.539 9.0911-10.951-4.314-27.695 10.377-41.771 2.334 0.009 15.045-12.617 16.636-19.902 17.076 2.077-4.996 5.591-9.994 1.474-14.987-7.618 8.171-13.874 10.668-33.17 4.668 4.876-1.679 14.843-11.39 24.448-11.425-6.775-2.467-12.29-2.087-17.814-1.475 2.917-3.961 12.149-15.197 28.625-8.476z\" fill=\"#02902e\"/>\n </g>\n</svg>"
+    }
+  },
+  "duration_ms": 17
+}

@@ -1,0 +1,117 @@
+{
+  "seq": 128,
+  "endpoint": "GET /Items/Latest",
+  "time": "2026-10-05T22:41:13.196Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/Latest",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "parentId": [
+        "a656b907eb3a73532e40e44b968d0225"
+      ],
+      "fields": [
+        "PrimaryImageAspectRatio",
+        "Path"
+      ],
+      "imageTypeLimit": [
+        "1"
+      ],
+      "enableImageTypes": [
+        "Primary",
+        "Backdrop",
+        "Thumb"
+      ],
+      "limit": [
+        "16"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "e52dc6a9d58f4078b3eab4b2249d3589-ae4a39f904091dc6",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=e52dc6a9d58f4078b3eab4b2249d3589,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:40:45 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:41:12 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "33.5665"
+    },
+    "body": [
+      {
+        "Name": "MF GHOST",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+        "Path": "/media/Series/MF Ghost",
+        "OfficialRating": "TV-14",
+        "ChannelId": null,
+        "CommunityRating": 8.2,
+        "RunTimeTicks": 14400000000,
+        "ProductionYear": 2023,
+        "IsFolder": true,
+        "Type": "Series",
+        "UserData": {
+          "PlayedPercentage": 0,
+          "UnplayedItemCount": 5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "414207",
+          "ItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6"
+        },
+        "Status": "Continuing",
+        "AirDays": [],
+        "PrimaryImageAspectRatio": 0.6666666666666666,
+        "ImageTags": {
+          "Thumb": "9821b022da26e338a777d06ebd13bd58",
+          "Primary": "36b84fbe87e05c068310b61dd183265b"
+        },
+        "BackdropImageTags": [
+          "a7e894c96d34ed85682e44601acd088f"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+          },
+          "Thumb": {
+            "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+          },
+          "Primary": {
+            "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown",
+        "EndDate": "2026-03-29T00:00:00.0000000Z",
+        "OriginalLanguage": "ja"
+      }
+    ]
+  },
+  "duration_ms": 36
+}

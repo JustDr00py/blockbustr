@@ -1,0 +1,96 @@
+{
+  "seq": 267,
+  "endpoint": "GET /Sessions",
+  "time": "2026-10-05T22:28:15.314Z",
+  "request": {
+    "method": "GET",
+    "path": "/Sessions",
+    "query": {
+      "activeWithinSeconds": [
+        "360"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "14d465a49aab4a0098f199211b5cdaa0-927f2a6e4e7b4ee8",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=14d465a49aab4a0098f199211b5cdaa0,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:28:12 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:28:15 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "32.0327"
+    },
+    "body": [
+      {
+        "PlayState": {
+          "CanSeek": false,
+          "IsPaused": false,
+          "IsMuted": false,
+          "RepeatMode": "RepeatNone",
+          "PlaybackOrder": "Default"
+        },
+        "AdditionalUsers": [],
+        "Capabilities": {
+          "PlayableMediaTypes": [
+            "Audio",
+            "Video"
+          ],
+          "SupportedCommands": [
+            "Play"
+          ],
+          "SupportsMediaControl": true,
+          "SupportsPersistentIdentifier": true,
+          "AppStoreUrl": "https://apps.apple.com/us/app/streamyfin/id6593660679",
+          "IconUrl": "https://raw.githubusercontent.com/streamyfin/streamyfin/refs/heads/develop/assets/images/streamyfin-client-badge.png"
+        },
+        "RemoteEndPoint": "192.0.2.2",
+        "PlayableMediaTypes": [
+          "Audio",
+          "Video"
+        ],
+        "Id": "eeee0000000000000000000000000001",
+        "UserId": "bbbb0000000000000000000000000001",
+        "UserName": "user1",
+        "Client": "Streamyfin",
+        "LastActivityDate": "2026-10-05T22:27:07.0066611Z",
+        "LastPlaybackCheckIn": "2026-10-05T22:27:06.172036Z",
+        "DeviceName": "Device 2",
+        "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+        "ApplicationVersion": "0.55.0",
+        "IsActive": true,
+        "SupportsMediaControl": true,
+        "SupportsRemoteControl": true,
+        "NowPlayingQueue": [],
+        "HasCustomDeviceName": false,
+        "ServerId": "cccc0000000000000000000000000001",
+        "SupportedCommands": [
+          "Play"
+        ]
+      }
+    ]
+  },
+  "duration_ms": 42
+}

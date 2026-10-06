@@ -1,0 +1,152 @@
+{
+  "seq": 198,
+  "endpoint": "GET /Items/Filters2",
+  "time": "2026-10-05T22:32:04.267Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/Filters2",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "parentId": [
+        "f137a2dd21bbc1b99aa5c0f6bf02a805"
+      ],
+      "includeItemTypes": [
+        "Movie"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Accept-Language": "en-us,en",
+      "Accept": "application/json,application/json; profile=CamelCase,application/json; profile=PascalCase,text/html",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:32:04 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "150.4666"
+    },
+    "body": {
+      "Genres": [
+        {
+          "Name": "Action",
+          "Id": "ce06903d834d2c3417e0889dd4049f3b"
+        },
+        {
+          "Name": "Adventure",
+          "Id": "51cec9645b896084d12b259acd05ccb1"
+        },
+        {
+          "Name": "Animation",
+          "Id": "074229225b7254292f131f9f49f8dcd6"
+        },
+        {
+          "Name": "Comedy",
+          "Id": "08d31605d366d63a7a924f944b4417f1"
+        },
+        {
+          "Name": "Drama",
+          "Id": "090eac6e9de4fe1fbc194e5b96691277"
+        },
+        {
+          "Name": "Family",
+          "Id": "ccbd8d9008aab2b5e749e1cc4bc458a4"
+        },
+        {
+          "Name": "Fantasy",
+          "Id": "a30dcc65be22eb3c21c03f7c1c7a57d1"
+        },
+        {
+          "Name": "Romance",
+          "Id": "1ffc72e19987e5fa4047c6a6870646cf"
+        }
+      ],
+      "Tags": [
+        "1950s",
+        "3d animation",
+        "admiring",
+        "aftercreditsstinger",
+        "aggressive",
+        "alternate dimension",
+        "amused",
+        "based on video game",
+        "bromance",
+        "cat",
+        "coming of age",
+        "duringcreditsstinger",
+        "father-in-law",
+        "fighting",
+        "friends",
+        "friendship",
+        "god",
+        "gore",
+        "hand to hand combat",
+        "italian riviera",
+        "italy",
+        "magic",
+        "martial arts",
+        "martial arts tournament",
+        "monster",
+        "ninja",
+        "ninja fighter",
+        "nurse",
+        "overbearing father",
+        "pasta",
+        "pesto",
+        "pixar",
+        "sea monster",
+        "seaside town",
+        "sequel",
+        "struggling actor",
+        "vespa",
+        "viagra",
+        "villain",
+        "vomit",
+        "water"
+      ],
+      "AudioLanguages": [
+        {
+          "Name": "English (eng)",
+          "Value": "eng"
+        },
+        {
+          "Name": "Italian (ita)",
+          "Value": "ita"
+        }
+      ],
+      "SubtitleLanguages": [
+        {
+          "Name": "English (eng)",
+          "Value": "eng"
+        },
+        {
+          "Name": "Italian (ita)",
+          "Value": "ita"
+        }
+      ]
+    }
+  },
+  "duration_ms": 156
+}

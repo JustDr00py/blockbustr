@@ -1,0 +1,45 @@
+{
+  "seq": 277,
+  "endpoint": "DELETE /Videos/ActiveEncodings",
+  "time": "2026-10-05T22:33:05.397Z",
+  "request": {
+    "method": "DELETE",
+    "path": "/Videos/ActiveEncodings",
+    "query": {
+      "deviceId": [
+        "device-0002"
+      ],
+      "playSessionId": [
+        "937a9bb8c9a04cdd81ab90f397af49bf"
+      ]
+    },
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0002\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 via jellyfin-sdk-kotlin (OkHttp/4.12.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0002",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "Date": "Mon, 05 Oct 2026 22:33:05 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "17.1585"
+    },
+    "body": null
+  },
+  "duration_ms": 23
+}

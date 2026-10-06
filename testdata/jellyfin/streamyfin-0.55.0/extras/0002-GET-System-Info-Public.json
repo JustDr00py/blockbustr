@@ -1,0 +1,45 @@
+{
+  "seq": 2,
+  "endpoint": "GET /System/Info/Public",
+  "time": "2026-10-05T22:39:34.480Z",
+  "request": {
+    "method": "GET",
+    "path": "/System/Info/Public",
+    "query": {},
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "sentry-trace": "a0fe38e58e33471090901cb1796a08d9-9bc6aa42e86b5e36",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=a0fe38e58e33471090901cb1796a08d9,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:24:49 GMT"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:39:34 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "9.2422"
+    },
+    "body": {
+      "LocalAddress": "http://192.0.2.1:8096",
+      "ServerName": "redacted1",
+      "Version": "12.1.0",
+      "ProductName": "Jellyfin Server",
+      "OperatingSystem": "",
+      "Id": "cccc0000000000000000000000000001",
+      "StartupWizardCompleted": true
+    }
+  },
+  "duration_ms": 35
+}

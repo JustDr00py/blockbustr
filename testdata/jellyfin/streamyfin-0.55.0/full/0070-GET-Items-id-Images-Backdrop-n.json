@@ -1,0 +1,50 @@
+{
+  "seq": 70,
+  "endpoint": "GET /Items/{id}/Images/Backdrop/{n}",
+  "time": "2026-10-05T22:25:21.847Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/73ecf1e6db425eb1214bb7c9cb74dfe6/Images/Backdrop/0",
+    "query": {
+      "fillWidth": [
+        "1776"
+      ],
+      "quality": [
+        "80"
+      ],
+      "tag": [
+        "a7e894c96d34ed85682e44601acd088f"
+      ]
+    },
+    "headers": {
+      "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 14; Device Build/REDACTED)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "250815",
+      "Content-Type": "image/jpeg",
+      "Date": "Mon, 05 Oct 2026 22:25:22 GMT",
+      "Server": "Kestrel",
+      "Age": "0",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Language": "en-US",
+      "ETag": "\"a7e894c96d34ed85682e44601acd088f\"",
+      "Last-Modified": "Mon, 05 Oct 2026 22:25:22 GMT",
+      "Vary": "Accept",
+      "transferMode.dlna.org": "Interactive",
+      "realTimeInfo.dlna.org": "DLNA.ORG_TLAG=*",
+      "Content-Disposition": "attachment",
+      "X-Response-Time-ms": "371.2088"
+    },
+    "body": null,
+    "body_omitted": "image/jpeg 250815 B"
+  },
+  "duration_ms": 378
+}

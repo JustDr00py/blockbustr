@@ -1,0 +1,583 @@
+{
+  "seq": 392,
+  "endpoint": "GET /Sessions",
+  "time": "2026-10-05T22:51:40.935Z",
+  "request": {
+    "method": "GET",
+    "path": "/Sessions",
+    "query": {
+      "activeWithinSeconds": [
+        "360"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "7e83de28a6774d3c87d4d17cea6d6245-bd633da8a0349543",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=7e83de28a6774d3c87d4d17cea6d6245,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:51:35 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:51:40 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "32.2074"
+    },
+    "body": [
+      {
+        "PlayState": {
+          "PositionTicks": 399570000,
+          "CanSeek": true,
+          "IsPaused": false,
+          "IsMuted": false,
+          "AudioStreamIndex": 2,
+          "SubtitleStreamIndex": -1,
+          "MediaSourceId": "84088e11eb6351255c08507602d79a0f",
+          "PlayMethod": "DirectPlay",
+          "RepeatMode": "RepeatNone",
+          "PlaybackOrder": "Default"
+        },
+        "AdditionalUsers": [],
+        "Capabilities": {
+          "PlayableMediaTypes": [
+            "Audio",
+            "Video"
+          ],
+          "SupportedCommands": [
+            "Play"
+          ],
+          "SupportsMediaControl": true,
+          "SupportsPersistentIdentifier": true,
+          "AppStoreUrl": "https://apps.apple.com/us/app/streamyfin/id6593660679",
+          "IconUrl": "https://raw.githubusercontent.com/streamyfin/streamyfin/refs/heads/develop/assets/images/streamyfin-client-badge.png"
+        },
+        "RemoteEndPoint": "192.0.2.1",
+        "PlayableMediaTypes": [
+          "Audio",
+          "Video"
+        ],
+        "Id": "eeee0000000000000000000000000001",
+        "UserId": "bbbb0000000000000000000000000001",
+        "UserName": "user1",
+        "Client": "Streamyfin",
+        "LastActivityDate": "2026-10-05T22:51:40.6066552Z",
+        "LastPlaybackCheckIn": "2026-10-05T22:51:40.6066558Z",
+        "DeviceName": "Device 2",
+        "NowPlayingItem": {
+          "Name": "Luca",
+          "OriginalTitle": "Luca",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "84088e11eb6351255c08507602d79a0f",
+          "DateCreated": "2026-10-05T21:15:23.7570943Z",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2021-06-17T00:00:00.0000000Z",
+          "ExternalUrls": [
+            {
+              "Name": "IMDb",
+              "Url": "https://www.imdb.com/title/tt12801262"
+            },
+            {
+              "Name": "TMDB",
+              "Url": "https://www.themoviedb.org/movie/508943"
+            }
+          ],
+          "CriticRating": 91,
+          "Path": "/media/Movies/Luca (2021)/Luca (2021).strm",
+          "EnableMediaSourceDisplay": true,
+          "OfficialRating": "PG",
+          "ChannelId": null,
+          "Overview": "Luca and his best friend Alberto experience an unforgettable summer on the Italian Riviera. But all the fun is threatened by a deeply-held secret: they are sea monsters from another world just below the water’s surface.",
+          "Taglines": [
+            "Prepare for an unforgettable trip."
+          ],
+          "Genres": [
+            "Animation",
+            "Family",
+            "Fantasy",
+            "Drama",
+            "Comedy"
+          ],
+          "CommunityRating": 7.772,
+          "RunTimeTicks": 57152000000,
+          "ProductionYear": 2021,
+          "ProviderIds": {
+            "Imdb": "tt12801262",
+            "Tmdb": "508943"
+          },
+          "IsHD": true,
+          "IsFolder": false,
+          "ParentId": "e675012a1892a87530d2c0b0d14a9026",
+          "Type": "Movie",
+          "Studios": [
+            {
+              "Name": "Pixar",
+              "Id": "a1384420050b89ea581e04c0dd9a83a8"
+            }
+          ],
+          "GenreItems": [
+            {
+              "Name": "Animation",
+              "Id": "074229225b7254292f131f9f49f8dcd6"
+            },
+            {
+              "Name": "Family",
+              "Id": "ccbd8d9008aab2b5e749e1cc4bc458a4"
+            },
+            {
+              "Name": "Fantasy",
+              "Id": "a30dcc65be22eb3c21c03f7c1c7a57d1"
+            },
+            {
+              "Name": "Drama",
+              "Id": "090eac6e9de4fe1fbc194e5b96691277"
+            },
+            {
+              "Name": "Comedy",
+              "Id": "08d31605d366d63a7a924f944b4417f1"
+            }
+          ],
+          "LocalTrailerCount": 0,
+          "SpecialFeatureCount": 0,
+          "PrimaryImageAspectRatio": 0.6666666666666666,
+          "MediaStreams": [
+            {
+              "Codec": "hevc",
+              "Language": "ita",
+              "ColorSpace": "bt2020nc",
+              "ColorTransfer": "smpte2084",
+              "ColorPrimaries": "bt2020",
+              "DvVersionMajor": 1,
+              "DvVersionMinor": 0,
+              "DvProfile": 8,
+              "DvLevel": 6,
+              "RpuPresentFlag": 1,
+              "ElPresentFlag": 0,
+              "BlPresentFlag": 1,
+              "DvBlSignalCompatibilityId": 1,
+              "TimeBase": "1/1000",
+              "Title": "Video 2160p",
+              "VideoRange": "HDR",
+              "VideoRangeType": "DOVIWithHDR10",
+              "VideoDoViTitle": "Dolby Vision Profile 8.1 (HDR10)",
+              "AudioSpatialFormat": "None",
+              "DisplayTitle": "Video 2160p - 4K - HEVC - Dolby Vision Profile 8.1 (HDR10)",
+              "IsInterlaced": false,
+              "BitRate": 6621773,
+              "BitDepth": 10,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 2076,
+              "Width": 3840,
+              "AverageFrameRate": 23.976025,
+              "RealFrameRate": 23.976025,
+              "ReferenceFrameRate": 23.976025,
+              "Profile": "Main 10",
+              "Type": "Video",
+              "AspectRatio": "1.85:1",
+              "Index": 0,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false,
+              "PixelFormat": "yuv420p10le",
+              "Level": 150,
+              "IsAnamorphic": false
+            },
+            {
+              "Codec": "ac3",
+              "Language": "ita",
+              "TimeBase": "1/1000",
+              "Title": "Italiano AC-3 5.1",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "Italian",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "Italiano AC-3 5.1 - Dolby Digital - Default",
+              "IsInterlaced": false,
+              "ChannelLayout": "5.1",
+              "BitRate": 640000,
+              "Channels": 6,
+              "SampleRate": 48000,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Audio",
+              "Index": 1,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            },
+            {
+              "Codec": "ac3",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "Title": "English AC-3 5.1",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "English",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "English AC-3 5.1 - Dolby Digital",
+              "IsInterlaced": false,
+              "ChannelLayout": "5.1",
+              "BitRate": 640000,
+              "Channels": 6,
+              "SampleRate": 48000,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Audio",
+              "Index": 2,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            },
+            {
+              "Codec": "subrip",
+              "Language": "ita",
+              "TimeBase": "1/1000",
+              "Title": "Italiano",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedUndefined": "Undefined",
+              "LocalizedDefault": "Default",
+              "LocalizedForced": "Forced",
+              "LocalizedExternal": "External",
+              "LocalizedHearingImpaired": "Hearing Impaired",
+              "LocalizedLanguage": "Italian",
+              "DisplayTitle": "Italiano - SUBRIP",
+              "IsInterlaced": false,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Subtitle",
+              "Index": 3,
+              "IsExternal": false,
+              "IsTextSubtitleStream": true,
+              "SupportsExternalStream": true
+            },
+            {
+              "Codec": "subrip",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "Title": "English",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedUndefined": "Undefined",
+              "LocalizedDefault": "Default",
+              "LocalizedForced": "Forced",
+              "LocalizedExternal": "External",
+              "LocalizedHearingImpaired": "Hearing Impaired",
+              "LocalizedLanguage": "English",
+              "DisplayTitle": "English - SUBRIP",
+              "IsInterlaced": false,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Subtitle",
+              "Index": 4,
+              "IsExternal": false,
+              "IsTextSubtitleStream": true,
+              "SupportsExternalStream": true
+            }
+          ],
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "ad87e578b85b2f6a6c71fc16131a3049",
+            "Logo": "609cce5f84918f5400e1cb942144686a",
+            "Thumb": "0a5b46e408f8db9f056bb2263054b886"
+          },
+          "BackdropImageTags": [
+            "dca946bc61eed45a3973e668c7255e33"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "dca946bc61eed45a3973e668c7255e33": "WQGR^@.APAo#J:XnGJO_pKa%S6X9PDOwp0t8sDs;pxx^ozS2r?of"
+            },
+            "Primary": {
+              "ad87e578b85b2f6a6c71fc16131a3049": "dnE;4ct3V]xv?wo#oxozF~R.xCR.GdR*sDR:j1WZbwaf"
+            },
+            "Logo": {
+              "609cce5f84918f5400e1cb942144686a": "VOK1%f?b-;-;-;M{M{xut7t700xuof-;RjIURjt7ofWB"
+            },
+            "Thumb": {
+              "0a5b46e408f8db9f056bb2263054b886": "W?9AXLo#bbbci_j^ysbIkCozslofbwWBoMofoeoyoifjn$RkR+kD"
+            }
+          },
+          "Chapters": [
+            {
+              "StartPositionTicks": 0,
+              "Name": "Capitolo 01",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 1478980000,
+              "Name": "Capitolo 02",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 3872200000,
+              "Name": "Capitolo 03",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 5098840000,
+              "Name": "Capitolo 04",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 6795120000,
+              "Name": "Capitolo 05",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 8752910000,
+              "Name": "Capitolo 06",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 9901970000,
+              "Name": "Capitolo 07",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 10277350000,
+              "Name": "Capitolo 08",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 12794860000,
+              "Name": "Capitolo 09",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 14119940000,
+              "Name": "Capitolo 10",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 15613930000,
+              "Name": "Capitolo 11",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 16918150000,
+              "Name": "Capitolo 12",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 19755150000,
+              "Name": "Capitolo 13",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 21399710000,
+              "Name": "Capitolo 14",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 22493720000,
+              "Name": "Capitolo 15",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 24982040000,
+              "Name": "Capitolo 16",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 25458760000,
+              "Name": "Capitolo 17",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 27041180000,
+              "Name": "Capitolo 18",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 27666800000,
+              "Name": "Capitolo 19",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 29336390000,
+              "Name": "Capitolo 20",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 30600980000,
+              "Name": "Capitolo 21",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 31247460000,
+              "Name": "Capitolo 22",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 32735620000,
+              "Name": "Capitolo 23",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 33788340000,
+              "Name": "Capitolo 24",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 35103400000,
+              "Name": "Capitolo 25",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 36075200000,
+              "Name": "Capitolo 26",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 36435980000,
+              "Name": "Capitolo 27",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 37300590000,
+              "Name": "Capitolo 28",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 38919290000,
+              "Name": "Capitolo 29",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 40090880000,
+              "Name": "Capitolo 30",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 41738360000,
+              "Name": "Capitolo 31",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 43999780000,
+              "Name": "Capitolo 32",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 46074770000,
+              "Name": "Capitolo 33",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 47734770000,
+              "Name": "Capitolo 34",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 48537230000,
+              "Name": "Capitolo 35",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 50749440000,
+              "Name": "Capitolo 36",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            },
+            {
+              "StartPositionTicks": 56215320000,
+              "Name": "Capitolo 37",
+              "ImageDateModified": "0001-01-01T00:00:00.0000000Z"
+            }
+          ],
+          "Trickplay": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "Width": 3840,
+          "Height": 2076,
+          "OriginalLanguage": "en"
+        },
+        "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+        "ApplicationVersion": "0.55.0",
+        "IsActive": true,
+        "SupportsMediaControl": true,
+        "SupportsRemoteControl": true,
+        "NowPlayingQueue": [],
+        "HasCustomDeviceName": false,
+        "ServerId": "cccc0000000000000000000000000001",
+        "SupportedCommands": [
+          "Play"
+        ]
+      },
+      {
+        "PlayState": {
+          "CanSeek": false,
+          "IsPaused": false,
+          "IsMuted": false,
+          "RepeatMode": "RepeatNone",
+          "PlaybackOrder": "Default"
+        },
+        "AdditionalUsers": [],
+        "Capabilities": {
+          "PlayableMediaTypes": [],
+          "SupportedCommands": [],
+          "SupportsMediaControl": false,
+          "SupportsPersistentIdentifier": true
+        },
+        "RemoteEndPoint": "192.0.2.2",
+        "PlayableMediaTypes": [],
+        "Id": "eeee0000000000000000000000000002",
+        "UserId": "bbbb0000000000000000000000000001",
+        "UserName": "user1",
+        "Client": "Jellyfin for Android",
+        "LastActivityDate": "2026-10-05T22:49:19.4422163Z",
+        "LastPlaybackCheckIn": "2026-10-05T22:39:30.4335841Z",
+        "DeviceName": "Device 2",
+        "DeviceId": "device-0002",
+        "ApplicationVersion": "2.7.3",
+        "IsActive": true,
+        "SupportsMediaControl": false,
+        "SupportsRemoteControl": false,
+        "NowPlayingQueue": [],
+        "HasCustomDeviceName": false,
+        "ServerId": "cccc0000000000000000000000000001",
+        "SupportedCommands": []
+      }
+    ]
+  },
+  "duration_ms": 41
+}

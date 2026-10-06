@@ -1,0 +1,41 @@
+{
+  "seq": 95,
+  "endpoint": "GET /web/69881.85d5c8ac3936b68e702e.css",
+  "time": "2026-10-05T22:30:30.024Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/69881.85d5c8ac3936b68e702e.css",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "text/css,*/*;q=0.1",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/css",
+      "Date": "Mon, 05 Oct 2026 22:30:29 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb41a\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.6353"
+    },
+    "body": {
+      "_text": ".tmla-mask,.touch-menu-la{bottom:0;box-sizing:border-box;contain:strict;padding-left:env(safe-area-inset-left);position:fixed;top:0}.touch-menu-la{background-color:#fff;display:-webkit-flex;display:flex;transition:left .26s ease-out,-webkit-transform 40ms ease-out;transition:transform 40ms ease-out,left .26s ease-out;transition:transform 40ms ease-out,left .26s ease-out,-webkit-transform 40ms ease-out;will-change:transform;z-index:1099}[div=rtl] .touch-menu-la{transition:right .26s ease-out,-webkit-transform 40ms ease-out;transition:transform 40ms ease-out,right .26s ease-out;transition:transform 40ms ease-out,right .26s ease-out,-webkit-transform 40ms ease-out}.touch-menu-la.transition{transition:left .26s ease-out,-webkit-transform .24s ease-out;transition:transform .24s ease-out,left .26s ease-out;transition:transform .24s ease-out,left .26s ease-out,-webkit-transform .24s ease-out}[div=rtl] .touch-menu-la.transition{transition:right .26s ease-out,-webkit-transform .24s ease-out;transition:transform .24s ease-out,right .26s ease-out;transition:transform .24s ease-out,right .26s ease-out,-webkit-transform .24s ease-out}.drawer-open{box-shadow:2px 0 12px rgba(0,0,0,.4)}.scrollContainer{-webkit-flex-grow:1;flex-grow:1}.tmla-mask{background-color:rgba(0,0,0,.3);left:0;opacity:0;right:0;transition:opacity .38s ease-in-out,visibility .38s ease-in-out;will-change:opacity;z-index:1098}.tmla-mask.backdrop{opacity:1}\n"
+    }
+  },
+  "duration_ms": 20
+}

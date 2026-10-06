@@ -1,0 +1,126 @@
+{
+  "seq": 92,
+  "endpoint": "GET /UserItems/Resume",
+  "time": "2026-10-05T22:25:48.230Z",
+  "request": {
+    "method": "GET",
+    "path": "/UserItems/Resume",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "limit": [
+        "8"
+      ],
+      "fields": [
+        "Overview"
+      ],
+      "imageTypeLimit": [
+        "1"
+      ],
+      "enableImageTypes": [
+        "Primary",
+        "Backdrop",
+        "Logo",
+        "Thumb"
+      ],
+      "includeItemTypes": [
+        "Movie",
+        "Episode"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "482d215e4cc940a5948800819331eb00-baca1a66009b53f6",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=482d215e4cc940a5948800819331eb00,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:25:07 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:25:48 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "93.0721"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Little Fockers",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "d48b8adc50a77956fcee8210661176fb",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2010-12-21T00:00:00.0000000Z",
+          "CriticRating": 9,
+          "OfficialRating": "PG-13",
+          "ChannelId": null,
+          "Overview": "It has taken 10 years, two little Fockers with wife Pam and countless hurdles for Greg to finally get in with his tightly wound father-in-law, Jack. After the cash-strapped dad takes a job moonlighting for a drug company, Jack's suspicions about his favorite male nurse come roaring back. When Greg and Pam's entire clan descends for the twins' birthday party, Greg must prove to the skeptical Jack that he's fully capable as the man of the house.",
+          "CommunityRating": 5.7,
+          "RunTimeTicks": 58597330000,
+          "ProductionYear": 2010,
+          "IsFolder": false,
+          "Type": "Movie",
+          "UserData": {
+            "PlayedPercentage": 20.176789625056298,
+            "PlaybackPositionTicks": 11823060000,
+            "PlayCount": 6,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:25:17.4253737Z",
+            "Played": false,
+            "Key": "d48b8adc-50a7-7956-fcee-8210661176fb",
+            "ItemId": "d48b8adc50a77956fcee8210661176fb"
+          },
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "d4b6a694a799811a5de4806201fec13a",
+            "Thumb": "3adf6a330f10b3c9d57498be6541c003",
+            "Logo": "240eb4d4be0863d139f98fd2128d6e48"
+          },
+          "BackdropImageTags": [
+            "3a6bf2bce119fbad29a0cf419169fe0e"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "3a6bf2bce119fbad29a0cf419169fe0e": "WqR3H0%M_N.8D%-p?bofjtjuoft7-=kCIAaKxuj[_3oMbHt7WBWB"
+            },
+            "Primary": {
+              "d4b6a694a799811a5de4806201fec13a": "dnOf.E-U?b-;~qt7IoW=_4W=M{t7s:aK%LxtxvofV[WW"
+            },
+            "Thumb": {
+              "3adf6a330f10b3c9d57498be6541c003": "WsN9|H-pH=xt.8sl~qxuE1WBozoeE2t7W=Rjadbb-;X8RjjZt7WB"
+            },
+            "Logo": {
+              "240eb4d4be0863d139f98fd2128d6e48": "NCCL[RfQ6g$6a|SM2DsUN[jtSLSLJkSMwyN[SMWp"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 112
+}

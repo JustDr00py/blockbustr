@@ -1,0 +1,164 @@
+{
+  "seq": 122,
+  "endpoint": "GET /UserViews",
+  "time": "2026-10-05T22:41:12.863Z",
+  "request": {
+    "method": "GET",
+    "path": "/UserViews",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "e52dc6a9d58f4078b3eab4b2249d3589-9e5b4821a7d7c777",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=e52dc6a9d58f4078b3eab4b2249d3589,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:40:45 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:41:12 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "82.9618"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Movies",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "f137a2dd21bbc1b99aa5c0f6bf02a805",
+          "Etag": "9e30462ab2a1d5d48c2f3638d62c42a7",
+          "DateCreated": "2026-10-05T21:07:17.7449921Z",
+          "DateLastMediaAdded": "0001-01-01T00:00:00.0000000Z",
+          "CanDelete": false,
+          "CanDownload": false,
+          "SortName": "movies",
+          "ExternalUrls": [],
+          "Path": "/config/root/default/Movies",
+          "EnableMediaSourceDisplay": true,
+          "ChannelId": null,
+          "Taglines": [],
+          "Genres": [],
+          "PlayAccess": "Full",
+          "RemoteTrailers": [],
+          "ProviderIds": {},
+          "IsFolder": true,
+          "ParentId": "e9d5075a555c1cbc394eec4cef295274",
+          "Type": "CollectionFolder",
+          "People": [],
+          "Studios": [],
+          "GenreItems": [],
+          "LocalTrailerCount": 0,
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "f137a2dd-21bb-c1b9-9aa5-c0f6bf02a805",
+            "ItemId": "f137a2dd21bbc1b99aa5c0f6bf02a805"
+          },
+          "ChildCount": 3,
+          "SpecialFeatureCount": 0,
+          "DisplayPreferencesId": "f137a2dd21bbc1b99aa5c0f6bf02a805",
+          "Tags": [],
+          "PrimaryImageAspectRatio": 1.7777777777777777,
+          "CollectionType": "movies",
+          "ImageTags": {
+            "Primary": "4bf5292daf4f426744299ad3001ea046"
+          },
+          "BackdropImageTags": [],
+          "ImageBlurHashes": {
+            "Primary": {
+              "4bf5292daf4f426744299ad3001ea046": "WD9irLbb9GjEW;oLShS4ayf6WVoL0KR*?HofayWVjEn$s:bbj[WV"
+            }
+          },
+          "Chapters": [],
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "LockedFields": [],
+          "LockData": false
+        },
+        {
+          "Name": "Shows",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "a656b907eb3a73532e40e44b968d0225",
+          "Etag": "add7dd6d0e5869f440636cf43349d6c5",
+          "DateCreated": "2026-10-05T21:07:45.1123418Z",
+          "DateLastMediaAdded": "0001-01-01T00:00:00.0000000Z",
+          "CanDelete": false,
+          "CanDownload": false,
+          "SortName": "shows",
+          "ExternalUrls": [],
+          "Path": "/config/root/default/Shows",
+          "EnableMediaSourceDisplay": true,
+          "ChannelId": null,
+          "Taglines": [],
+          "Genres": [],
+          "PlayAccess": "Full",
+          "RemoteTrailers": [],
+          "ProviderIds": {},
+          "IsFolder": true,
+          "ParentId": "e9d5075a555c1cbc394eec4cef295274",
+          "Type": "CollectionFolder",
+          "People": [],
+          "Studios": [],
+          "GenreItems": [],
+          "LocalTrailerCount": 0,
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "a656b907-eb3a-7353-2e40-e44b968d0225",
+            "ItemId": "a656b907eb3a73532e40e44b968d0225"
+          },
+          "ChildCount": 1,
+          "SpecialFeatureCount": 0,
+          "DisplayPreferencesId": "a656b907eb3a73532e40e44b968d0225",
+          "Tags": [],
+          "PrimaryImageAspectRatio": 1.7777777777777777,
+          "CollectionType": "tvshows",
+          "ImageTags": {
+            "Primary": "61a7fa835dea04bf6e77f6420570855a"
+          },
+          "BackdropImageTags": [],
+          "ImageBlurHashes": {
+            "Primary": {
+              "61a7fa835dea04bf6e77f6420570855a": "WB8~TLC,64#lbbr?PVs:iviwXTba4:i_?bW.V[WUtSV?WXt7n%WC"
+            }
+          },
+          "Chapters": [],
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "LockedFields": [],
+          "LockData": false
+        }
+      ],
+      "TotalRecordCount": 2,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 94
+}

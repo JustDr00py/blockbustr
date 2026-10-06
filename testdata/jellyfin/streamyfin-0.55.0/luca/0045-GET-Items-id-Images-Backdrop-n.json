@@ -1,0 +1,29 @@
+{
+  "seq": 45,
+  "endpoint": "GET /Items/{id}/Images/Backdrop/{n}",
+  "time": "2026-10-05T22:40:36.005Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/84088e11eb6351255c08507602d79a0f/Images/Backdrop/0",
+    "query": {
+      "quality": [
+        "90"
+      ],
+      "tag": [
+        "dca946bc61eed45a3973e668c7255e33"
+      ],
+      "width": [
+        "1000"
+      ]
+    },
+    "headers": {
+      "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 14; Device Build/REDACTED)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": null,
+    "body": null
+  },
+  "error": "Client disconnected."
+}

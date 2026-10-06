@@ -1,0 +1,142 @@
+{
+  "seq": 35,
+  "endpoint": "GET /Items",
+  "time": "2026-10-05T22:53:00.930Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "isMissing": [
+        "false"
+      ],
+      "limit": [
+        "800"
+      ],
+      "recursive": [
+        "true"
+      ],
+      "searchTerm": [
+        "Mortal kombat"
+      ],
+      "fields": [
+        "PrimaryImageAspectRatio",
+        "CanDelete",
+        "MediaSourceCount"
+      ],
+      "includeItemTypes": [
+        "Movie",
+        "Series",
+        "Episode",
+        "Playlist",
+        "MusicAlbum",
+        "Audio",
+        "TvChannel",
+        "PhotoAlbum",
+        "Photo",
+        "AudioBook",
+        "Book",
+        "BoxSet"
+      ],
+      "imageTypeLimit": [
+        "1"
+      ],
+      "enableTotalRecordCount": [
+        "false"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Accept-Language": "en-us,en",
+      "Accept": "application/json,application/json; profile=CamelCase,application/json; profile=PascalCase,text/html",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:53:00 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "114.4004"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Mortal Kombat II",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "1f77a87a9603bff7d1589d1e076f060c",
+          "CanDelete": true,
+          "Container": "mov,mp4,m4a,3gp,3g2,mj2",
+          "PremiereDate": "2026-05-06T00:00:00.0000000Z",
+          "CriticRating": 64,
+          "OfficialRating": "R",
+          "ChannelId": null,
+          "CommunityRating": 7.786,
+          "RunTimeTicks": 63585920000,
+          "ProductionYear": 2026,
+          "IsFolder": false,
+          "Type": "Movie",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 3,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:39:52.4503623Z",
+            "Played": false,
+            "Key": "1f77a87a-9603-bff7-d158-9d1e076f060c",
+            "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+          },
+          "PrimaryImageAspectRatio": 0.6666666666666666,
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Thumb": "0b55d0c947c87a51d12fca0a5d68010e",
+            "Primary": "24ab56762c9d8cb3d25f4323853b0389",
+            "Logo": "94051eb91d590f014438cce01f89754c"
+          },
+          "BackdropImageTags": [
+            "be8c66e5b7827b6a0aae6ecdbe0c61d8"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "be8c66e5b7827b6a0aae6ecdbe0c61d8": "WKF2*9oL9^#mSzt6w{JSSfjZSMa|1JJ8-AbbjHWB$gWV$PSNa#WV"
+            },
+            "Thumb": {
+              "0b55d0c947c87a51d12fca0a5d68010e": "W67,uyD%57xuIp%fEgNHt7xZaJxG0e%M%1RjozIV=xxaE2RkxuNG"
+            },
+            "Primary": {
+              "24ab56762c9d8cb3d25f4323853b0389": "dD9%9p$gIVof-psTELNa0LODNaR-awWX%2-VxuNHxas."
+            },
+            "Logo": {
+              "94051eb91d590f014438cce01f89754c": "PB84;{j[IAj[%NWBIUjt-;j[jaj[kBj[V[ae4TfkRPaetRt7WAWB"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 119
+}

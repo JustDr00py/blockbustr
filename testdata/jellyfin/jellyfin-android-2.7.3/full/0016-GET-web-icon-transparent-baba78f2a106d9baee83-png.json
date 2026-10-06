@@ -1,0 +1,39 @@
+{
+  "seq": 16,
+  "endpoint": "GET /web/icon-transparent.baba78f2a106d9baee83.png",
+  "time": "2026-10-05T22:30:28.701Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/icon-transparent.baba78f2a106d9baee83.png",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Referer": "http://192.0.2.2:8096/web/main.jellyfin.62ea10d695d4592fccae.css?eed478c834840450f1de",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "23534",
+      "Content-Type": "image/png",
+      "Date": "Mon, 05 Oct 2026 22:30:28 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af772740ee\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:50 GMT",
+      "X-Response-Time-ms": "0.4996"
+    },
+    "body": null,
+    "body_omitted": "image/png 23534 B"
+  },
+  "duration_ms": 5
+}

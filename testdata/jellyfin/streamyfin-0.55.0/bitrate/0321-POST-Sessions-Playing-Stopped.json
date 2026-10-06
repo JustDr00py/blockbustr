@@ -1,0 +1,47 @@
+{
+  "seq": 321,
+  "endpoint": "POST /Sessions/Playing/Stopped",
+  "time": "2026-10-05T22:50:52.091Z",
+  "request": {
+    "method": "POST",
+    "path": "/Sessions/Playing/Stopped",
+    "query": {},
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "64cd44d84c3543e494a7f9225c257e9f-96b3c6523a5a4a1f-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=64cd44d84c3543e494a7f9225c257e9f,sentry-org_id=4509610343596032,sentry-transaction=%2Fplayer%2Fdirect-player,sentry-sampled=false,sentry-sample_rand=0.7036785926406428,sentry-sample_rate=0",
+      "Content-Type": "application/json",
+      "Content-Length": "165",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": {
+      "ItemId": "84088e11eb6351255c08507602d79a0f",
+      "MediaSourceId": "84088e11eb6351255c08507602d79a0f",
+      "PositionTicks": 0,
+      "PlaySessionId": "fee5323bfc4e4a6fb923baf7c70cf83d"
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "Date": "Mon, 05 Oct 2026 22:50:51 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "32.0874"
+    },
+    "body": null
+  },
+  "duration_ms": 40
+}

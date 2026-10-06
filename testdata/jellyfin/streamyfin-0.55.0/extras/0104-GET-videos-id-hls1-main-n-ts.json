@@ -1,0 +1,114 @@
+{
+  "seq": 104,
+  "endpoint": "GET /videos/{id}/hls1/main/{n}.ts",
+  "time": "2026-10-05T22:39:54.373Z",
+  "request": {
+    "method": "GET",
+    "path": "/videos/1f77a87a-9603-bff7-d158-9d1e076f060c/hls1/main/3.ts",
+    "query": {
+      "DeviceId": [
+        "dddd0000-0000-0000-0000-000000000001"
+      ],
+      "MediaSourceId": [
+        "1f77a87a9603bff7d1589d1e076f060c"
+      ],
+      "VideoCodec": [
+        "h264,hevc"
+      ],
+      "AudioCodec": [
+        "copy"
+      ],
+      "AudioStreamIndex": [
+        "1"
+      ],
+      "VideoBitrate": [
+        "3839539"
+      ],
+      "AudioBitrate": [
+        "160461"
+      ],
+      "MaxFramerate": [
+        "24"
+      ],
+      "SegmentContainer": [
+        "ts"
+      ],
+      "PlaySessionId": [
+        "96d14f860c744041b8f0e1963fca49aa"
+      ],
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ],
+      "TranscodingMaxAudioChannels": [
+        "6"
+      ],
+      "RequireAvc": [
+        "false"
+      ],
+      "EnableAudioVbrEncoding": [
+        "true"
+      ],
+      "Tag": [
+        "95c3644a7f226bcbcc8f8f306cfe3448"
+      ],
+      "SubtitleMethod": [
+        "Hls"
+      ],
+      "av1-level": [
+        "8"
+      ],
+      "av1-videobitdepth": [
+        "8"
+      ],
+      "av1-profile": [
+        "main"
+      ],
+      "hevc-level": [
+        "153"
+      ],
+      "hevc-rangetype": [
+        "Unknown,SDR,HDR10,HLG,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR,DOVIWithEL,DOVIWithHDR10Plus,DOVIWithELHDR10Plus,DOVIInvalid,HDR10Plus"
+      ],
+      "TranscodeReasons": [
+        "VideoCodecNotSupported,ContainerBitrateExceedsLimit"
+      ],
+      "runtimeTicks": [
+        "90000000"
+      ],
+      "actualSegmentLengthTicks": [
+        "30000000"
+      ]
+    },
+    "headers": {
+      "User-Agent": "libmpv",
+      "Accept": "*/*",
+      "Range": "bytes=0-",
+      "Connection": "keep-alive",
+      "Host": "jellyfin:8096",
+      "Icy-MetaData": "1",
+      "Authorization": "MediaBrowser Token=\"aaaa0000000000000000000000000001\""
+    },
+    "auth": {
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 206,
+    "headers": {
+      "Content-Length": "1499300",
+      "Content-Type": "video/mp2t",
+      "Date": "Mon, 05 Oct 2026 22:39:54 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Language": "en-US",
+      "Content-Range": "bytes 0-1499299/1499300",
+      "Last-Modified": "Mon, 05 Oct 2026 22:39:53 GMT",
+      "X-Response-Time-ms": "9.6537"
+    },
+    "body": null,
+    "body_omitted": "video/mp2t streamed (not captured)"
+  },
+  "duration_ms": 15
+}

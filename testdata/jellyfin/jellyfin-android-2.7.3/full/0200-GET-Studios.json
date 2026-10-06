@@ -1,0 +1,513 @@
+{
+  "seq": 200,
+  "endpoint": "GET /Studios",
+  "time": "2026-10-05T22:32:04.271Z",
+  "request": {
+    "method": "GET",
+    "path": "/Studios",
+    "query": {
+      "parentId": [
+        "f137a2dd21bbc1b99aa5c0f6bf02a805"
+      ],
+      "fields": [
+        "DateCreated",
+        "PrimaryImageAspectRatio"
+      ],
+      "includeItemTypes": [
+        "Movie"
+      ],
+      "enableImageTypes": [
+        "Thumb"
+      ],
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "enableTotalRecordCount": [
+        "false"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Accept-Language": "en-us,en",
+      "Accept": "application/json,application/json; profile=CamelCase,application/json; profile=PascalCase,text/html",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:32:04 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "227.4966"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Atomic Monster",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "18f86fa916fe6e03d3dc690d7db9f650",
+          "DateCreated": "2026-10-05T21:07:24.8676518Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Atomic Monster",
+            "ItemId": "18f86fa916fe6e03d3dc690d7db9f650"
+          },
+          "ChildCount": 1,
+          "ImageTags": {},
+          "ImageBlurHashes": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Broken Road Productions",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "4147100fa0fc9dc162cab294943c53e7",
+          "DateCreated": "2026-10-05T21:07:24.9546515Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Broken Road Productions",
+            "ItemId": "4147100fa0fc9dc162cab294943c53e7"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "de61daa69cfaf12fd08005ef5789156d"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "de61daa69cfaf12fd08005ef5789156d": "WkR{#?-;?b?bD%%M?bofxut7Rjj[-;ofIURj%Mt7~qofM{j[t7t7"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Domain Entertainment",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "9009b257eee3208f4383638cb9ad992e",
+          "DateCreated": "2026-10-05T21:07:25.0816511Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Domain Entertainment",
+            "ItemId": "9009b257eee3208f4383638cb9ad992e"
+          },
+          "ChildCount": 1,
+          "ImageTags": {},
+          "ImageBlurHashes": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "DreamWorks Pictures",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "8dfcb072fade7ffde98ce192dc2d66bb",
+          "DateCreated": "2026-10-05T22:06:04.8720324Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-DreamWorks Pictures",
+            "ItemId": "8dfcb072fade7ffde98ce192dc2d66bb"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "5655011e80e35cc10de726ad46bf0113"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "5655011e80e35cc10de726ad46bf0113": "WLFZn2?w~o%ikCx{EF-.?XtQxtRpD+ogR-kDt7oKtDt7RpxtayWF"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Everyman Pictures",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "9cff0cef84576cc3466754c1f7c3ad21",
+          "DateCreated": "2026-10-05T22:06:04.9270323Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Everyman Pictures",
+            "ItemId": "9cff0cef84576cc3466754c1f7c3ad21"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "c1f5c27298f1cc169eaf4d99b54d763a"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "c1f5c27298f1cc169eaf4d99b54d763a": "WB6@{4M_0J-;%MM{-;RjIUxut7Rj0Jxu?bIUM{t70Jxu?cE0M{xu"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Fireside Films",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "da8dc08b1f5d6bfaee5360475c10b9f8",
+          "DateCreated": "2026-10-05T21:07:25.092651Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Fireside Films",
+            "ItemId": "da8dc08b1f5d6bfaee5360475c10b9f8"
+          },
+          "ChildCount": 1,
+          "ImageTags": {},
+          "ImageBlurHashes": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Nancy Tenenbaum Films",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "99c7164597673d28f5525f1a577a438f",
+          "DateCreated": "2026-10-05T22:06:05.0400319Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Nancy Tenenbaum Films",
+            "ItemId": "99c7164597673d28f5525f1a577a438f"
+          },
+          "ChildCount": 1,
+          "ImageTags": {},
+          "ImageBlurHashes": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "New Line Cinema",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "7873ccad8e0c6cb8e4381eaf1d35e7fa",
+          "DateCreated": "2026-10-05T21:07:25.110651Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-New Line Cinema",
+            "ItemId": "7873ccad8e0c6cb8e4381eaf1d35e7fa"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "456f8c245bc71ffaa4d6b1c48a768dbc"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "456f8c245bc71ffaa4d6b1c48a768dbc": "WE7J,_s;0-Iu^L-l=^ofE7Rn-QxqEgWV-7s-I@R+5UWC^JxW9zN0"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Paramount Pictures",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "2672ed34a3f2b0bb6b4257c2ab9875b7",
+          "DateCreated": "2026-10-05T22:06:05.0440319Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Paramount Pictures",
+            "ItemId": "2672ed34a3f2b0bb6b4257c2ab9875b7"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "c6b2e6b85b338d122b6625485b4d54e2"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "c6b2e6b85b338d122b6625485b4d54e2": "WVD[;N%1sloMRkbIIua$R*s:oMWC0gNIR-NHoLs:%1t6xZs.bFR+"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Pixar",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "a1384420050b89ea581e04c0dd9a83a8",
+          "DateCreated": "2026-10-05T22:06:05.0800318Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Pixar",
+            "ItemId": "a1384420050b89ea581e04c0dd9a83a8"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "c2843c971459f23b0f356f1bb68a212a"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "c2843c971459f23b0f356f1bb68a212a": "WLIF.E-=j[%ORj%h%goffkbHWCbHROWBayoLofoK.AbIayt7s:t7"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Relativity Media",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "e7f283ffd9a3c0c9f1d78aadede25b7f",
+          "DateCreated": "2026-10-05T22:06:05.1150317Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Relativity Media",
+            "ItemId": "e7f283ffd9a3c0c9f1d78aadede25b7f"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "456612846737602475c7d0864f5773bf"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "456612846737602475c7d0864f5773bf": "W31zSYb{Q,pJtRQ,topKV=kXe,VqU[ozu6VXROtma0ogtnVrWZpJ"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Tribeca Productions",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "cb5eadde41d4358bbe75d4dfb7f010e0",
+          "DateCreated": "2026-10-05T22:06:05.2150314Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Tribeca Productions",
+            "ItemId": "cb5eadde41d4358bbe75d4dfb7f010e0"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "ba2890f83cfa470e151635dcb5c33c68"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "ba2890f83cfa470e151635dcb5c33c68": "WGD0Go~q4nRjj[ay?bxuM{t7xuM{-;xuM{j[t7IU-;xuRjRjWBRj"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        },
+        {
+          "Name": "Universal Pictures",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "e56aaac7ab0bb0f5f48371be0252bab4",
+          "DateCreated": "2026-10-05T22:06:05.3220311Z",
+          "ChannelId": null,
+          "Type": "Studio",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "Studio-Universal Pictures",
+            "ItemId": "e56aaac7ab0bb0f5f48371be0252bab4"
+          },
+          "ChildCount": 1,
+          "ImageTags": {
+            "Thumb": "e6aaae9b036b7863b4206c4652ee2ffe"
+          },
+          "ImageBlurHashes": {
+            "Thumb": {
+              "e6aaae9b036b7863b4206c4652ee2ffe": "WE84oM%N9FROozRltSoyV@V[a$kB00Mx-:ozn+xtI9M{o$t7s+n,"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "TrailerCount": 0,
+          "MovieCount": 1,
+          "SeriesCount": 0,
+          "ProgramCount": 0,
+          "EpisodeCount": 0,
+          "SongCount": 0,
+          "AlbumCount": 0,
+          "ArtistCount": 0,
+          "MusicVideoCount": 0
+        }
+      ],
+      "TotalRecordCount": 0,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 237
+}

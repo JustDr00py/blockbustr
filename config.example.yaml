@@ -1,0 +1,44 @@
+# blockbustr configuration. Copy to config.yaml; every key is optional.
+# Environment variables (BLOCKBUSTR_*) override these values; see .env.example.
+server:
+  listen: ":8096"              # Jellyfin's port, so clients find it by default
+  external_url: ""             # e.g. https://blockbustr.example.ts.net
+  server_name: blockbustr
+  shutdown_timeout: 10s
+  # admin_username / admin_password: better set via BLOCKBUSTR_ADMIN_USERNAME/_PASSWORD in .env
+database:
+  url: postgres://blockbustr:blockbustr@postgres:5432/blockbustr?sslmode=disable
+redis:
+  url: redis://redis:6379/0
+paths:
+  cache: /cache                # transcode/ and images/ live under here by default
+compat:
+  reported_version: "12.1.0"   # Jellyfin version we claim (DESIGN §11 Q1)
+  product_name: Jellyfin Server
+  proxy_clients: []            # clients that always get proxied remote streams
+  redirect_clients: []         # clients that may follow http->https redirects
+  legacy_auth: true            # also accept X-Emby-* headers / ?api_key= (stock 12.1.0 rejects them)
+transcode:
+  hwaccel: auto                # auto | none | qsv | vaapi
+  segment_seconds: 3
+  max_sessions: 4
+metadata:
+  language: en-US
+log:
+  level: info                  # debug | info | warn | error
+  format: text                 # text | json
+libraries:                     # matched to the database by name
+  - name: Movies
+    kind: movies               # movies | tvshows
+    paths: [/media/Movies]
+  - name: Shows
+    kind: tvshows
+    paths: [/media/Series]
+scan:
+  on_start: true
+  interval: 6h                 # "0s" disables periodic rescans (durations need a unit)
+  probe_workers: 0             # concurrent ffprobe runs; 0 = NumCPU/2
+  probe_timeout: 2m
+  missing_grace: 24h           # missing files are kept (hidden) this long before deletion
+  watch: true                  # rescan a library when its files change (not on network shares)
+  watch_delay: 30s             # ...once they've been quiet this long

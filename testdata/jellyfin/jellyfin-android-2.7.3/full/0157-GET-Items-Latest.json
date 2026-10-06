@@ -1,0 +1,213 @@
+{
+  "seq": 157,
+  "endpoint": "GET /Items/Latest",
+  "time": "2026-10-05T22:31:00.141Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/Latest",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "parentId": [
+        "f137a2dd21bbc1b99aa5c0f6bf02a805"
+      ],
+      "fields": [
+        "PrimaryImageAspectRatio",
+        "Path"
+      ],
+      "imageTypeLimit": [
+        "1"
+      ],
+      "enableImageTypes": [
+        "Primary",
+        "Backdrop",
+        "Thumb"
+      ],
+      "limit": [
+        "16"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Accept-Language": "en-us,en",
+      "Accept": "application/json,application/json; profile=CamelCase,application/json; profile=PascalCase,text/html",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:30:59 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "32.6283"
+    },
+    "body": [
+      {
+        "Name": "Little Fockers",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "d48b8adc50a77956fcee8210661176fb",
+        "HasSubtitles": true,
+        "Container": "mkv",
+        "PremiereDate": "2010-12-21T00:00:00.0000000Z",
+        "CriticRating": 9,
+        "Path": "/media/Movies/Little Fockers (2010)/Little Fockers (2010).strm",
+        "OfficialRating": "PG-13",
+        "ChannelId": null,
+        "CommunityRating": 5.7,
+        "RunTimeTicks": 58597330000,
+        "ProductionYear": 2010,
+        "IsFolder": false,
+        "Type": "Movie",
+        "UserData": {
+          "PlayedPercentage": 44.99295445713994,
+          "PlaybackPositionTicks": 26364670000,
+          "PlayCount": 6,
+          "IsFavorite": false,
+          "LastPlayedDate": "2026-10-05T22:25:17.4253737Z",
+          "Played": false,
+          "Key": "d48b8adc-50a7-7956-fcee-8210661176fb",
+          "ItemId": "d48b8adc50a77956fcee8210661176fb"
+        },
+        "PrimaryImageAspectRatio": 0.6666666666666666,
+        "VideoType": "VideoFile",
+        "ImageTags": {
+          "Primary": "d4b6a694a799811a5de4806201fec13a",
+          "Thumb": "3adf6a330f10b3c9d57498be6541c003"
+        },
+        "BackdropImageTags": [
+          "3a6bf2bce119fbad29a0cf419169fe0e"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "3a6bf2bce119fbad29a0cf419169fe0e": "WqR3H0%M_N.8D%-p?bofjtjuoft7-=kCIAaKxuj[_3oMbHt7WBWB"
+          },
+          "Primary": {
+            "d4b6a694a799811a5de4806201fec13a": "dnOf.E-U?b-;~qt7IoW=_4W=M{t7s:aK%LxtxvofV[WW"
+          },
+          "Thumb": {
+            "3adf6a330f10b3c9d57498be6541c003": "WsN9|H-pH=xt.8sl~qxuE1WBozoeE2t7W=Rjadbb-;X8RjjZt7WB"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Video",
+        "OriginalLanguage": "en"
+      },
+      {
+        "Name": "Luca",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "84088e11eb6351255c08507602d79a0f",
+        "HasSubtitles": true,
+        "Container": "mkv",
+        "PremiereDate": "2021-06-17T00:00:00.0000000Z",
+        "CriticRating": 91,
+        "Path": "/media/Movies/Luca (2021)/Luca (2021).strm",
+        "OfficialRating": "PG",
+        "ChannelId": null,
+        "CommunityRating": 7.772,
+        "RunTimeTicks": 57152000000,
+        "ProductionYear": 2021,
+        "IsFolder": false,
+        "Type": "Movie",
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 1,
+          "IsFavorite": false,
+          "LastPlayedDate": "2026-10-05T21:24:04.1047551Z",
+          "Played": false,
+          "Key": "84088e11-eb63-5125-5c08-507602d79a0f",
+          "ItemId": "84088e11eb6351255c08507602d79a0f"
+        },
+        "PrimaryImageAspectRatio": 0.6666666666666666,
+        "VideoType": "VideoFile",
+        "ImageTags": {
+          "Primary": "ad87e578b85b2f6a6c71fc16131a3049",
+          "Thumb": "0a5b46e408f8db9f056bb2263054b886"
+        },
+        "BackdropImageTags": [
+          "dca946bc61eed45a3973e668c7255e33"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "dca946bc61eed45a3973e668c7255e33": "WQGR^@.APAo#J:XnGJO_pKa%S6X9PDOwp0t8sDs;pxx^ozS2r?of"
+          },
+          "Primary": {
+            "ad87e578b85b2f6a6c71fc16131a3049": "dnE;4ct3V]xv?wo#oxozF~R.xCR.GdR*sDR:j1WZbwaf"
+          },
+          "Thumb": {
+            "0a5b46e408f8db9f056bb2263054b886": "W?9AXLo#bbbci_j^ysbIkCozslofbwWBoMofoeoyoifjn$RkR+kD"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Video",
+        "OriginalLanguage": "en"
+      },
+      {
+        "Name": "Mortal Kombat II",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "1f77a87a9603bff7d1589d1e076f060c",
+        "Container": "mov,mp4,m4a,3gp,3g2,mj2",
+        "PremiereDate": "2026-05-06T00:00:00.0000000Z",
+        "CriticRating": 64,
+        "Path": "/media/Movies/Mortal Kombat II (2026)/Mortal Kombat II (2026).mp4",
+        "OfficialRating": "R",
+        "ChannelId": null,
+        "CommunityRating": 7.786,
+        "RunTimeTicks": 63585920000,
+        "ProductionYear": 2026,
+        "IsFolder": false,
+        "Type": "Movie",
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "931285",
+          "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+        },
+        "PrimaryImageAspectRatio": 0.6666666666666666,
+        "VideoType": "VideoFile",
+        "ImageTags": {
+          "Thumb": "0b55d0c947c87a51d12fca0a5d68010e",
+          "Primary": "24ab56762c9d8cb3d25f4323853b0389"
+        },
+        "BackdropImageTags": [
+          "be8c66e5b7827b6a0aae6ecdbe0c61d8"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "be8c66e5b7827b6a0aae6ecdbe0c61d8": "WKF2*9oL9^#mSzt6w{JSSfjZSMa|1JJ8-AbbjHWB$gWV$PSNa#WV"
+          },
+          "Thumb": {
+            "0b55d0c947c87a51d12fca0a5d68010e": "W67,uyD%57xuIp%fEgNHt7xZaJxG0e%M%1RjozIV=xxaE2RkxuNG"
+          },
+          "Primary": {
+            "24ab56762c9d8cb3d25f4323853b0389": "dD9%9p$gIVof-psTELNa0LODNaR-awWX%2-VxuNHxas."
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Video",
+        "OriginalLanguage": "en"
+      }
+    ]
+  },
+  "duration_ms": 37
+}

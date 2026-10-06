@@ -1,0 +1,44 @@
+{
+  "seq": 19,
+  "endpoint": "GET /items/{id}/Images/Backdrop/{n}",
+  "time": "2026-10-05T21:23:49.540Z",
+  "request": {
+    "method": "GET",
+    "path": "/items/1f77a87a-9603-bff7-d158-9d1e076f060c/Images/Backdrop/0",
+    "query": {
+      "tag": [
+        "be8c66e5b7827b6a0aae6ecdbe0c61d8"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/5.4.0"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "1559371",
+      "Content-Type": "image/jpeg",
+      "Date": "Mon, 05 Oct 2026 21:23:49 GMT",
+      "Server": "Kestrel",
+      "Age": "857",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Language": "en-US",
+      "ETag": "\"be8c66e5b7827b6a0aae6ecdbe0c61d8\"",
+      "Last-Modified": "Mon, 05 Oct 2026 21:09:32 GMT",
+      "Vary": "Accept",
+      "transferMode.dlna.org": "Interactive",
+      "realTimeInfo.dlna.org": "DLNA.ORG_TLAG=*",
+      "Content-Disposition": "attachment",
+      "X-Response-Time-ms": "8.4716"
+    },
+    "body": null,
+    "body_omitted": "image/jpeg streamed (not captured)"
+  },
+  "duration_ms": 26
+}

@@ -1,0 +1,66 @@
+{
+  "seq": 302,
+  "endpoint": "GET /DisplayPreferences/usersettings",
+  "time": "2026-10-05T22:39:19.033Z",
+  "request": {
+    "method": "GET",
+    "path": "/DisplayPreferences/usersettings",
+    "query": {
+      "client": [
+        "emby"
+      ]
+    },
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0002\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 via jellyfin-sdk-kotlin (OkHttp/4.12.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0002",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:39:18 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "145.3011"
+    },
+    "body": {
+      "Id": "3ce5b65d-e116-d731-65d1-efc4a30ec35c",
+      "SortBy": "SortName",
+      "RememberIndexing": false,
+      "PrimaryImageHeight": 250,
+      "PrimaryImageWidth": 250,
+      "CustomPrefs": {
+        "chromecastVersion": "stable",
+        "skipForwardLength": "30000",
+        "skipBackLength": "10000",
+        "enableNextVideoInfoOverlay": "False",
+        "tvhome": null,
+        "dashboardTheme": null
+      },
+      "ScrollDirection": "Horizontal",
+      "ShowBackdrop": true,
+      "RememberSorting": false,
+      "SortOrder": "Ascending",
+      "ShowSidebar": false,
+      "Client": "emby"
+    }
+  },
+  "duration_ms": 150
+}

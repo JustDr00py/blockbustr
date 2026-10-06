@@ -1,0 +1,44 @@
+{
+  "seq": 60,
+  "endpoint": "GET /items/{id}/Images/Primary",
+  "time": "2026-10-05T21:24:51.343Z",
+  "request": {
+    "method": "GET",
+    "path": "/items/6ea6a881-3455-664f-b3c1-50087b18ab27/Images/Primary",
+    "query": {
+      "tag": [
+        "03751afc383a3daf7cae97ae3eac069b"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/5.4.0"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "126518",
+      "Content-Type": "image/jpeg",
+      "Date": "Mon, 05 Oct 2026 21:24:51 GMT",
+      "Server": "Kestrel",
+      "Age": "896",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Language": "en-US",
+      "ETag": "\"03751afc383a3daf7cae97ae3eac069b\"",
+      "Last-Modified": "Mon, 05 Oct 2026 21:09:55 GMT",
+      "Vary": "Accept",
+      "transferMode.dlna.org": "Interactive",
+      "realTimeInfo.dlna.org": "DLNA.ORG_TLAG=*",
+      "Content-Disposition": "attachment",
+      "X-Response-Time-ms": "3.8741"
+    },
+    "body": null,
+    "body_omitted": "image/jpeg 126518 B"
+  },
+  "duration_ms": 10
+}

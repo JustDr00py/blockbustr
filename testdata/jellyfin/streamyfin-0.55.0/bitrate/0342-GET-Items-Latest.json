@@ -1,0 +1,231 @@
+{
+  "seq": 342,
+  "endpoint": "GET /Items/Latest",
+  "time": "2026-10-05T22:50:52.536Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/Latest",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "fields": [
+        "Overview"
+      ],
+      "includeItemTypes": [
+        "Series",
+        "Season",
+        "Episode"
+      ],
+      "imageTypeLimit": [
+        "1"
+      ],
+      "enableImageTypes": [
+        "Primary",
+        "Backdrop",
+        "Logo",
+        "Thumb"
+      ],
+      "limit": [
+        "10"
+      ],
+      "groupItems": [
+        "true"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "bcf34a8cfdff4850b42eb7e1cc99d404-b5bf4f1b63162adf-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=bcf34a8cfdff4850b42eb7e1cc99d404,sentry-org_id=4509610343596032,sentry-transaction=%2Fplayer%2Fdirect-player,sentry-sampled=false,sentry-sample_rand=0.4545416865638447,sentry-sample_rate=0",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:50:51 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:50:52 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "27.9406"
+    },
+    "body": [
+      {
+        "Name": "Season 1",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "c4f64bdf1f4027e19eefa42f9ddce58f",
+        "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+        "ChannelId": null,
+        "ProductionYear": 2023,
+        "IndexNumber": 1,
+        "IsFolder": true,
+        "Type": "Season",
+        "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "ParentBackdropImageTags": [
+          "a7e894c96d34ed85682e44601acd088f"
+        ],
+        "UserData": {
+          "PlayedPercentage": 0,
+          "UnplayedItemCount": 5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "414207001",
+          "ItemId": "c4f64bdf1f4027e19eefa42f9ddce58f"
+        },
+        "SeriesName": "MF GHOST",
+        "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+        "ImageTags": {
+          "Primary": "3429f9000cfcd41b31987973ba55e382"
+        },
+        "BackdropImageTags": [],
+        "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+        "ImageBlurHashes": {
+          "Primary": {
+            "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4",
+            "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7"
+          },
+          "Logo": {
+            "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+          },
+          "Thumb": {
+            "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+          },
+          "Backdrop": {
+            "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+          }
+        },
+        "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown"
+      },
+      {
+        "Name": "MF GHOST",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+        "OfficialRating": "TV-14",
+        "ChannelId": null,
+        "Overview": "Japan adopts self-driving electric automobiles and renders most gas engines obsolete by 202X. The fastest cars find new life in the MFG, a racing circuit held on Japanese motorways. Drivers from around the world race for a shot at the title. Kanata Rivington returns from Britain to Japan for the MFG—and to find his father. Can he win the title and find answers? Buckle up and push it to the limit!",
+        "CommunityRating": 8.2,
+        "RunTimeTicks": 14400000000,
+        "ProductionYear": 2023,
+        "IsFolder": true,
+        "Type": "Series",
+        "UserData": {
+          "PlayedPercentage": 0,
+          "UnplayedItemCount": 5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "414207",
+          "ItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6"
+        },
+        "Status": "Continuing",
+        "AirDays": [],
+        "ImageTags": {
+          "Logo": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "Thumb": "9821b022da26e338a777d06ebd13bd58",
+          "Primary": "36b84fbe87e05c068310b61dd183265b"
+        },
+        "BackdropImageTags": [
+          "a7e894c96d34ed85682e44601acd088f"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+          },
+          "Logo": {
+            "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+          },
+          "Thumb": {
+            "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+          },
+          "Primary": {
+            "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown",
+        "EndDate": "2026-03-29T00:00:00.0000000Z",
+        "OriginalLanguage": "ja"
+      },
+      {
+        "Name": "MF GHOST",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+        "OfficialRating": "TV-14",
+        "ChannelId": null,
+        "Overview": "Japan adopts self-driving electric automobiles and renders most gas engines obsolete by 202X. The fastest cars find new life in the MFG, a racing circuit held on Japanese motorways. Drivers from around the world race for a shot at the title. Kanata Rivington returns from Britain to Japan for the MFG—and to find his father. Can he win the title and find answers? Buckle up and push it to the limit!",
+        "CommunityRating": 8.2,
+        "RunTimeTicks": 14400000000,
+        "ProductionYear": 2023,
+        "IsFolder": true,
+        "Type": "Series",
+        "UserData": {
+          "PlayedPercentage": 0,
+          "UnplayedItemCount": 5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "414207",
+          "ItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6"
+        },
+        "ChildCount": 5,
+        "Status": "Continuing",
+        "AirDays": [],
+        "ImageTags": {
+          "Logo": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "Thumb": "9821b022da26e338a777d06ebd13bd58",
+          "Primary": "36b84fbe87e05c068310b61dd183265b"
+        },
+        "BackdropImageTags": [
+          "a7e894c96d34ed85682e44601acd088f"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+          },
+          "Logo": {
+            "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+          },
+          "Thumb": {
+            "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+          },
+          "Primary": {
+            "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown",
+        "EndDate": "2026-03-29T00:00:00.0000000Z",
+        "OriginalLanguage": "ja"
+      }
+    ]
+  },
+  "duration_ms": 30
+}

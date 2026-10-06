@@ -1,0 +1,203 @@
+{
+  "seq": 46,
+  "endpoint": "GET /Items/Latest",
+  "time": "2026-10-05T21:24:46.939Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/Latest",
+    "query": {
+      "userId": [
+        "bbbb0000-0000-0000-0000-000000000001"
+      ],
+      "parentId": [
+        "f137a2dd-21bb-c1b9-9aa5-c0f6bf02a805"
+      ],
+      "limit": [
+        "16"
+      ],
+      "groupItems": [
+        "true"
+      ]
+    },
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Findroid\", Version=\"1.1.0\", DeviceId=\"device-0001\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Findroid/1.1.0 via jellyfin-sdk-kotlin (OkHttp/5.4.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Findroid",
+      "Version": "1.1.0",
+      "DeviceId": "device-0001",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 21:24:46 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "24.0882"
+    },
+    "body": [
+      {
+        "Name": "Little Fockers",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "d48b8adc50a77956fcee8210661176fb",
+        "PremiereDate": "2010-12-21T00:00:00.0000000Z",
+        "CriticRating": 9,
+        "OfficialRating": "PG-13",
+        "ChannelId": null,
+        "CommunityRating": 5.7,
+        "ProductionYear": 2010,
+        "IsFolder": false,
+        "Type": "Movie",
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "39451",
+          "ItemId": "d48b8adc50a77956fcee8210661176fb"
+        },
+        "VideoType": "VideoFile",
+        "ImageTags": {
+          "Primary": "d4b6a694a799811a5de4806201fec13a",
+          "Logo": "240eb4d4be0863d139f98fd2128d6e48",
+          "Thumb": "3adf6a330f10b3c9d57498be6541c003"
+        },
+        "BackdropImageTags": [
+          "3a6bf2bce119fbad29a0cf419169fe0e"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "3a6bf2bce119fbad29a0cf419169fe0e": "WqR3H0%M_N.8D%-p?bofjtjuoft7-=kCIAaKxuj[_3oMbHt7WBWB"
+          },
+          "Primary": {
+            "d4b6a694a799811a5de4806201fec13a": "dnOf.E-U?b-;~qt7IoW=_4W=M{t7s:aK%LxtxvofV[WW"
+          },
+          "Logo": {
+            "240eb4d4be0863d139f98fd2128d6e48": "NCCL[RfQ6g$6a|SM2DsUN[jtSLSLJkSMwyN[SMWp"
+          },
+          "Thumb": {
+            "3adf6a330f10b3c9d57498be6541c003": "WsN9|H-pH=xt.8sl~qxuE1WBozoeE2t7W=Rjadbb-;X8RjjZt7WB"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Video",
+        "OriginalLanguage": "en"
+      },
+      {
+        "Name": "Luca",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "84088e11eb6351255c08507602d79a0f",
+        "HasSubtitles": true,
+        "Container": "mkv",
+        "PremiereDate": "2021-06-17T00:00:00.0000000Z",
+        "CriticRating": 91,
+        "OfficialRating": "PG",
+        "ChannelId": null,
+        "CommunityRating": 7.772,
+        "RunTimeTicks": 57152000000,
+        "ProductionYear": 2021,
+        "IsFolder": false,
+        "Type": "Movie",
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 1,
+          "IsFavorite": false,
+          "LastPlayedDate": "2026-10-05T21:24:04.1047551Z",
+          "Played": false,
+          "Key": "84088e11-eb63-5125-5c08-507602d79a0f",
+          "ItemId": "84088e11eb6351255c08507602d79a0f"
+        },
+        "VideoType": "VideoFile",
+        "ImageTags": {
+          "Primary": "ad87e578b85b2f6a6c71fc16131a3049",
+          "Logo": "609cce5f84918f5400e1cb942144686a",
+          "Thumb": "0a5b46e408f8db9f056bb2263054b886"
+        },
+        "BackdropImageTags": [
+          "dca946bc61eed45a3973e668c7255e33"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "dca946bc61eed45a3973e668c7255e33": "WQGR^@.APAo#J:XnGJO_pKa%S6X9PDOwp0t8sDs;pxx^ozS2r?of"
+          },
+          "Primary": {
+            "ad87e578b85b2f6a6c71fc16131a3049": "dnE;4ct3V]xv?wo#oxozF~R.xCR.GdR*sDR:j1WZbwaf"
+          },
+          "Logo": {
+            "609cce5f84918f5400e1cb942144686a": "VOK1%f?b-;-;-;M{M{xut7t700xuof-;RjIURjt7ofWB"
+          },
+          "Thumb": {
+            "0a5b46e408f8db9f056bb2263054b886": "W?9AXLo#bbbci_j^ysbIkCozslofbwWBoMofoeoyoifjn$RkR+kD"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Video",
+        "OriginalLanguage": "en"
+      },
+      {
+        "Name": "Mortal Kombat II",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "1f77a87a9603bff7d1589d1e076f060c",
+        "Container": "mov,mp4,m4a,3gp,3g2,mj2",
+        "PremiereDate": "2026-05-06T00:00:00.0000000Z",
+        "CriticRating": 64,
+        "OfficialRating": "R",
+        "ChannelId": null,
+        "CommunityRating": 7.786,
+        "RunTimeTicks": 63585920000,
+        "ProductionYear": 2026,
+        "IsFolder": false,
+        "Type": "Movie",
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "931285",
+          "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+        },
+        "VideoType": "VideoFile",
+        "ImageTags": {
+          "Thumb": "0b55d0c947c87a51d12fca0a5d68010e",
+          "Primary": "24ab56762c9d8cb3d25f4323853b0389",
+          "Logo": "94051eb91d590f014438cce01f89754c"
+        },
+        "BackdropImageTags": [
+          "be8c66e5b7827b6a0aae6ecdbe0c61d8"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "be8c66e5b7827b6a0aae6ecdbe0c61d8": "WKF2*9oL9^#mSzt6w{JSSfjZSMa|1JJ8-AbbjHWB$gWV$PSNa#WV"
+          },
+          "Thumb": {
+            "0b55d0c947c87a51d12fca0a5d68010e": "W67,uyD%57xuIp%fEgNHt7xZaJxG0e%M%1RjozIV=xxaE2RkxuNG"
+          },
+          "Primary": {
+            "24ab56762c9d8cb3d25f4323853b0389": "dD9%9p$gIVof-psTELNa0LODNaR-awWX%2-VxuNHxas."
+          },
+          "Logo": {
+            "94051eb91d590f014438cce01f89754c": "PB84;{j[IAj[%NWBIUjt-;j[jaj[kBj[V[ae4TfkRPaetRt7WAWB"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Video",
+        "OriginalLanguage": "en"
+      }
+    ]
+  },
+  "duration_ms": 29
+}

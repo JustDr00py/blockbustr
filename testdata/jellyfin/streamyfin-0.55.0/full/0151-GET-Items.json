@@ -1,0 +1,82 @@
+{
+  "seq": 151,
+  "endpoint": "GET /Items",
+  "time": "2026-10-05T22:26:12.685Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "excludeItemIds": [
+        "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "551ae82823de5533467c046377c55afb"
+      ],
+      "limit": [
+        "20"
+      ],
+      "recursive": [
+        "true"
+      ],
+      "sortOrder": [
+        "Descending"
+      ],
+      "fields": [
+        "ParentId",
+        "PrimaryImageAspectRatio"
+      ],
+      "includeItemTypes": [
+        "Movie",
+        "Series"
+      ],
+      "sortBy": [
+        "PremiereDate"
+      ],
+      "personIds": [
+        "45387430f285ebdf635b1d73da74d759"
+      ],
+      "collapseBoxSetItems": [
+        "false"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "f37c43f436e645399b005005c00095ac-8153b2bc619e51de-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=f37c43f436e645399b005005c00095ac,sentry-org_id=4509610343596032,sentry-transaction=%2Fitems%2Fpage,sentry-sampled=false,sentry-sample_rand=0.9831021268662669,sentry-sample_rate=0",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:26:12 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "40.5724"
+    },
+    "body": {
+      "Items": [],
+      "TotalRecordCount": 0,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 46
+}

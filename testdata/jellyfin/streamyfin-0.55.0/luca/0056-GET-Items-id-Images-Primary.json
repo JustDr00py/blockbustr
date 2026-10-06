@@ -1,0 +1,33 @@
+{
+  "seq": 56,
+  "endpoint": "GET /Items/{id}/Images/Primary",
+  "time": "2026-10-05T22:40:36.304Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/ea7e062bb0719e3157f9cb8367140a3d/Images/Primary",
+    "query": {},
+    "headers": {
+      "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 14; Device Build/REDACTED)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:40:36 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "1.3326"
+    },
+    "body": "Saverio Raimondo does not have an image of type Primary"
+  },
+  "duration_ms": 11
+}

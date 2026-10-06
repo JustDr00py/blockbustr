@@ -1,0 +1,77 @@
+{
+  "seq": 122,
+  "endpoint": "GET /socket",
+  "time": "2026-10-05T22:39:34.427Z",
+  "request": {
+    "method": "GET",
+    "path": "/socket",
+    "query": {
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ],
+      "deviceId": [
+        "dddd0000-0000-0000-0000-000000000001"
+      ]
+    },
+    "headers": {
+      "origin": "http://192.0.2.3:8096",
+      "Upgrade": "websocket",
+      "Connection": "Upgrade",
+      "Sec-WebSocket-Key": "ElfUiwLqWjHxhMHFF9tj3A==",
+      "Sec-WebSocket-Version": "13",
+      "Sec-WebSocket-Extensions": "permessage-deflate",
+      "Host": "jellyfin:8096",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "query:apikey"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 101,
+    "headers": {
+      "Connection": "Upgrade",
+      "Date": "Mon, 05 Oct 2026 22:39:34 GMT",
+      "Server": "Kestrel",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Language": "en-US",
+      "Upgrade": "websocket",
+      "Sec-WebSocket-Accept": "Vrv47VD4deCUXZdNZjzymWOdbN0=",
+      "X-Response-Time-ms": "27.423"
+    },
+    "body": null
+  },
+  "duration_ms": 42,
+  "websocket": {
+    "messages": [
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:39:34.506Z",
+        "data": {
+          "MessageId": "f295323c764540b7a9893f198e354a61",
+          "Data": 60,
+          "MessageType": "ForceKeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:40:04.718Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:40:04.726Z",
+        "data": {
+          "MessageId": "a10b9a15a77347fc8f77bee65ddbb21c",
+          "MessageType": "KeepAlive"
+        }
+      }
+    ],
+    "truncated": false
+  }
+}

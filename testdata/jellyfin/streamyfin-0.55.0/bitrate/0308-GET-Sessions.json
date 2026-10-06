@@ -1,0 +1,130 @@
+{
+  "seq": 308,
+  "endpoint": "GET /Sessions",
+  "time": "2026-10-05T22:50:38.354Z",
+  "request": {
+    "method": "GET",
+    "path": "/Sessions",
+    "query": {
+      "activeWithinSeconds": [
+        "360"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "e5e9aeb98086486bad8ef42d1faee9f5-9977eb219f7fb7cc",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=e5e9aeb98086486bad8ef42d1faee9f5,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:50:32 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:50:38 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "32.8039"
+    },
+    "body": [
+      {
+        "PlayState": {
+          "CanSeek": false,
+          "IsPaused": false,
+          "IsMuted": false,
+          "RepeatMode": "RepeatNone",
+          "PlaybackOrder": "Default"
+        },
+        "AdditionalUsers": [],
+        "Capabilities": {
+          "PlayableMediaTypes": [
+            "Audio",
+            "Video"
+          ],
+          "SupportedCommands": [
+            "Play"
+          ],
+          "SupportsMediaControl": true,
+          "SupportsPersistentIdentifier": true,
+          "AppStoreUrl": "https://apps.apple.com/us/app/streamyfin/id6593660679",
+          "IconUrl": "https://raw.githubusercontent.com/streamyfin/streamyfin/refs/heads/develop/assets/images/streamyfin-client-badge.png"
+        },
+        "RemoteEndPoint": "192.0.2.1",
+        "PlayableMediaTypes": [
+          "Audio",
+          "Video"
+        ],
+        "Id": "eeee0000000000000000000000000001",
+        "UserId": "bbbb0000000000000000000000000001",
+        "UserName": "user1",
+        "Client": "Streamyfin",
+        "LastActivityDate": "2026-10-05T22:50:26.6526908Z",
+        "LastPlaybackCheckIn": "2026-10-05T22:50:24.0480034Z",
+        "DeviceName": "Device 2",
+        "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+        "ApplicationVersion": "0.55.0",
+        "IsActive": true,
+        "SupportsMediaControl": true,
+        "SupportsRemoteControl": true,
+        "NowPlayingQueue": [],
+        "HasCustomDeviceName": false,
+        "ServerId": "cccc0000000000000000000000000001",
+        "SupportedCommands": [
+          "Play"
+        ]
+      },
+      {
+        "PlayState": {
+          "CanSeek": false,
+          "IsPaused": false,
+          "IsMuted": false,
+          "RepeatMode": "RepeatNone",
+          "PlaybackOrder": "Default"
+        },
+        "AdditionalUsers": [],
+        "Capabilities": {
+          "PlayableMediaTypes": [],
+          "SupportedCommands": [],
+          "SupportsMediaControl": false,
+          "SupportsPersistentIdentifier": true
+        },
+        "RemoteEndPoint": "192.0.2.2",
+        "PlayableMediaTypes": [],
+        "Id": "eeee0000000000000000000000000002",
+        "UserId": "bbbb0000000000000000000000000001",
+        "UserName": "user1",
+        "Client": "Jellyfin for Android",
+        "LastActivityDate": "2026-10-05T22:49:19.4422163Z",
+        "LastPlaybackCheckIn": "2026-10-05T22:39:30.4335841Z",
+        "DeviceName": "Device 2",
+        "DeviceId": "device-0002",
+        "ApplicationVersion": "2.7.3",
+        "IsActive": true,
+        "SupportsMediaControl": false,
+        "SupportsRemoteControl": false,
+        "NowPlayingQueue": [],
+        "HasCustomDeviceName": false,
+        "ServerId": "cccc0000000000000000000000000001",
+        "SupportedCommands": []
+      }
+    ]
+  },
+  "duration_ms": 42
+}

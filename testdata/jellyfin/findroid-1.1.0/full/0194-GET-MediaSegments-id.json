@@ -1,0 +1,46 @@
+{
+  "seq": 194,
+  "endpoint": "GET /MediaSegments/{id}",
+  "time": "2026-10-05T21:35:06.507Z",
+  "request": {
+    "method": "GET",
+    "path": "/MediaSegments/d48b8adc-50a7-7956-fcee-8210661176fb",
+    "query": {},
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Findroid\", Version=\"1.1.0\", DeviceId=\"device-0001\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Findroid/1.1.0 via jellyfin-sdk-kotlin (OkHttp/5.4.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Findroid",
+      "Version": "1.1.0",
+      "DeviceId": "device-0001",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 21:35:06 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "20.8712"
+    },
+    "body": {
+      "Items": [],
+      "TotalRecordCount": 0,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 26
+}

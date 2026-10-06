@@ -1,0 +1,98 @@
+{
+  "seq": 266,
+  "endpoint": "GET /videos/{id}/main.m3u8",
+  "time": "2026-10-05T22:32:41.307Z",
+  "request": {
+    "method": "GET",
+    "path": "/videos/1f77a87a-9603-bff7-d158-9d1e076f060c/main.m3u8",
+    "query": {
+      "DeviceId": [
+        "device-0002"
+      ],
+      "MediaSourceId": [
+        "1f77a87a9603bff7d1589d1e076f060c"
+      ],
+      "VideoCodec": [
+        "h264"
+      ],
+      "AudioCodec": [
+        "copy"
+      ],
+      "AudioStreamIndex": [
+        "1"
+      ],
+      "VideoBitrate": [
+        "5839539"
+      ],
+      "AudioBitrate": [
+        "160461"
+      ],
+      "MaxFramerate": [
+        "24"
+      ],
+      "SegmentContainer": [
+        "ts"
+      ],
+      "PlaySessionId": [
+        "937a9bb8c9a04cdd81ab90f397af49bf"
+      ],
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ],
+      "RequireAvc": [
+        "false"
+      ],
+      "EnableAudioVbrEncoding": [
+        "true"
+      ],
+      "Tag": [
+        "95c3644a7f226bcbcc8f8f306cfe3448"
+      ],
+      "SubtitleMethod": [
+        "Encode"
+      ],
+      "av1-level": [
+        "8"
+      ],
+      "av1-videobitdepth": [
+        "8"
+      ],
+      "av1-profile": [
+        "main"
+      ],
+      "TranscodeReasons": [
+        "VideoCodecNotSupported,ContainerBitrateExceedsLimit"
+      ]
+    },
+    "headers": {
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0002\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 (Linux;Android 14) AndroidXMedia3/1.8.0",
+      "Accept-Encoding": "gzip",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0002",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "1372384",
+      "Content-Type": "application/vnd.apple.mpegurl",
+      "Date": "Mon, 05 Oct 2026 22:32:41 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "56.6869"
+    },
+    "body": null,
+    "body_omitted": "application/vnd.apple.mpegurl streamed (not captured)"
+  },
+  "duration_ms": 64
+}

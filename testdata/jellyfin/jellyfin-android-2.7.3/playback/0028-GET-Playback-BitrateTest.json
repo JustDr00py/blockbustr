@@ -1,0 +1,48 @@
+{
+  "seq": 28,
+  "endpoint": "GET /Playback/BitrateTest",
+  "time": "2026-10-05T22:53:00.226Z",
+  "request": {
+    "method": "GET",
+    "path": "/Playback/BitrateTest",
+    "query": {
+      "Size": [
+        "1000000"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Cache-Control": "no-cache, no-store",
+      "Accept": "*/*",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "1048576",
+      "Content-Type": "application/octet-stream",
+      "Date": "Mon, 05 Oct 2026 22:52:59 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "18.1148"
+    },
+    "body": null,
+    "body_omitted": "application/octet-stream 1048576 B"
+  },
+  "duration_ms": 28
+}

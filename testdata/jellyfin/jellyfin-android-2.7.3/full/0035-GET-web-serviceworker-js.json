@@ -1,0 +1,45 @@
+{
+  "seq": 35,
+  "endpoint": "GET /web/serviceworker.js",
+  "time": "2026-10-05T22:30:28.805Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/serviceworker.js",
+    "query": {
+      "eed478c834840450f1de": [
+        ""
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "*/*",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/javascript",
+      "Date": "Mon, 05 Oct 2026 22:30:28 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb37a\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.7518"
+    },
+    "body": {
+      "_text": "(self.webpackChunk=self.webpackChunk||[]).push([[82798],{16764:function(n,e,t){t(78557),t(90076),self.addEventListener(\"notificationclick\",(function(n){var e=n.notification;e.close();var t=e.data,i=t.serverId,r=n.action;if(!r)return clients.openWindow(\"/\"),void n.waitUntil(Promise.resolve());n.waitUntil(function(n,e,t){return function(n){return Promise.resolve(window.connectionManager.getApiClient(n))}(t).then((function(t){switch(n){case\"cancel-install\":return t.cancelPackageInstallation(e.id);case\"restart\":return t.restartServer();default:return clients.openWindow(\"/\"),Promise.resolve()}}))}(r,t,i))}),!1),self.addEventListener(\"activate\",(function(){return self.clients.claim()}))}},function(n){n.O(0,[59928],(function(){return n(n.s=16764)})),n.O()}]);"
+    }
+  },
+  "duration_ms": 12
+}

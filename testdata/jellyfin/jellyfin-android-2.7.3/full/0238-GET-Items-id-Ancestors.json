@@ -1,0 +1,153 @@
+{
+  "seq": 238,
+  "endpoint": "GET /Items/{id}/Ancestors",
+  "time": "2026-10-05T22:32:12.425Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/1f77a87a9603bff7d1589d1e076f060c/Ancestors",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Accept-Language": "en-us,en",
+      "Accept": "application/json,application/json; profile=CamelCase,application/json; profile=PascalCase,text/html",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:32:12 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "56.9308"
+    },
+    "body": [
+      {
+        "Name": "Movies",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "f137a2dd21bbc1b99aa5c0f6bf02a805",
+        "Etag": "9e30462ab2a1d5d48c2f3638d62c42a7",
+        "DateCreated": "2026-10-05T21:07:17.7449921Z",
+        "DateLastMediaAdded": "0001-01-01T00:00:00.0000000Z",
+        "CanDelete": false,
+        "CanDownload": false,
+        "SortName": "movies",
+        "ExternalUrls": [],
+        "Path": "/config/root/default/Movies",
+        "EnableMediaSourceDisplay": true,
+        "ChannelId": null,
+        "Taglines": [],
+        "Genres": [],
+        "PlayAccess": "Full",
+        "RemoteTrailers": [],
+        "ProviderIds": {},
+        "IsFolder": true,
+        "ParentId": "e9d5075a555c1cbc394eec4cef295274",
+        "Type": "CollectionFolder",
+        "People": [],
+        "Studios": [],
+        "GenreItems": [],
+        "LocalTrailerCount": 0,
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "f137a2dd-21bb-c1b9-9aa5-c0f6bf02a805",
+          "ItemId": "f137a2dd21bbc1b99aa5c0f6bf02a805"
+        },
+        "ChildCount": 3,
+        "SpecialFeatureCount": 0,
+        "DisplayPreferencesId": "f137a2dd21bbc1b99aa5c0f6bf02a805",
+        "Tags": [],
+        "PrimaryImageAspectRatio": 1.7777777777777777,
+        "CollectionType": "movies",
+        "ImageTags": {
+          "Primary": "4bf5292daf4f426744299ad3001ea046"
+        },
+        "BackdropImageTags": [],
+        "ImageBlurHashes": {
+          "Primary": {
+            "4bf5292daf4f426744299ad3001ea046": "WD9irLbb9GjEW;oLShS4ayf6WVoL0KR*?HofayWVjEn$s:bbj[WV"
+          }
+        },
+        "Chapters": [],
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown",
+        "LockedFields": [],
+        "LockData": false
+      },
+      {
+        "Name": "Media Folders",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "e9d5075a555c1cbc394eec4cef295274",
+        "Etag": "9c174091ef7541e9dfbde65326890919",
+        "DateCreated": "2026-10-05T21:05:51.6082821Z",
+        "CanDelete": false,
+        "CanDownload": false,
+        "SortName": "media folders",
+        "ExternalUrls": [],
+        "Path": "/config/root/default",
+        "EnableMediaSourceDisplay": true,
+        "ChannelId": null,
+        "Taglines": [],
+        "Genres": [],
+        "PlayAccess": "Full",
+        "RemoteTrailers": [],
+        "ProviderIds": {},
+        "IsFolder": true,
+        "ParentId": null,
+        "Type": "UserRootFolder",
+        "People": [],
+        "Studios": [],
+        "GenreItems": [],
+        "LocalTrailerCount": 0,
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "e9d5075a-555c-1cbc-394e-ec4cef295274",
+          "ItemId": "e9d5075a555c1cbc394eec4cef295274"
+        },
+        "ChildCount": 2,
+        "SpecialFeatureCount": 0,
+        "DisplayPreferencesId": "b21ccc945ed35ac08c3b35d5de9e71f3",
+        "Tags": [],
+        "PrimaryImageAspectRatio": 1.7777777777777777,
+        "ImageTags": {
+          "Primary": "12b47835f23cd04c985a2caafbc84961"
+        },
+        "BackdropImageTags": [],
+        "ImageBlurHashes": {
+          "Primary": {
+            "12b47835f23cd04c985a2caafbc84961": "WD9irLbb9GjEW;oLShS4ayf6WVoL0KR*?HofayWVjEn$s:bbj[WV"
+          }
+        },
+        "Chapters": [],
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown",
+        "LockedFields": [],
+        "LockData": false
+      }
+    ]
+  },
+  "duration_ms": 63
+}

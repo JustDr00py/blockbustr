@@ -1,0 +1,41 @@
+{
+  "seq": 236,
+  "endpoint": "GET /web/66884.1cd569ac04ac2a6cd721.css",
+  "time": "2026-10-05T22:32:11.633Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/66884.1cd569ac04ac2a6cd721.css",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "text/css,*/*;q=0.1",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/css",
+      "Date": "Mon, 05 Oct 2026 22:32:11 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb6b6\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "2.6367"
+    },
+    "body": {
+      "_text": ".itemProgressBar{background:#333;background:rgba(51,51,51,.8);height:.28em;position:relative}.itemLinearProgress{border-radius:100px;bottom:0;left:0;position:absolute!important;width:100%}.itemProgressBarForeground{bottom:0;position:absolute;top:0}[dir=ltr] .itemProgressBarForeground{left:0}[dir=rtl] .itemProgressBarForeground{right:0}.indicator{-webkit-align-items:center;align-items:center;border-radius:100em;display:-webkit-flex;display:flex;font-weight:500;height:2em;-webkit-justify-content:center;justify-content:center;width:2em}.timerIndicator{color:#cb272a}.timerIndicator-inactive{color:#888}[dir=ltr] .indicator+.indicator{margin-left:.25em}[dir=rtl] .indicator+.indicator{margin-right:.25em}.indicatorIcon{font-size:1.6em;height:auto;width:auto}.countIndicator{font-size:88%;font-weight:500}.countIndicator,.playedIndicator{-webkit-align-items:center;align-items:center;border-radius:100em;box-shadow:0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12),0 3px 1px -2px rgba(0,0,0,.2);color:#fff;display:-webkit-flex;display:flex;-webkit-justify-content:center;justify-content:center}.playedIndicator{font-size:80%}.videoIndicator{-webkit-align-items:center;align-items:center;background:#444;box-shadow:0 2px 2px 0 rgba(0,0,0,.14),0 1px 5px 0 rgba(0,0,0,.12),0 3px 1px -2px rgba(0,0,0,.2);color:#fff;display:-webkit-flex;display:flex;font-size:88%;-webkit-justify-content:center;justify-content:center}.syncIndicator,.videoIndicator{border-radius:100em}.emptySyncIndicator{background:#ccc;color:#333}.missingIndicator,.unairedIndicator{background:#c33;border-radius:100em;color:#fff;font-size:84%;font-weight:500;margin:0 .25em;padding:.25em .5em}\n.newTvProgram{background:#38c;color:#fff}.liveTvProgram{background:#c33;color:#fff}.premiereTvProgram{background:#ef6c00;color:#fff}.repeatTvProgram{background:#009688;color:#fff}\n"
+    }
+  },
+  "duration_ms": 8
+}

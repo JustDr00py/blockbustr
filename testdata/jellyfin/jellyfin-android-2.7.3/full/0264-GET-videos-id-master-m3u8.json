@@ -1,0 +1,100 @@
+{
+  "seq": 264,
+  "endpoint": "GET /videos/{id}/master.m3u8",
+  "time": "2026-10-05T22:32:41.131Z",
+  "request": {
+    "method": "GET",
+    "path": "/videos/1f77a87a-9603-bff7-d158-9d1e076f060c/master.m3u8",
+    "query": {
+      "DeviceId": [
+        "device-0002"
+      ],
+      "MediaSourceId": [
+        "1f77a87a9603bff7d1589d1e076f060c"
+      ],
+      "VideoCodec": [
+        "h264"
+      ],
+      "AudioCodec": [
+        "mp3,aac,ac3,eac3"
+      ],
+      "AudioStreamIndex": [
+        "1"
+      ],
+      "VideoBitrate": [
+        "5839539"
+      ],
+      "AudioBitrate": [
+        "160461"
+      ],
+      "MaxFramerate": [
+        "24"
+      ],
+      "SegmentContainer": [
+        "ts"
+      ],
+      "PlaySessionId": [
+        "937a9bb8c9a04cdd81ab90f397af49bf"
+      ],
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ],
+      "RequireAvc": [
+        "false"
+      ],
+      "EnableAudioVbrEncoding": [
+        "true"
+      ],
+      "Tag": [
+        "95c3644a7f226bcbcc8f8f306cfe3448"
+      ],
+      "SubtitleMethod": [
+        "Encode"
+      ],
+      "av1-level": [
+        "8"
+      ],
+      "av1-videobitdepth": [
+        "8"
+      ],
+      "av1-profile": [
+        "main"
+      ],
+      "TranscodeReasons": [
+        "VideoCodecNotSupported,ContainerBitrateExceedsLimit"
+      ]
+    },
+    "headers": {
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0002\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 (Linux;Android 14) AndroidXMedia3/1.8.0",
+      "Accept-Encoding": "gzip",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0002",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "707",
+      "Content-Type": "application/vnd.apple.mpegurl",
+      "Date": "Mon, 05 Oct 2026 22:32:41 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "Expires": "0",
+      "X-Response-Time-ms": "71.4203"
+    },
+    "body": {
+      "_text": "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=6000000,AVERAGE-BANDWIDTH=6000000,VIDEO-RANGE=SDR,CODECS=\"avc1.424029,mp4a.40.2\",RESOLUTION=1920x804,FRAME-RATE=24\nmain.m3u8?DeviceId=device-0002&MediaSourceId=1f77a87a9603bff7d1589d1e076f060c&VideoCodec=h264&AudioCodec=copy&AudioStreamIndex=1&VideoBitrate=5839539&AudioBitrate=160461&MaxFramerate=24&SegmentContainer=ts&PlaySessionId=937a9bb8c9a04cdd81ab90f397af49bf&ApiKey=aaaa0000000000000000000000000001&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=95c3644a7f226bcbcc8f8f306cfe3448&SubtitleMethod=Encode&av1-level=8&av1-videobitdepth=8&av1-profile=main&TranscodeReasons=VideoCodecNotSupported,ContainerBitrateExceedsLimit\n"
+    }
+  },
+  "duration_ms": 76
+}

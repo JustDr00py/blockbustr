@@ -1,0 +1,56 @@
+{
+  "seq": 59,
+  "endpoint": "GET /MediaSegments/{id}",
+  "time": "2026-10-05T22:25:17.374Z",
+  "request": {
+    "method": "GET",
+    "path": "/MediaSegments/d48b8adc50a77956fcee8210661176fb",
+    "query": {
+      "includeSegmentTypes": [
+        "Intro",
+        "Outro",
+        "Recap",
+        "Commercial",
+        "Preview"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "b64c8707654b45ca81d99e50fab234ec-8eae50831ef1ac6b",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=b64c8707654b45ca81d99e50fab234ec,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:25:17 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "33.7812"
+    },
+    "body": {
+      "Items": [],
+      "TotalRecordCount": 0,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 39
+}

@@ -1,0 +1,84 @@
+# blockbustr dev/prod stack (TASKS P1.2): blockbustr + PostgreSQL + Redis.
+#   podman-compose -f deploy/docker-compose.yml up -d --build   # or: docker compose …
+# Secrets come from ../.env (copy ../.env.example). The recon stack in
+# deploy/recon/ also wants port 8096; set BLOCKBUSTR_PORT to run both.
+
+name: blockbustr
+
+services:
+  blockbustr:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: localhost/blockbustr:dev
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      BLOCKBUSTR_DATABASE_URL: postgres://blockbustr:${POSTGRES_PASSWORD:-blockbustr}@postgres:5432/blockbustr?sslmode=disable
+      BLOCKBUSTR_REDIS_URL: redis://redis:6379/0
+      BLOCKBUSTR_ADMIN_USERNAME: ${BLOCKBUSTR_ADMIN_USERNAME:-}
+      BLOCKBUSTR_ADMIN_PASSWORD: ${BLOCKBUSTR_ADMIN_PASSWORD:-}
+      BLOCKBUSTR_TMDB_API_KEY: ${BLOCKBUSTR_TMDB_API_KEY:-}
+      BLOCKBUSTR_REALDEBRID_API_KEY: ${BLOCKBUSTR_REALDEBRID_API_KEY:-}
+      BLOCKBUSTR_TORBOX_API_KEY: ${BLOCKBUSTR_TORBOX_API_KEY:-}
+      BLOCKBUSTR_EXTERNAL_URL: ${BLOCKBUSTR_EXTERNAL_URL:-}
+      BLOCKBUSTR_LOG_LEVEL: ${BLOCKBUSTR_LOG_LEVEL:-info}
+    ports:
+      - "${BLOCKBUSTR_PORT:-8096}:8096"
+    volumes:
+      - ./data/config:/config        # optional config.yaml
+      - ./data/cache:/cache          # transcode segments + image cache
+      - ${MEDIA_DIR:-${HOME}/Videos}:/media:ro
+    # Intel QSV/VAAPI. If the host's renderD128 is 0660 (most distros), set
+    # RENDER_GID in ../.env to `getent group render | cut -d: -f3`.
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID:-video}"
+    # Fedora/SELinux: read ~/Videos and /dev/dri without relabelling them.
+    security_opt:
+      - label=disable
+    # Declared here as well as in the Dockerfile: podman builds OCI images, which drop HEALTHCHECK.
+    healthcheck:
+      test: ["CMD", "/app/blockbustr", "-config", "/config/config.yaml", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  postgres:
+    image: docker.io/library/postgres:17.11
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: blockbustr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blockbustr}
+      POSTGRES_DB: blockbustr
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"   # for migrations/sqlc from the host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blockbustr -d blockbustr"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: docker.io/library/redis:8.10
+    restart: unless-stopped
+    # Cache and coordination only (DESIGN §5): no persistence, bounded memory.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

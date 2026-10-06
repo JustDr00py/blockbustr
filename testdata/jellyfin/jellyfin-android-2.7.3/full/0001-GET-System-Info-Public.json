@@ -1,0 +1,49 @@
+{
+  "seq": 1,
+  "endpoint": "GET /System/Info/Public",
+  "time": "2026-10-05T22:30:28.211Z",
+  "request": {
+    "method": "GET",
+    "path": "/System/Info/Public",
+    "query": {},
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0001\", Device=\"Device 1\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 via jellyfin-sdk-kotlin (OkHttp/4.12.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0001",
+      "Device": "Device 1",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:30:28 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "2.6949"
+    },
+    "body": {
+      "LocalAddress": "http://192.0.2.1:8096",
+      "ServerName": "redacted1",
+      "Version": "12.1.0",
+      "ProductName": "Jellyfin Server",
+      "OperatingSystem": "",
+      "Id": "cccc0000000000000000000000000001",
+      "StartupWizardCompleted": true
+    }
+  },
+  "duration_ms": 9
+}

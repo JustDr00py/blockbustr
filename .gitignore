@@ -1,0 +1,12 @@
+# raw fixtures still contain tokens; only scrubbed fixtures (P0.5) are committed
+testdata/jellyfin/_raw/
+__pycache__/
+scripts/capture/scrub.local.txt
+/bin/
+.env
+/config.yaml
+/deploy/data/
+# mitmproxy captures and the recon Jellyfin's data hold real tokens and links
+*.mitm
+/deploy/recon/captures/
+/deploy/recon/data/

@@ -1,0 +1,86 @@
+{
+  "seq": 289,
+  "endpoint": "GET /socket",
+  "time": "2026-10-05T22:34:13.498Z",
+  "request": {
+    "method": "GET",
+    "path": "/socket",
+    "query": {
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "Upgrade",
+      "Pragma": "no-cache",
+      "Cache-Control": "no-cache",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Upgrade": "websocket",
+      "Origin": "http://192.0.2.2:8096",
+      "Sec-WebSocket-Version": "13",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Sec-WebSocket-Key": "TyEdP/Pb38j5jlAqBtaMmw==",
+      "Sec-WebSocket-Extensions": "permessage-deflate; client_max_window_bits"
+    },
+    "auth": {
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "query:apikey"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 101,
+    "headers": {
+      "Connection": "Upgrade",
+      "Date": "Mon, 05 Oct 2026 22:34:13 GMT",
+      "Server": "Kestrel",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Language": "en-US",
+      "Upgrade": "websocket",
+      "Sec-WebSocket-Accept": "s06HodnQCPMwGuzc5O4hSCsDPW8=",
+      "X-Response-Time-ms": "469.8183"
+    },
+    "body": null
+  },
+  "duration_ms": 576,
+  "websocket": {
+    "messages": [
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:34:14.314Z",
+        "data": {
+          "MessageId": "9c904a478ef84eebb1caeea665722cbb",
+          "Data": 60,
+          "MessageType": "ForceKeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:34:14.534Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:34:14.540Z",
+        "data": {
+          "MessageId": "ee0c205ecccb42dbb988bb291488d850",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:34:17.855Z",
+        "data": {
+          "MessageId": "2332d6caa18e4a8bb5abeea15c09ab4e",
+          "Data": "",
+          "MessageType": "ServerShuttingDown"
+        }
+      }
+    ],
+    "truncated": false
+  }
+}

@@ -1,0 +1,310 @@
+{
+  "seq": 86,
+  "endpoint": "GET /Sessions",
+  "time": "2026-10-05T22:25:44.047Z",
+  "request": {
+    "method": "GET",
+    "path": "/Sessions",
+    "query": {
+      "activeWithinSeconds": [
+        "360"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "482d215e4cc940a5948800819331eb00-849f29fd5f711c48",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=482d215e4cc940a5948800819331eb00,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:25:38 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:25:43 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "22.9372"
+    },
+    "body": [
+      {
+        "PlayState": {
+          "PositionTicks": 11811710000,
+          "CanSeek": true,
+          "IsPaused": false,
+          "IsMuted": false,
+          "AudioStreamIndex": 1,
+          "SubtitleStreamIndex": -1,
+          "MediaSourceId": "d48b8adc50a77956fcee8210661176fb",
+          "PlayMethod": "DirectPlay",
+          "RepeatMode": "RepeatNone",
+          "PlaybackOrder": "Default"
+        },
+        "AdditionalUsers": [],
+        "Capabilities": {
+          "PlayableMediaTypes": [
+            "Audio",
+            "Video"
+          ],
+          "SupportedCommands": [
+            "Play"
+          ],
+          "SupportsMediaControl": true,
+          "SupportsPersistentIdentifier": true,
+          "AppStoreUrl": "https://apps.apple.com/us/app/streamyfin/id6593660679",
+          "IconUrl": "https://raw.githubusercontent.com/streamyfin/streamyfin/refs/heads/develop/assets/images/streamyfin-client-badge.png"
+        },
+        "RemoteEndPoint": "192.0.2.2",
+        "PlayableMediaTypes": [
+          "Audio",
+          "Video"
+        ],
+        "Id": "eeee0000000000000000000000000001",
+        "UserId": "bbbb0000000000000000000000000001",
+        "UserName": "user1",
+        "Client": "Streamyfin",
+        "LastActivityDate": "2026-10-05T22:25:43.5390392Z",
+        "LastPlaybackCheckIn": "2026-10-05T22:25:34.529331Z",
+        "DeviceName": "Device 2",
+        "NowPlayingItem": {
+          "Name": "Little Fockers",
+          "OriginalTitle": "Little Fockers",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "d48b8adc50a77956fcee8210661176fb",
+          "DateCreated": "2026-10-05T21:18:48.3388826Z",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2010-12-21T00:00:00.0000000Z",
+          "ExternalUrls": [
+            {
+              "Name": "IMDb",
+              "Url": "https://www.imdb.com/title/tt0970866"
+            },
+            {
+              "Name": "TMDB",
+              "Url": "https://www.themoviedb.org/movie/39451"
+            }
+          ],
+          "CriticRating": 9,
+          "Path": "/media/Movies/Little Fockers (2010)/Little Fockers (2010).strm",
+          "EnableMediaSourceDisplay": true,
+          "OfficialRating": "PG-13",
+          "ChannelId": null,
+          "Overview": "It has taken 10 years, two little Fockers with wife Pam and countless hurdles for Greg to finally get in with his tightly wound father-in-law, Jack. After the cash-strapped dad takes a job moonlighting for a drug company, Jack's suspicions about his favorite male nurse come roaring back. When Greg and Pam's entire clan descends for the twins' birthday party, Greg must prove to the skeptical Jack that he's fully capable as the man of the house.",
+          "Taglines": [
+            "Kids bring everyone closer, right?"
+          ],
+          "Genres": [
+            "Comedy",
+            "Romance"
+          ],
+          "CommunityRating": 5.7,
+          "RunTimeTicks": 58597330000,
+          "ProductionYear": 2010,
+          "ProviderIds": {
+            "Imdb": "tt0970866",
+            "Tmdb": "39451",
+            "TmdbCollection": "51509"
+          },
+          "IsHD": true,
+          "IsFolder": false,
+          "ParentId": "e675012a1892a87530d2c0b0d14a9026",
+          "Type": "Movie",
+          "Studios": [
+            {
+              "Name": "Universal Pictures",
+              "Id": "e56aaac7ab0bb0f5f48371be0252bab4"
+            },
+            {
+              "Name": "Paramount Pictures",
+              "Id": "2672ed34a3f2b0bb6b4257c2ab9875b7"
+            },
+            {
+              "Name": "Relativity Media",
+              "Id": "e7f283ffd9a3c0c9f1d78aadede25b7f"
+            },
+            {
+              "Name": "Tribeca Productions",
+              "Id": "cb5eadde41d4358bbe75d4dfb7f010e0"
+            },
+            {
+              "Name": "Everyman Pictures",
+              "Id": "9cff0cef84576cc3466754c1f7c3ad21"
+            },
+            {
+              "Name": "Nancy Tenenbaum Films",
+              "Id": "99c7164597673d28f5525f1a577a438f"
+            },
+            {
+              "Name": "DreamWorks Pictures",
+              "Id": "8dfcb072fade7ffde98ce192dc2d66bb"
+            }
+          ],
+          "GenreItems": [
+            {
+              "Name": "Comedy",
+              "Id": "08d31605d366d63a7a924f944b4417f1"
+            },
+            {
+              "Name": "Romance",
+              "Id": "1ffc72e19987e5fa4047c6a6870646cf"
+            }
+          ],
+          "LocalTrailerCount": 0,
+          "SpecialFeatureCount": 0,
+          "PrimaryImageAspectRatio": 0.6666666666666666,
+          "MediaStreams": [
+            {
+              "Codec": "hevc",
+              "ColorSpace": "bt709",
+              "ColorTransfer": "bt709",
+              "ColorPrimaries": "bt709",
+              "TimeBase": "1/1000",
+              "VideoRange": "SDR",
+              "VideoRangeType": "SDR",
+              "AudioSpatialFormat": "None",
+              "DisplayTitle": "1080p HEVC SDR",
+              "IsInterlaced": false,
+              "BitRate": 2633869,
+              "BitDepth": 8,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 1038,
+              "Width": 1920,
+              "AverageFrameRate": 23.976025,
+              "RealFrameRate": 23.976025,
+              "ReferenceFrameRate": 23.976025,
+              "Profile": "Main",
+              "Type": "Video",
+              "AspectRatio": "1.85:1",
+              "Index": 0,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false,
+              "PixelFormat": "yuv420p",
+              "Level": 120,
+              "IsAnamorphic": false
+            },
+            {
+              "Codec": "aac",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "English",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "English - AAC - 5.1 - Default",
+              "IsInterlaced": false,
+              "ChannelLayout": "5.1",
+              "BitRate": 320000,
+              "Channels": 6,
+              "SampleRate": 48000,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Profile": "LC",
+              "Type": "Audio",
+              "Index": 1,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            },
+            {
+              "Codec": "PGSSUB",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "Title": "English SDH",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedUndefined": "Undefined",
+              "LocalizedDefault": "Default",
+              "LocalizedForced": "Forced",
+              "LocalizedExternal": "External",
+              "LocalizedHearingImpaired": "Hearing Impaired",
+              "LocalizedLanguage": "English",
+              "DisplayTitle": "English SDH - PGSSUB",
+              "IsInterlaced": false,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 1080,
+              "Width": 1920,
+              "Type": "Subtitle",
+              "Index": 2,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": true
+            }
+          ],
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Thumb": "3adf6a330f10b3c9d57498be6541c003",
+            "Primary": "d4b6a694a799811a5de4806201fec13a",
+            "Logo": "240eb4d4be0863d139f98fd2128d6e48"
+          },
+          "BackdropImageTags": [
+            "3a6bf2bce119fbad29a0cf419169fe0e"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "3a6bf2bce119fbad29a0cf419169fe0e": "WqR3H0%M_N.8D%-p?bofjtjuoft7-=kCIAaKxuj[_3oMbHt7WBWB"
+            },
+            "Thumb": {
+              "3adf6a330f10b3c9d57498be6541c003": "WsN9|H-pH=xt.8sl~qxuE1WBozoeE2t7W=Rjadbb-;X8RjjZt7WB"
+            },
+            "Primary": {
+              "d4b6a694a799811a5de4806201fec13a": "dnOf.E-U?b-;~qt7IoW=_4W=M{t7s:aK%LxtxvofV[WW"
+            },
+            "Logo": {
+              "240eb4d4be0863d139f98fd2128d6e48": "NCCL[RfQ6g$6a|SM2DsUN[jtSLSLJkSMwyN[SMWp"
+            }
+          },
+          "Chapters": [],
+          "Trickplay": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "Width": 1920,
+          "Height": 1038,
+          "OriginalLanguage": "en"
+        },
+        "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+        "ApplicationVersion": "0.55.0",
+        "IsActive": true,
+        "SupportsMediaControl": true,
+        "SupportsRemoteControl": true,
+        "NowPlayingQueue": [],
+        "HasCustomDeviceName": false,
+        "ServerId": "cccc0000000000000000000000000001",
+        "SupportedCommands": [
+          "Play"
+        ]
+      }
+    ]
+  },
+  "duration_ms": 31
+}

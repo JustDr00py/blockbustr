@@ -1,0 +1,478 @@
+{
+  "seq": 48,
+  "endpoint": "GET /Items/{id}",
+  "time": "2026-10-05T21:24:50.661Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/73ecf1e6-db42-5eb1-214b-b7c9cb74dfe6",
+    "query": {
+      "userId": [
+        "bbbb0000-0000-0000-0000-000000000001"
+      ]
+    },
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Findroid\", Version=\"1.1.0\", DeviceId=\"device-0001\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Findroid/1.1.0 via jellyfin-sdk-kotlin (OkHttp/5.4.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Findroid",
+      "Version": "1.1.0",
+      "DeviceId": "device-0001",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 21:24:50 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "80.9897"
+    },
+    "body": {
+      "Name": "MF GHOST",
+      "OriginalTitle": "MFゴースト",
+      "ServerId": "cccc0000000000000000000000000001",
+      "Id": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+      "Etag": "8136817277c5f98b7f256b49b500a72d",
+      "DateCreated": "2026-10-05T21:09:53.8195407Z",
+      "DateLastMediaAdded": "2026-08-22T03:41:51.3063206Z",
+      "CanDelete": true,
+      "CanDownload": false,
+      "SortName": "mf ghost",
+      "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+      "ExternalUrls": [
+        {
+          "Name": "IMDb",
+          "Url": "https://www.imdb.com/title/tt28299608"
+        },
+        {
+          "Name": "TMDB",
+          "Url": "https://www.themoviedb.org/tv/154526"
+        }
+      ],
+      "Path": "/media/Series/MF Ghost",
+      "EnableMediaSourceDisplay": true,
+      "OfficialRating": "TV-14",
+      "ChannelId": null,
+      "Overview": "Japan adopts self-driving electric automobiles and renders most gas engines obsolete by 202X. The fastest cars find new life in the MFG, a racing circuit held on Japanese motorways. Drivers from around the world race for a shot at the title. Kanata Rivington returns from Britain to Japan for the MFG—and to find his father. Can he win the title and find answers? Buckle up and push it to the limit!",
+      "Taglines": [],
+      "Genres": [
+        "Animation",
+        "Action & Adventure"
+      ],
+      "CommunityRating": 8.2,
+      "CumulativeRunTimeTicks": 14400000000,
+      "RunTimeTicks": 14400000000,
+      "PlayAccess": "Full",
+      "ProductionYear": 2023,
+      "RemoteTrailers": [
+        {
+          "Url": "https://www.youtube.com/watch?v=evM8AAQVLZ8",
+          "Name": "Official Trailer 2 [Subtitled]"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=xJaRegMCbNQ",
+          "Name": "Official Trailer [Subtitled]"
+        }
+      ],
+      "ProviderIds": {
+        "Tmdb": "154526",
+        "Imdb": "tt28299608",
+        "Tvdb": "414207"
+      },
+      "IsFolder": true,
+      "ParentId": "0d4d8e78db9beac67eb93fed59ef1c86",
+      "Type": "Series",
+      "People": [
+        {
+          "Name": "Yuma Uchida",
+          "Id": "45387430f285ebdf635b1d73da74d759",
+          "Role": "Kanata Rivington (Kanata Katagiri) (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "d55795c27844e4ed162117a0a74ab5d1",
+          "ImageBlurHashes": {
+            "Primary": {
+              "d55795c27844e4ed162117a0a74ab5d1": "dmJbEho#g%%Mx]t7%Moz57WB$%ba_Nt7kWkC?btRRjoz"
+            }
+          }
+        },
+        {
+          "Name": "Ayane Sakura",
+          "Id": "efc9b3bea54cc5e1eea1c27dfb7f35bf",
+          "Role": "Ren Saionji / Seven (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "0e2a9a530f05a4dc82a5ef969d34bf32",
+          "ImageBlurHashes": {
+            "Primary": {
+              "0e2a9a530f05a4dc82a5ef969d34bf32": "dgMQ*S%g?v_N%1Mxx]xuI[jZxaoM%gtRxt%M-;Rjt7t8"
+            }
+          }
+        },
+        {
+          "Name": "Megumi Okada",
+          "Id": "991238dbf7c3d331a1b6b4fab1de8111",
+          "Role": "Mayuko Saionji (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "3778c0613331d18740122b09f2f17c95",
+          "ImageBlurHashes": {
+            "Primary": {
+              "3778c0613331d18740122b09f2f17c95": "dkI#W3~q.8?b%Mt6xuxuNxWBxaWB%Mt7xuxuxuWBWCj@"
+            }
+          }
+        },
+        {
+          "Name": "Jiro Saito",
+          "Id": "6fad7756b00c99a08c6a64d27adbd593",
+          "Role": "Ren's Father (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "5f492394c8ed75d47951d3350f85bcf3",
+          "ImageBlurHashes": {
+            "Primary": {
+              "5f492394c8ed75d47951d3350f85bcf3": "dXEoAA9aT0-V0KxuMxWCtlxG%2NaNGRjs.R*RjxuRjay"
+            }
+          }
+        },
+        {
+          "Name": "Mariko Nagai",
+          "Id": "15859b6d11b5f39f7c0407f49d7df383",
+          "Role": "Wakana (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "06fc1889e91881c464d8193766a48029",
+          "ImageBlurHashes": {
+            "Primary": {
+              "06fc1889e91881c464d8193766a48029": "dOJto5E2u5~WE2M_-pIUpd?H?HtS_3ofx]s:^,M{M_R+"
+            }
+          }
+        },
+        {
+          "Name": "Yuuki Hoshi",
+          "Id": "6d094addc9e190801b441b9cf63e6254",
+          "Role": "Yamashita (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "ad48aabf4255109373b9f0c46196b8ca",
+          "ImageBlurHashes": {
+            "Primary": {
+              "ad48aabf4255109373b9f0c46196b8ca": "dNJt;y-;?wbc.8ay~p%MEMR*9Fni_3WBx]xu~qt7RPWV"
+            }
+          }
+        },
+        {
+          "Name": "Takehito Koyasu",
+          "Id": "eb83d7bb6bd52fe1b6f77e612180070a",
+          "Role": "Ryo Takahashi (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "1cf8284d3bd161ed3b6e23d6128f6139",
+          "ImageBlurHashes": {
+            "Primary": {
+              "1cf8284d3bd161ed3b6e23d6128f6139": "dXJtxOoM%$~q_3xt~WNHElWX^*%2xuNGIVof~VxtNGWX"
+            }
+          }
+        },
+        {
+          "Name": "Tatsuki Kobe",
+          "Id": "6ea6a8813455664fb3c150087b18ab27",
+          "Role": "Yoji Tanaka (Live Commentary) (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "03751afc383a3daf7cae97ae3eac069b",
+          "ImageBlurHashes": {
+            "Primary": {
+              "03751afc383a3daf7cae97ae3eac069b": "dsLDfG$*yDtR.7Rk%1xZS~Wqi_t6~Wt7ozt7-:axM{oK"
+            }
+          }
+        },
+        {
+          "Name": "Osamu Hosoi",
+          "Id": "f1b24e0a2873802d568cdae9b5801fee",
+          "Role": "Fumihiro Joyu (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "7f7576e4ad03c6411d5e053b168e47ad",
+          "ImageBlurHashes": {
+            "Primary": {
+              "7f7576e4ad03c6411d5e053b168e47ad": "dyKBH:%M?cae~qxukDV@%Mayt6RjIVWBaJbHR-ofxZt7"
+            }
+          }
+        },
+        {
+          "Name": "Daisuke Ono",
+          "Id": "29aa55e131a778f3bced70aa34690f7f",
+          "Role": "Shun Aiba (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "51f405a818ad9af3819448ec00f8d63a",
+          "ImageBlurHashes": {
+            "Primary": {
+              "51f405a818ad9af3819448ec00f8d63a": "ddKBK~%M_Noz4nRjoKj[%hofe.of?bozo#j[%gWBV@of"
+            }
+          }
+        },
+        {
+          "Name": "Tasuku Hatanaka",
+          "Id": "183cb6a8d83b8822de8795e431335d73",
+          "Role": "Ogata (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "f551c705c66345bd2c002d6350fb7015",
+          "ImageBlurHashes": {
+            "Primary": {
+              "f551c705c66345bd2c002d6350fb7015": "dPHeRd8_t.t7x^%M?a-;pJ%M%1W=~qRjW=xv?bt8M{n$"
+            }
+          }
+        },
+        {
+          "Name": "Kohsuke Tanabe",
+          "Id": "dc27497419bdcd8222f254137ecf1a0a",
+          "Role": "Kakeru Yashio (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "989eeea3f9c65064c31ca97cfdfc5a96",
+          "ImageBlurHashes": {
+            "Primary": {
+              "989eeea3f9c65064c31ca97cfdfc5a96": "drOWKX?b.9?H9GM{%LoztmWVr?s:~Wt7g3t7-;ofWBof"
+            }
+          }
+        },
+        {
+          "Name": "Kohsuke Tanabe",
+          "Id": "dc27497419bdcd8222f254137ecf1a0a",
+          "Role": "Spectator (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "989eeea3f9c65064c31ca97cfdfc5a96",
+          "ImageBlurHashes": {
+            "Primary": {
+              "989eeea3f9c65064c31ca97cfdfc5a96": "drOWKX?b.9?H9GM{%LoztmWVr?s:~Wt7g3t7-;ofWBof"
+            }
+          }
+        },
+        {
+          "Name": "Kohsuke Tanabe",
+          "Id": "dc27497419bdcd8222f254137ecf1a0a",
+          "Role": "Man A (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "989eeea3f9c65064c31ca97cfdfc5a96",
+          "ImageBlurHashes": {
+            "Primary": {
+              "989eeea3f9c65064c31ca97cfdfc5a96": "drOWKX?b.9?H9GM{%LoztmWVr?s:~Wt7g3t7-;ofWBof"
+            }
+          }
+        },
+        {
+          "Name": "Shin-ichiro Miki",
+          "Id": "d27c89b1350f7037823d3135b119d965",
+          "Role": "Narration (voice) (uncredited)",
+          "Type": "Actor",
+          "PrimaryImageTag": "9684afbe06a4cdd0d471be54b2127441",
+          "ImageBlurHashes": {
+            "Primary": {
+              "9684afbe06a4cdd0d471be54b2127441": "dVM@Gz?H?v_300W.-;RjcFkXxEt6~VxDoI%M?GoLNHNG"
+            }
+          }
+        },
+        {
+          "Name": "Shin-ichiro Miki",
+          "Id": "d27c89b1350f7037823d3135b119d965",
+          "Role": "Narration (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "9684afbe06a4cdd0d471be54b2127441",
+          "ImageBlurHashes": {
+            "Primary": {
+              "9684afbe06a4cdd0d471be54b2127441": "dVM@Gz?H?v_300W.-;RjcFkXxEt6~VxDoI%M?GoLNHNG"
+            }
+          }
+        },
+        {
+          "Name": "Hiroshi Kamiya",
+          "Id": "5120530fa1cc8d31c3e891ce5e183863",
+          "Role": "Michael Beckenbauer (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "753da9e408fe76499d9e6803fff676e2",
+          "ImageBlurHashes": {
+            "Primary": {
+              "753da9e408fe76499d9e6803fff676e2": "dMF$37s*.S?vImx]xZM{EmWTwvt7~WV[xvxu?G%2kCWA"
+            }
+          }
+        },
+        {
+          "Name": "Marina Inoue",
+          "Id": "413d60fd0f2fd8ee300d79b4b36f9f40",
+          "Role": "Agnes Beckenbauer (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "fa89fe02a37089d2e1f94ca7087b1b4d",
+          "ImageBlurHashes": {
+            "Primary": {
+              "fa89fe02a37089d2e1f94ca7087b1b4d": "dQMZzdVru4~X?8t7?bxtKlx]-Uxa_MkAogt7~Ws:RjtR"
+            }
+          }
+        },
+        {
+          "Name": "Hirotsugu Ogo",
+          "Id": "f1bfd836aff5342527b216cd81d79822",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        },
+        {
+          "Name": "Yuuji Suzuki",
+          "Id": "2a49300ac09b04f065cb1c09d1b8a968",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        },
+        {
+          "Name": "Katsunori Naruke",
+          "Id": "0134494d3f42db46c7ea3b454d771378",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        },
+        {
+          "Name": "Nobuhiko Kurosu",
+          "Id": "296557fd13dfeb3a7ff71ba5b88c50c1",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        },
+        {
+          "Name": "Naoto Kase",
+          "Id": "9b468be2d503d359bf644680284e3c01",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        }
+      ],
+      "Studios": [
+        {
+          "Name": "Tokyo MX",
+          "Id": "00966a94da9f4db984f5725f16674f5d"
+        },
+        {
+          "Name": "BS11",
+          "Id": "b4f4f707ccae7ade259e3fd914bdca03"
+        },
+        {
+          "Name": "BS Nippon TV",
+          "Id": "1fcf66a43e926d34e8f76a9ac49447a9"
+        },
+        {
+          "Name": "FelixFilm",
+          "Id": "8621ad42aac21ff08ec071fa0e08b738"
+        },
+        {
+          "Name": "avex pictures",
+          "Id": "a005ae66eede8a441f9fa28a30c6bf6a"
+        },
+        {
+          "Name": "Kodansha",
+          "Id": "bf006328ccbc1bebd47947820d50c279"
+        },
+        {
+          "Name": "Animax Broadcast Japan",
+          "Id": "adf6d6a69abe358772278be7cbc2b858"
+        },
+        {
+          "Name": "Crunchyroll",
+          "Id": "a339ec496e1b33b9d8a6154259d67ab9"
+        },
+        {
+          "Name": "Sammy",
+          "Id": "b8b0666b34b031ba774d81dcbcff2d64"
+        },
+        {
+          "Name": "JIN",
+          "Id": "4951649ebc84ebdb17c686983c424286"
+        }
+      ],
+      "GenreItems": [
+        {
+          "Name": "Animation",
+          "Id": "074229225b7254292f131f9f49f8dcd6"
+        },
+        {
+          "Name": "Action & Adventure",
+          "Id": "d3d3728a0f119813db4c7733da59771a"
+        }
+      ],
+      "LocalTrailerCount": 0,
+      "UserData": {
+        "PlayedPercentage": 0,
+        "UnplayedItemCount": 5,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "414207",
+        "ItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6"
+      },
+      "RecursiveItemCount": 5,
+      "ChildCount": 1,
+      "SpecialFeatureCount": 0,
+      "DisplayPreferencesId": "f63033ff6886ecc7083a696cbeced1b0",
+      "Status": "Continuing",
+      "AirDays": [],
+      "Tags": [
+        "car race",
+        "sports car",
+        "street race",
+        "based on comic",
+        "racing",
+        "drifting",
+        "tournament",
+        "seinen",
+        "skills challenge",
+        "anime",
+        "prodigy",
+        "motorsport",
+        "mountain road"
+      ],
+      "PrimaryImageAspectRatio": 0.6666666666666666,
+      "ImageTags": {
+        "Primary": "36b84fbe87e05c068310b61dd183265b",
+        "Logo": "9298fc9f9fcde0aed398191b2da6b8d9",
+        "Thumb": "9821b022da26e338a777d06ebd13bd58"
+      },
+      "BackdropImageTags": [
+        "a7e894c96d34ed85682e44601acd088f"
+      ],
+      "ImageBlurHashes": {
+        "Backdrop": {
+          "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+        },
+        "Primary": {
+          "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7"
+        },
+        "Logo": {
+          "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+        },
+        "Thumb": {
+          "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+        }
+      },
+      "Chapters": [],
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown",
+      "EndDate": "2026-03-29T00:00:00.0000000Z",
+      "LockedFields": [],
+      "LockData": false,
+      "OriginalLanguage": "ja"
+    }
+  },
+  "duration_ms": 90
+}

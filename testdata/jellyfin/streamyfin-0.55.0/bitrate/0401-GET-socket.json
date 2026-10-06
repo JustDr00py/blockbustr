@@ -1,0 +1,728 @@
+{
+  "seq": 401,
+  "endpoint": "GET /socket",
+  "time": "2026-10-05T22:44:02.423Z",
+  "request": {
+    "method": "GET",
+    "path": "/socket",
+    "query": {
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ],
+      "deviceId": [
+        "dddd0000-0000-0000-0000-000000000001"
+      ]
+    },
+    "headers": {
+      "origin": "http://192.0.2.3:8096",
+      "Upgrade": "websocket",
+      "Connection": "Upgrade",
+      "Sec-WebSocket-Key": "ys2dyVNcdefaimV9U5nXIw==",
+      "Sec-WebSocket-Version": "13",
+      "Sec-WebSocket-Extensions": "permessage-deflate",
+      "Host": "jellyfin:8096",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "query:apikey"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 101,
+    "headers": {
+      "Connection": "Upgrade",
+      "Date": "Mon, 05 Oct 2026 22:44:02 GMT",
+      "Server": "Kestrel",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Language": "en-US",
+      "Upgrade": "websocket",
+      "Sec-WebSocket-Accept": "yqXZ8L8y8Vf6dO3CWweh9IG9czo=",
+      "X-Response-Time-ms": "28.0456"
+    },
+    "body": null
+  },
+  "duration_ms": 38,
+  "websocket": {
+    "messages": [
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:44:02.493Z",
+        "data": {
+          "MessageId": "ed0827f4e7364149bd5835dc93ec85ae",
+          "Data": 60,
+          "MessageType": "ForceKeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:44:07.266Z",
+        "data": {
+          "MessageId": "9c55cf5591ed407fad20eaed184c4d93",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 4,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:44:06.7495057Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:44:27.408Z",
+        "data": {
+          "MessageId": "aba695ea28014838979eb0af9040b24e",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 4,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:44:06.7495057Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:44:30.091Z",
+        "data": {
+          "MessageId": "7f7485ee99bb4b1ab7a86e2a9ad77aeb",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 5,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:44:29.5748569Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:44:32.796Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:44:32.798Z",
+        "data": {
+          "MessageId": "bccc031f3b08492f88da15073817e219",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:44:36.535Z",
+        "data": {
+          "MessageId": "d1d89669c3c44d4ba1e96b53e102f1c4",
+          "Data": {
+            "FoldersAddedTo": [],
+            "FoldersRemovedFrom": [],
+            "ItemsAdded": [],
+            "ItemsRemoved": [],
+            "ItemsUpdated": [
+              "84088e11eb6351255c08507602d79a0f"
+            ],
+            "CollectionFolders": [],
+            "IsEmpty": false
+          },
+          "MessageType": "LibraryChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:45:02.781Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:45:02.784Z",
+        "data": {
+          "MessageId": "59f6018fb26e4a529b0083c56e700936",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:45:32.796Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:45:32.800Z",
+        "data": {
+          "MessageId": "03b0dbd33a7e4f6ab9cdac9fd500f84e",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:46:02.794Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:46:02.797Z",
+        "data": {
+          "MessageId": "c385ddb5c60a43869bf4293558cf15be",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:46:32.810Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:46:32.814Z",
+        "data": {
+          "MessageId": "b2c01ae8d67d44748c507d1ddd5131d4",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:46:35.961Z",
+        "data": {
+          "MessageId": "c2f7f219786c48ba96aa3b8fb6394977",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 5,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:44:29.5748569Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:47:02.814Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:47:02.818Z",
+        "data": {
+          "MessageId": "4375ed0096674f069f1ac6bdd567ce2f",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:47:08.604Z",
+        "data": {
+          "MessageId": "966699e95be54f568e67d62b182bab6d",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 6,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:47:08.0884977Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:47:12.557Z",
+        "data": {
+          "MessageId": "64bbf2f315ae498ba7e31bd99212dfcc",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 6,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:47:08.0884977Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:47:15.331Z",
+        "data": {
+          "MessageId": "1be90177801d435b8082f0523655fa39",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 7,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:47:14.8130145Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:47:32.857Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:47:32.860Z",
+        "data": {
+          "MessageId": "41f000b1d9ae46ec942bcd58b150c820",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:47:37.770Z",
+        "data": {
+          "MessageId": "1d42db70dc3d40169825c5af200713ea",
+          "Data": {
+            "FoldersAddedTo": [],
+            "FoldersRemovedFrom": [],
+            "ItemsAdded": [],
+            "ItemsRemoved": [],
+            "ItemsUpdated": [
+              "84088e11eb6351255c08507602d79a0f"
+            ],
+            "CollectionFolders": [],
+            "IsEmpty": false
+          },
+          "MessageType": "LibraryChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:48:02.822Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:48:02.825Z",
+        "data": {
+          "MessageId": "169e17668c254dfdad966e9d1ebff981",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:48:32.828Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:48:32.832Z",
+        "data": {
+          "MessageId": "3ef5aa72288840b487618ea9ec05c9ba",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:49:02.902Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:49:02.905Z",
+        "data": {
+          "MessageId": "b8147e2d83254da1ad4bf2e396898fd7",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:49:20.233Z",
+        "data": {
+          "MessageId": "6cdf87c6c1be4224aa280a68911dc494",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 3,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:39:52.4503623Z",
+                "Played": false,
+                "Key": "931285",
+                "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:49:32.909Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:49:32.912Z",
+        "data": {
+          "MessageId": "7a20e3ec23b346ad909eaea2c3b78f43",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:50:02.844Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:50:02.847Z",
+        "data": {
+          "MessageId": "aa429d3c841b4de193bcf92cf4d900f7",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:50:27.183Z",
+        "data": {
+          "MessageId": "50f64ce101cf400e9820f7155dcb49b8",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 7,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:47:14.8130145Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:50:32.926Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:50:32.931Z",
+        "data": {
+          "MessageId": "dd09beb1bc344f1b920d4bd9a450d4c4",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:50:49.575Z",
+        "data": {
+          "MessageId": "d51804de35804e0fb9b05e404f83e2c9",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 8,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:50:49.0637211Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:50:52.644Z",
+        "data": {
+          "MessageId": "ab114ab4eddd4947ae404a05e7165872",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 8,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:50:49.0637211Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:50:55.471Z",
+        "data": {
+          "MessageId": "e30f3b0612e34556a68a0ee5a52c9dc4",
+          "Data": {
+            "UserId": "bbbb0000000000000000000000000001",
+            "UserDataList": [
+              {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 9,
+                "IsFavorite": false,
+                "LastPlayedDate": "2026-10-05T22:50:54.9568254Z",
+                "Played": false,
+                "Key": "508943",
+                "ItemId": "84088e11eb6351255c08507602d79a0f"
+              },
+              {
+                "PlayedPercentage": 0,
+                "UnplayedItemCount": 3,
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "e675012a-1892-a875-30d2-c0b0d14a9026",
+                "ItemId": "e675012a1892a87530d2c0b0d14a9026"
+              }
+            ]
+          },
+          "MessageType": "UserDataChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:51:02.926Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:51:02.930Z",
+        "data": {
+          "MessageId": "32f4ec9cc9024dc59dfc74a323d87944",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:51:18.768Z",
+        "data": {
+          "MessageId": "9b32139317374b279c9f82d699e6dff0",
+          "Data": {
+            "FoldersAddedTo": [],
+            "FoldersRemovedFrom": [],
+            "ItemsAdded": [],
+            "ItemsRemoved": [],
+            "ItemsUpdated": [
+              "84088e11eb6351255c08507602d79a0f"
+            ],
+            "CollectionFolders": [],
+            "IsEmpty": false
+          },
+          "MessageType": "LibraryChanged"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:51:32.869Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:51:32.872Z",
+        "data": {
+          "MessageId": "d576416e0cef482f89ee19520ad9aba3",
+          "MessageType": "KeepAlive"
+        }
+      }
+    ],
+    "truncated": false
+  }
+}

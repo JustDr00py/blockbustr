@@ -1,0 +1,45 @@
+{
+  "seq": 28,
+  "endpoint": "GET /web/node_modules.history.bundle.js",
+  "time": "2026-10-05T22:30:28.780Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/node_modules.history.bundle.js",
+    "query": {
+      "eed478c834840450f1de": [
+        ""
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "*/*",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/javascript",
+      "Date": "Mon, 05 Oct 2026 22:30:28 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb14d\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.0816"
+    },
+    "body": {
+      "_text": "\"use strict\";(self.webpackChunk=self.webpackChunk||[]).push([[82363],{25127:function(n,u,c){var e;c.d(u,{rc:function(){return e}}),function(n){n.Pop=\"POP\",n.Push=\"PUSH\",n.Replace=\"REPLACE\"}(e||(e={}))}}]);"
+    }
+  },
+  "duration_ms": 5
+}

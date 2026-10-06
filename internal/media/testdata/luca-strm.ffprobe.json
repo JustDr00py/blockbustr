@@ -1,0 +1,717 @@
+{
+ "streams": [
+  {
+   "index": 0,
+   "codec_name": "hevc",
+   "codec_long_name": "H.265 / HEVC (High Efficiency Video Coding)",
+   "profile": "Main 10",
+   "codec_type": "video",
+   "codec_tag_string": "[0][0][0][0]",
+   "codec_tag": "0x0000",
+   "width": 3840,
+   "height": 2076,
+   "coded_width": 3840,
+   "coded_height": 2080,
+   "has_b_frames": 2,
+   "sample_aspect_ratio": "1:1",
+   "display_aspect_ratio": "320:173",
+   "pix_fmt": "yuv420p10le",
+   "level": 150,
+   "color_range": "tv",
+   "color_space": "bt2020nc",
+   "color_transfer": "smpte2084",
+   "color_primaries": "bt2020",
+   "chroma_location": "topleft",
+   "view_ids_available": "",
+   "view_pos_available": "",
+   "r_frame_rate": "24000/1001",
+   "avg_frame_rate": "24000/1001",
+   "time_base": "1/1000",
+   "start_pts": 0,
+   "start_time": "0.000000",
+   "extradata_size": 2553,
+   "disposition": {
+    "default": 1,
+    "dub": 0,
+    "original": 0,
+    "comment": 0,
+    "lyrics": 0,
+    "karaoke": 0,
+    "forced": 0,
+    "hearing_impaired": 0,
+    "visual_impaired": 0,
+    "clean_effects": 0,
+    "attached_pic": 0,
+    "timed_thumbnails": 0,
+    "non_diegetic": 0,
+    "captions": 0,
+    "descriptions": 0,
+    "metadata": 0,
+    "dependent": 0,
+    "still_image": 0,
+    "multilayer": 0
+   },
+   "tags": {
+    "language": "ita",
+    "title": "Video 2160p",
+    "BPS": "6621773",
+    "DURATION": "01:35:15.085000000",
+    "NUMBER_OF_FRAMES": "137025",
+    "NUMBER_OF_BYTES": "4730499997",
+    "_STATISTICS_WRITING_APP": "mkvmerge v79.0 ('Funeral Pyres') 64-bit",
+    "_STATISTICS_WRITING_DATE_UTC": "2023-10-21 15:14:37",
+    "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+   },
+   "side_data_list": [
+    {
+     "side_data_type": "DOVI configuration record",
+     "dv_version_major": 1,
+     "dv_version_minor": 0,
+     "dv_profile": 8,
+     "dv_level": 6,
+     "rpu_present_flag": 1,
+     "el_present_flag": 0,
+     "bl_present_flag": 1,
+     "dv_bl_signal_compatibility_id": 1,
+     "dv_md_compression": "none"
+    }
+   ]
+  },
+  {
+   "index": 1,
+   "codec_name": "ac3",
+   "codec_long_name": "ATSC A/52A (AC-3)",
+   "codec_type": "audio",
+   "codec_tag_string": "[0][0][0][0]",
+   "codec_tag": "0x0000",
+   "mime_codec_string": "ac-3",
+   "sample_fmt": "fltp",
+   "sample_rate": "48000",
+   "channels": 6,
+   "channel_layout": "5.1(side)",
+   "bits_per_sample": 0,
+   "initial_padding": 0,
+   "dmix_mode": "0",
+   "ltrt_cmixlev": "0.000000",
+   "ltrt_surmixlev": "0.000000",
+   "loro_cmixlev": "0.000000",
+   "loro_surmixlev": "0.000000",
+   "r_frame_rate": "0/0",
+   "avg_frame_rate": "0/0",
+   "time_base": "1/1000",
+   "start_pts": 0,
+   "start_time": "0.000000",
+   "bit_rate": "640000",
+   "disposition": {
+    "default": 1,
+    "dub": 0,
+    "original": 0,
+    "comment": 0,
+    "lyrics": 0,
+    "karaoke": 0,
+    "forced": 0,
+    "hearing_impaired": 0,
+    "visual_impaired": 0,
+    "clean_effects": 0,
+    "attached_pic": 0,
+    "timed_thumbnails": 0,
+    "non_diegetic": 0,
+    "captions": 0,
+    "descriptions": 0,
+    "metadata": 0,
+    "dependent": 0,
+    "still_image": 0,
+    "multilayer": 0
+   },
+   "tags": {
+    "language": "ita",
+    "title": "Italiano AC-3 5.1",
+    "BPS": "640000",
+    "DURATION": "01:35:15.200000000",
+    "NUMBER_OF_FRAMES": "178600",
+    "NUMBER_OF_BYTES": "457216000",
+    "_STATISTICS_WRITING_APP": "mkvmerge v79.0 ('Funeral Pyres') 64-bit",
+    "_STATISTICS_WRITING_DATE_UTC": "2023-10-21 15:14:37",
+    "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+   }
+  },
+  {
+   "index": 2,
+   "codec_name": "ac3",
+   "codec_long_name": "ATSC A/52A (AC-3)",
+   "codec_type": "audio",
+   "codec_tag_string": "[0][0][0][0]",
+   "codec_tag": "0x0000",
+   "mime_codec_string": "ac-3",
+   "sample_fmt": "fltp",
+   "sample_rate": "48000",
+   "channels": 6,
+   "channel_layout": "5.1(side)",
+   "bits_per_sample": 0,
+   "initial_padding": 0,
+   "dmix_mode": "0",
+   "ltrt_cmixlev": "0.000000",
+   "ltrt_surmixlev": "0.000000",
+   "loro_cmixlev": "0.000000",
+   "loro_surmixlev": "0.000000",
+   "r_frame_rate": "0/0",
+   "avg_frame_rate": "0/0",
+   "time_base": "1/1000",
+   "start_pts": 0,
+   "start_time": "0.000000",
+   "bit_rate": "640000",
+   "disposition": {
+    "default": 0,
+    "dub": 0,
+    "original": 0,
+    "comment": 0,
+    "lyrics": 0,
+    "karaoke": 0,
+    "forced": 0,
+    "hearing_impaired": 0,
+    "visual_impaired": 0,
+    "clean_effects": 0,
+    "attached_pic": 0,
+    "timed_thumbnails": 0,
+    "non_diegetic": 0,
+    "captions": 0,
+    "descriptions": 0,
+    "metadata": 0,
+    "dependent": 0,
+    "still_image": 0,
+    "multilayer": 0
+   },
+   "tags": {
+    "language": "eng",
+    "title": "English AC-3 5.1",
+    "BPS": "640000",
+    "DURATION": "01:35:15.008000000",
+    "NUMBER_OF_FRAMES": "178594",
+    "NUMBER_OF_BYTES": "457200640",
+    "_STATISTICS_WRITING_APP": "mkvmerge v79.0 ('Funeral Pyres') 64-bit",
+    "_STATISTICS_WRITING_DATE_UTC": "2023-10-21 15:14:37",
+    "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+   }
+  },
+  {
+   "index": 3,
+   "codec_name": "subrip",
+   "codec_long_name": "SubRip subtitle",
+   "codec_type": "subtitle",
+   "codec_tag_string": "[0][0][0][0]",
+   "codec_tag": "0x0000",
+   "r_frame_rate": "0/0",
+   "avg_frame_rate": "0/0",
+   "time_base": "1/1000",
+   "start_pts": 0,
+   "start_time": "0.000000",
+   "duration_ts": 5715200,
+   "duration": "5715.200000",
+   "disposition": {
+    "default": 0,
+    "dub": 0,
+    "original": 0,
+    "comment": 0,
+    "lyrics": 0,
+    "karaoke": 0,
+    "forced": 0,
+    "hearing_impaired": 0,
+    "visual_impaired": 0,
+    "clean_effects": 0,
+    "attached_pic": 0,
+    "timed_thumbnails": 0,
+    "non_diegetic": 0,
+    "captions": 0,
+    "descriptions": 0,
+    "metadata": 0,
+    "dependent": 0,
+    "still_image": 0,
+    "multilayer": 0
+   },
+   "tags": {
+    "language": "ita",
+    "title": "Italiano",
+    "BPS": "49",
+    "DURATION": "01:33:30.360000000",
+    "NUMBER_OF_FRAMES": "1272",
+    "NUMBER_OF_BYTES": "34929",
+    "_STATISTICS_WRITING_APP": "mkvmerge v79.0 ('Funeral Pyres') 64-bit",
+    "_STATISTICS_WRITING_DATE_UTC": "2023-10-21 15:14:37",
+    "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+   }
+  },
+  {
+   "index": 4,
+   "codec_name": "subrip",
+   "codec_long_name": "SubRip subtitle",
+   "codec_type": "subtitle",
+   "codec_tag_string": "[0][0][0][0]",
+   "codec_tag": "0x0000",
+   "r_frame_rate": "0/0",
+   "avg_frame_rate": "0/0",
+   "time_base": "1/1000",
+   "start_pts": 0,
+   "start_time": "0.000000",
+   "duration_ts": 5715200,
+   "duration": "5715.200000",
+   "disposition": {
+    "default": 0,
+    "dub": 0,
+    "original": 0,
+    "comment": 0,
+    "lyrics": 0,
+    "karaoke": 0,
+    "forced": 0,
+    "hearing_impaired": 0,
+    "visual_impaired": 0,
+    "clean_effects": 0,
+    "attached_pic": 0,
+    "timed_thumbnails": 0,
+    "non_diegetic": 0,
+    "captions": 0,
+    "descriptions": 0,
+    "metadata": 0,
+    "dependent": 0,
+    "still_image": 0,
+    "multilayer": 0
+   },
+   "tags": {
+    "language": "eng",
+    "title": "English",
+    "BPS": "56",
+    "DURATION": "01:33:30.402000000",
+    "NUMBER_OF_FRAMES": "1550",
+    "NUMBER_OF_BYTES": "39620",
+    "_STATISTICS_WRITING_APP": "mkvmerge v79.0 ('Funeral Pyres') 64-bit",
+    "_STATISTICS_WRITING_DATE_UTC": "2023-10-21 15:14:37",
+    "_STATISTICS_TAGS": "BPS DURATION NUMBER_OF_FRAMES NUMBER_OF_BYTES"
+   }
+  }
+ ],
+ "chapters": [
+  {
+   "id": -8238650624449862434,
+   "time_base": "1/1000000000",
+   "start": 0,
+   "start_time": "0.000000",
+   "end": 147898000000,
+   "end_time": "147.898000",
+   "tags": {
+    "title": "Capitolo 01"
+   }
+  },
+  {
+   "id": 7769422651975886404,
+   "time_base": "1/1000000000",
+   "start": 147898000000,
+   "start_time": "147.898000",
+   "end": 387220000000,
+   "end_time": "387.220000",
+   "tags": {
+    "title": "Capitolo 02"
+   }
+  },
+  {
+   "id": -2931825054926050345,
+   "time_base": "1/1000000000",
+   "start": 387220000000,
+   "start_time": "387.220000",
+   "end": 509884000000,
+   "end_time": "509.884000",
+   "tags": {
+    "title": "Capitolo 03"
+   }
+  },
+  {
+   "id": 5939280961343191511,
+   "time_base": "1/1000000000",
+   "start": 509884000000,
+   "start_time": "509.884000",
+   "end": 679512000000,
+   "end_time": "679.512000",
+   "tags": {
+    "title": "Capitolo 04"
+   }
+  },
+  {
+   "id": 3787131993557320995,
+   "time_base": "1/1000000000",
+   "start": 679512000000,
+   "start_time": "679.512000",
+   "end": 875291000000,
+   "end_time": "875.291000",
+   "tags": {
+    "title": "Capitolo 05"
+   }
+  },
+  {
+   "id": 7843598208836318358,
+   "time_base": "1/1000000000",
+   "start": 875291000000,
+   "start_time": "875.291000",
+   "end": 990197000000,
+   "end_time": "990.197000",
+   "tags": {
+    "title": "Capitolo 06"
+   }
+  },
+  {
+   "id": 7275044658893912801,
+   "time_base": "1/1000000000",
+   "start": 990197000000,
+   "start_time": "990.197000",
+   "end": 1027735000000,
+   "end_time": "1027.735000",
+   "tags": {
+    "title": "Capitolo 07"
+   }
+  },
+  {
+   "id": 2596314842212199985,
+   "time_base": "1/1000000000",
+   "start": 1027735000000,
+   "start_time": "1027.735000",
+   "end": 1279486000000,
+   "end_time": "1279.486000",
+   "tags": {
+    "title": "Capitolo 08"
+   }
+  },
+  {
+   "id": 7945842452496404217,
+   "time_base": "1/1000000000",
+   "start": 1279486000000,
+   "start_time": "1279.486000",
+   "end": 1411994000000,
+   "end_time": "1411.994000",
+   "tags": {
+    "title": "Capitolo 09"
+   }
+  },
+  {
+   "id": 6364725299965854605,
+   "time_base": "1/1000000000",
+   "start": 1411994000000,
+   "start_time": "1411.994000",
+   "end": 1561393000000,
+   "end_time": "1561.393000",
+   "tags": {
+    "title": "Capitolo 10"
+   }
+  },
+  {
+   "id": -779904800604087797,
+   "time_base": "1/1000000000",
+   "start": 1561393000000,
+   "start_time": "1561.393000",
+   "end": 1691815000000,
+   "end_time": "1691.815000",
+   "tags": {
+    "title": "Capitolo 11"
+   }
+  },
+  {
+   "id": -3464901076930834692,
+   "time_base": "1/1000000000",
+   "start": 1691815000000,
+   "start_time": "1691.815000",
+   "end": 1975515000000,
+   "end_time": "1975.515000",
+   "tags": {
+    "title": "Capitolo 12"
+   }
+  },
+  {
+   "id": 1610658485049769899,
+   "time_base": "1/1000000000",
+   "start": 1975515000000,
+   "start_time": "1975.515000",
+   "end": 2139971000000,
+   "end_time": "2139.971000",
+   "tags": {
+    "title": "Capitolo 13"
+   }
+  },
+  {
+   "id": -2445514395741160070,
+   "time_base": "1/1000000000",
+   "start": 2139971000000,
+   "start_time": "2139.971000",
+   "end": 2249372000000,
+   "end_time": "2249.372000",
+   "tags": {
+    "title": "Capitolo 14"
+   }
+  },
+  {
+   "id": -2617755775084295183,
+   "time_base": "1/1000000000",
+   "start": 2249372000000,
+   "start_time": "2249.372000",
+   "end": 2498204000000,
+   "end_time": "2498.204000",
+   "tags": {
+    "title": "Capitolo 15"
+   }
+  },
+  {
+   "id": -238090192194638175,
+   "time_base": "1/1000000000",
+   "start": 2498204000000,
+   "start_time": "2498.204000",
+   "end": 2545876000000,
+   "end_time": "2545.876000",
+   "tags": {
+    "title": "Capitolo 16"
+   }
+  },
+  {
+   "id": -3714599416019298707,
+   "time_base": "1/1000000000",
+   "start": 2545876000000,
+   "start_time": "2545.876000",
+   "end": 2704118000000,
+   "end_time": "2704.118000",
+   "tags": {
+    "title": "Capitolo 17"
+   }
+  },
+  {
+   "id": -6814943257671437146,
+   "time_base": "1/1000000000",
+   "start": 2704118000000,
+   "start_time": "2704.118000",
+   "end": 2766680000000,
+   "end_time": "2766.680000",
+   "tags": {
+    "title": "Capitolo 18"
+   }
+  },
+  {
+   "id": -5833840648455144568,
+   "time_base": "1/1000000000",
+   "start": 2766680000000,
+   "start_time": "2766.680000",
+   "end": 2933639000000,
+   "end_time": "2933.639000",
+   "tags": {
+    "title": "Capitolo 19"
+   }
+  },
+  {
+   "id": 5538053983381203802,
+   "time_base": "1/1000000000",
+   "start": 2933639000000,
+   "start_time": "2933.639000",
+   "end": 3060098000000,
+   "end_time": "3060.098000",
+   "tags": {
+    "title": "Capitolo 20"
+   }
+  },
+  {
+   "id": 8892702046442017056,
+   "time_base": "1/1000000000",
+   "start": 3060098000000,
+   "start_time": "3060.098000",
+   "end": 3124746000000,
+   "end_time": "3124.746000",
+   "tags": {
+    "title": "Capitolo 21"
+   }
+  },
+  {
+   "id": 7905260569427679901,
+   "time_base": "1/1000000000",
+   "start": 3124746000000,
+   "start_time": "3124.746000",
+   "end": 3273562000000,
+   "end_time": "3273.562000",
+   "tags": {
+    "title": "Capitolo 22"
+   }
+  },
+  {
+   "id": 3313243240174174629,
+   "time_base": "1/1000000000",
+   "start": 3273562000000,
+   "start_time": "3273.562000",
+   "end": 3378834000000,
+   "end_time": "3378.834000",
+   "tags": {
+    "title": "Capitolo 23"
+   }
+  },
+  {
+   "id": -8918467698986830663,
+   "time_base": "1/1000000000",
+   "start": 3378834000000,
+   "start_time": "3378.834000",
+   "end": 3510340000000,
+   "end_time": "3510.340000",
+   "tags": {
+    "title": "Capitolo 24"
+   }
+  },
+  {
+   "id": 8381447543790066472,
+   "time_base": "1/1000000000",
+   "start": 3510340000000,
+   "start_time": "3510.340000",
+   "end": 3607520000000,
+   "end_time": "3607.520000",
+   "tags": {
+    "title": "Capitolo 25"
+   }
+  },
+  {
+   "id": 1362982790992226423,
+   "time_base": "1/1000000000",
+   "start": 3607520000000,
+   "start_time": "3607.520000",
+   "end": 3643598000000,
+   "end_time": "3643.598000",
+   "tags": {
+    "title": "Capitolo 26"
+   }
+  },
+  {
+   "id": -1859266776418547341,
+   "time_base": "1/1000000000",
+   "start": 3643598000000,
+   "start_time": "3643.598000",
+   "end": 3730059000000,
+   "end_time": "3730.059000",
+   "tags": {
+    "title": "Capitolo 27"
+   }
+  },
+  {
+   "id": 341448624387477245,
+   "time_base": "1/1000000000",
+   "start": 3730059000000,
+   "start_time": "3730.059000",
+   "end": 3891929000000,
+   "end_time": "3891.929000",
+   "tags": {
+    "title": "Capitolo 28"
+   }
+  },
+  {
+   "id": 1167775708500087046,
+   "time_base": "1/1000000000",
+   "start": 3891929000000,
+   "start_time": "3891.929000",
+   "end": 4009088000000,
+   "end_time": "4009.088000",
+   "tags": {
+    "title": "Capitolo 29"
+   }
+  },
+  {
+   "id": -2384623028348585553,
+   "time_base": "1/1000000000",
+   "start": 4009088000000,
+   "start_time": "4009.088000",
+   "end": 4173836000000,
+   "end_time": "4173.836000",
+   "tags": {
+    "title": "Capitolo 30"
+   }
+  },
+  {
+   "id": -5609436741032346137,
+   "time_base": "1/1000000000",
+   "start": 4173836000000,
+   "start_time": "4173.836000",
+   "end": 4399978000000,
+   "end_time": "4399.978000",
+   "tags": {
+    "title": "Capitolo 31"
+   }
+  },
+  {
+   "id": -4730300092520552347,
+   "time_base": "1/1000000000",
+   "start": 4399978000000,
+   "start_time": "4399.978000",
+   "end": 4607477000000,
+   "end_time": "4607.477000",
+   "tags": {
+    "title": "Capitolo 32"
+   }
+  },
+  {
+   "id": -3900345267842506871,
+   "time_base": "1/1000000000",
+   "start": 4607477000000,
+   "start_time": "4607.477000",
+   "end": 4773477000000,
+   "end_time": "4773.477000",
+   "tags": {
+    "title": "Capitolo 33"
+   }
+  },
+  {
+   "id": -8039126836465827625,
+   "time_base": "1/1000000000",
+   "start": 4773477000000,
+   "start_time": "4773.477000",
+   "end": 4853723000000,
+   "end_time": "4853.723000",
+   "tags": {
+    "title": "Capitolo 34"
+   }
+  },
+  {
+   "id": 2088786748944261362,
+   "time_base": "1/1000000000",
+   "start": 4853723000000,
+   "start_time": "4853.723000",
+   "end": 5074944000000,
+   "end_time": "5074.944000",
+   "tags": {
+    "title": "Capitolo 35"
+   }
+  },
+  {
+   "id": -7990337862193341136,
+   "time_base": "1/1000000000",
+   "start": 5074944000000,
+   "start_time": "5074.944000",
+   "end": 5621532000000,
+   "end_time": "5621.532000",
+   "tags": {
+    "title": "Capitolo 36"
+   }
+  },
+  {
+   "id": 7122721705722817468,
+   "time_base": "1/1000000000",
+   "start": 5621532000000,
+   "start_time": "5621.532000",
+   "end": 5715200000000,
+   "end_time": "5715.200000",
+   "tags": {
+    "title": "Capitolo 37"
+   }
+  }
+ ],
+ "format": {
+  "nb_streams": 5,
+  "nb_programs": 0,
+  "nb_stream_groups": 0,
+  "format_name": "matroska,webm",
+  "format_long_name": "Matroska / WebM",
+  "start_time": "0.000000",
+  "duration": "5715.200000",
+  "size": "5646654817",
+  "bit_rate": "7904052",
+  "probe_score": 100,
+  "tags": {
+   "title": "Luca (2021) 2160p H265 10 bit DV HDR10+ ita eng AC3 5.1 sub ita eng Licodm",
+   "encoder": "libebml v1.4.4 + libmatroska v1.7.1",
+   "creation_time": "2023-10-21T15:14:37.000000Z"
+  }
+ }
+}

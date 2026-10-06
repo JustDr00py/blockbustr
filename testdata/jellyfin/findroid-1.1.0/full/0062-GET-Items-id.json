@@ -1,0 +1,209 @@
+{
+  "seq": 62,
+  "endpoint": "GET /Items/{id}",
+  "time": "2026-10-05T21:24:52.284Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/c4f64bdf-1f40-27e1-9eef-a42f9ddce58f",
+    "query": {
+      "userId": [
+        "bbbb0000-0000-0000-0000-000000000001"
+      ]
+    },
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Findroid\", Version=\"1.1.0\", DeviceId=\"device-0001\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Findroid/1.1.0 via jellyfin-sdk-kotlin (OkHttp/5.4.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Findroid",
+      "Version": "1.1.0",
+      "DeviceId": "device-0001",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 21:24:52 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "35.6677"
+    },
+    "body": {
+      "Name": "Season 1",
+      "ServerId": "cccc0000000000000000000000000001",
+      "Id": "c4f64bdf1f4027e19eefa42f9ddce58f",
+      "Etag": "df547fd784022817a04392a95e138179",
+      "DateCreated": "2026-10-05T21:09:53.8573709Z",
+      "DateLastMediaAdded": "0001-01-01T00:00:00.0000000Z",
+      "CanDelete": true,
+      "CanDownload": false,
+      "SortName": "0001",
+      "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+      "ExternalUrls": [
+        {
+          "Name": "IMDb",
+          "Url": "https://www.imdb.com/title/tt28299608/episodes/?season=1"
+        },
+        {
+          "Name": "TMDB",
+          "Url": "https://www.themoviedb.org/tv/154526/season/1"
+        }
+      ],
+      "Path": "/media/Series/MF Ghost/Season 01",
+      "EnableMediaSourceDisplay": true,
+      "ChannelId": null,
+      "Taglines": [],
+      "Genres": [],
+      "PlayAccess": "Full",
+      "ProductionYear": 2023,
+      "IndexNumber": 1,
+      "RemoteTrailers": [],
+      "ProviderIds": {
+        "Tmdb": "237895",
+        "Tvdb": "1975068"
+      },
+      "IsFolder": true,
+      "ParentId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+      "Type": "Season",
+      "People": [
+        {
+          "Name": "Yuma Uchida",
+          "Id": "45387430f285ebdf635b1d73da74d759",
+          "Role": "Kanata Rivington (Kanata Katagiri) (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "d55795c27844e4ed162117a0a74ab5d1",
+          "ImageBlurHashes": {
+            "Primary": {
+              "d55795c27844e4ed162117a0a74ab5d1": "dmJbEho#g%%Mx]t7%Moz57WB$%ba_Nt7kWkC?btRRjoz"
+            }
+          }
+        },
+        {
+          "Name": "Ayane Sakura",
+          "Id": "efc9b3bea54cc5e1eea1c27dfb7f35bf",
+          "Role": "Ren Saionji / Seven (voice)",
+          "Type": "Actor",
+          "PrimaryImageTag": "0e2a9a530f05a4dc82a5ef969d34bf32",
+          "ImageBlurHashes": {
+            "Primary": {
+              "0e2a9a530f05a4dc82a5ef969d34bf32": "dgMQ*S%g?v_N%1Mxx]xuI[jZxaoM%gtRxt%M-;Rjt7t8"
+            }
+          }
+        },
+        {
+          "Name": "Hirotsugu Ogo",
+          "Id": "f1bfd836aff5342527b216cd81d79822",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        },
+        {
+          "Name": "Yuuji Suzuki",
+          "Id": "2a49300ac09b04f065cb1c09d1b8a968",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        },
+        {
+          "Name": "Katsunori Naruke",
+          "Id": "0134494d3f42db46c7ea3b454d771378",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        },
+        {
+          "Name": "Nobuhiko Kurosu",
+          "Id": "296557fd13dfeb3a7ff71ba5b88c50c1",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        },
+        {
+          "Name": "Naoto Kase",
+          "Id": "9b468be2d503d359bf644680284e3c01",
+          "Role": "Producer",
+          "Type": "Producer",
+          "ImageBlurHashes": {
+            "Primary": {}
+          }
+        }
+      ],
+      "Studios": [],
+      "GenreItems": [],
+      "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+      "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+      "ParentBackdropImageTags": [
+        "a7e894c96d34ed85682e44601acd088f"
+      ],
+      "LocalTrailerCount": 0,
+      "UserData": {
+        "PlayedPercentage": 0,
+        "UnplayedItemCount": 5,
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 0,
+        "IsFavorite": false,
+        "Played": false,
+        "Key": "414207001",
+        "ItemId": "c4f64bdf1f4027e19eefa42f9ddce58f"
+      },
+      "RecursiveItemCount": 5,
+      "ChildCount": 5,
+      "SeriesName": "MF GHOST",
+      "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+      "SpecialFeatureCount": 0,
+      "DisplayPreferencesId": "dfd065f5787fb957a750d76dcf835aad",
+      "Tags": [],
+      "PrimaryImageAspectRatio": 0.68,
+      "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+      "ImageTags": {
+        "Primary": "3429f9000cfcd41b31987973ba55e382"
+      },
+      "BackdropImageTags": [],
+      "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+      "ImageBlurHashes": {
+        "Primary": {
+          "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4",
+          "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7"
+        },
+        "Logo": {
+          "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+        },
+        "Thumb": {
+          "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+        },
+        "Backdrop": {
+          "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+        }
+      },
+      "SeriesStudio": "Tokyo MX",
+      "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+      "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+      "Chapters": [],
+      "LocationType": "FileSystem",
+      "MediaType": "Unknown",
+      "LockedFields": [],
+      "LockData": false
+    }
+  },
+  "duration_ms": 40
+}

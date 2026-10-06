@@ -1,0 +1,142 @@
+# TASKS.md — blockbustr
+
+Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
+
+## Now
+- [ ] P2.7 Remux path (`-c copy`) vs full transcode, chosen by the decision
+
+## Next
+- P0.3 leftovers (mark played/unplayed; TV/iOS/Kodi when available)
+
+## Blocked / questions
+- Q2 Do clients require `ProductName == "Jellyfin Server"`? Answer in P0.3.
+
+---
+
+## Phase 0 — Recon and fixtures (target: 1 week)
+- [x] P0.1 Recon compose stack (Jellyfin 12.1.0 + mitmproxy 12.2.3) → `deploy/recon/` [§9.1]. Found: JSON casing is negotiated from Accept (DESIGN §3.1)
+- [x] P0.2a QSV in recon: `/dev/dri` passthrough in `deploy/recon/compose.yml`; AV1 and HEVC10-HDR→H.264 QSV transcodes verified in the container
+- [x] P0.2 Test library (`~/Videos` → `/media`, setup wizard done; libraries Movies=/media/Movies, Shows=/media/Series)
+  - [x] Movie: Mortal Kombat II (2026), AV1 + AAC in MP4 (most TV clients will need a transcode)
+  - [x] Show: MF Ghost S01E01–05, H.264 MKV, FLAC (jpn) + EAC3 (eng), ASS + SRT subs in eng/ara/fre (remux, audio transcode, sub switching)
+  - [x] `.strm` ×2 → jellybird `http://jellybird-host:8097/stream/realdebrid/…` → 302 to RD CDN (verified from the container); remote ffprobe works through the redirect
+  - [x] PGS subs: Little Fockers (2010) `.strm`, HEVC Main 1080p SDR + AAC + `hdmv_pgs_subtitle` (eng)
+  - [x] HEVC/HDR: Luca (2021) `.strm`, 2160p HEVC Main 10, DV + HDR10+ (smpte2084), AC3 ita/eng, SRT ita/eng
+  - [ ] Optional: specials (Season 00), second season, multi-episode file
+- [ ] P0.3 Capture with each client: login → home → library → item detail → play → seek → pause → stop → resume on another device
+  - [x] Findroid 1.1.0 → `captures/findroid-1.1.0-full.mitm` (207 flows, 21 endpoints; local MKV ✓, `.strm` ✓ with mpv, ✗ with ExoPlayer)
+  - [ ] Jellyfin Android TV
+  - [x] Jellyfin for Android 2.7.3 `playback` → search (3× `/Items?searchTerm` + `/Artists`), favourite on/off (legacy `/Users/{id}/FavoriteItems/{id}`), Mortal Kombat II AV1 **direct-played** by Media3 (cap 140 Mbps)
+  - [ ] Swiftfin
+  - [x] Streamyfin 0.55.0 `extras` + `luca` scenarios: Mortal Kombat II AV1 → **HLS transcode, VAAPI decode + `h264_qsv` encode at 24.5×**. Luca `.strm` **DirectPlay** via mpv (no bitrate cap sent), audio switched ita→eng client-side (reported only as `AudioStreamIndex` 1→2 in Progress; no new PlaybackInfo). First Luca start stalled at 0s and was retried. HDR tone-map transcode **can't be triggered through Jellyfin**: 12.1.0 ignores the bitrate cap for `.strm` (proved by replay, DESIGN §8.3a). The QSV tone-map pipeline itself was verified directly with ffmpeg (6.8×)
+  - [x] Jellyfin for Android 2.7.3 (WebView + Media3), captured in the same session and split out with `--keep-client`/`--keep-ua` → `testdata/jellyfin/jellyfin-android-2.7.3/full` (QuickConnect polling, `/Playback/BitrateTest`, jellyfin-web assets)
+  - [x] Streamyfin 0.55.0 → `captures/streamyfin-0.55.0-full.mitm` (272 flows, 25 endpoints; `.strm` ✓ via mpv, local MKV DirectStream ✓, WebSocket ✓). **Not covered yet:** transcode/HLS, search, favourite/played, audio switching, Luca 4K
+  - [ ] Infuse
+  - [ ] Kodi (Jellyfin for Kodi add-on, add-on mode)
+- [x] P0.4 `scripts/capture/convert.sh` (runs `mitm2fixtures.py` in the mitmproxy image) → `testdata/jellyfin/_raw/{client}/{scenario}/NNNN-METHOD-endpoint.json` + `index.json` census. Raw output is gitignored; 7 unit tests (`convert.sh --test`)
+- [x] P0.5 `scripts/capture/scrub_fixtures.py <client> [scenario]`: `_raw/` → committed `testdata/jellyfin/<client>/<scenario>/`. Same-shape stable placeholders (token `aaaa…`, user `bbbb…`, server `cccc…`, session `eeee…`), `Pw` redacted, private/Tailscale IPs → 192.0.2.N, `sig=`/debrid IDs/`*.ts.net` scrubbed, personal strings from gitignored `scrub.local.txt`. Leak check aborts the run; 7 unit tests. Findroid fixtures scrubbed and verified
+- [ ] P0.6 Endpoint census: a list of every unique (method, normalised path, client) in the fixtures. Update DESIGN.md §3.5 if it differs
+  - [x] Tooling: `scripts/capture/census.py [--check]` → `testdata/jellyfin/CENSUS.md` (merges every scrubbed `index.json` and matches against DESIGN §3.5; 3 unit tests)
+  - [x] Findroid: 21/21 endpoints covered by DESIGN (QuickConnect endpoints now listed explicitly in §3.5)
+  - [x] Streamyfin: 25/25 covered after adding `/Streamyfin/config` (404). Android UA device model/build now scrubbed
+  - [ ] Re-run after each new client capture; done when every MVP client is in
+- [ ] P0.7 Answer Q2/Q4 (Q1 done: 12.1.0) in DESIGN.md §11
+
+**Exit:** fixtures committed (scrubbed), endpoint census matches DESIGN §3.5.
+
+## Phase 1 — Skeleton, auth, browse
+- [x] P1.1 Repo bootstrap: `go.mod` (`github.com/sysadmin/blockbustr`, Go 1.26), `cmd/blockbustr` (config → slog → HTTP server with `/healthz` only, graceful SIGTERM shutdown, `-version`), `internal/config` (YAML + `BLOCKBUSTR_*` env, strict keys, validates everything at once; 7 tests), Makefile (`build/test/vet/lint/check/test-scripts`), `.golangci.yml` (v2), `config.example.yaml`, `.env.example`, `.gitignore`. golangci-lint isn't installed yet, so `make lint` is pending
+- [x] P1.2 `Dockerfile` (Go 1.26 build → debian:trixie-slim + ffmpeg + iHD non-free driver, non-root uid 1000, tini) + `deploy/docker-compose.yml` (blockbustr + postgres:17.11 + redis:8.10 cache-only/no persistence, all healthy; `/dev/dri`, read-only `~/Videos`, `BLOCKBUSTR_PORT` so it can run next to recon) + `blockbustr -healthcheck` (compose-level too, because podman drops Dockerfile HEALTHCHECK). golangci-lint v2.14 installed, `make lint` clean
+- [x] P1.3 goose migrations (embedded, auto-applied on start, `-migrate up|down|down-all|status`): extensions + `f_unaccent`, libraries, items, media_sources, media_streams, images, users, devices, access_tokens, user_data, display_preferences [§4]. DB tests (`make test-db`, throwaway database per test): full up → down-all → up round trip, accent-insensitive search, trigram match, CHECK/unique/cascade rules
+- [x] P1.4 sqlc v1.31.1 (`sqlc.yaml`, pgx/v5, typed overrides) → `internal/store/pg/db`. Queries: libraries (create/list), items (create/get/children paged + count), users (create/get by id or name, case-insensitive/list/count/last login), devices + tokens (upsert device, create/resolve session, excluding revoked tokens and disabled users/touch/revoke/revoke-device). `pg.NewPool`. Search moved to an `item_search_vector()` expression index. 3 DB tests; `make generate` / `make sqlc-check` (in `check`)
+- [x] P1.5 `internal/cache` (go-redis v9.23): `bb:` prefix, every §5 key builder + TTL constant, JSON get/set (+ sliding `GetJSONEx`), owner-checked `TryLock/Unlock/Refresh`; startup pings Redis. 6 tests (5 against real Redis, random prefix, cleaned up). `make test-db` → `make test-integration` (Postgres + Redis)
+- [x] P1.6 `internal/jfapi/dto`: pinned 12.1.0 `openapi.json` → `scripts/gen-dto.py` (uuid→`ID`, date-time→`Time`, `ChannelId` keeps null) → oapi-codegen v2.8 `go tool` → `types.gen.go`. Helpers `ID` (N out, any spelling in), `Time` (.NET format: trimmed fraction, or `.0000000Z` for zero), ticks. **851 captured responses / 21 endpoints round-trip byte-for-value identical.** `make dto` / `make dto-check` (in `check`)
+- [x] P1.7 `internal/jfapi`: chi router with literal-only case canonicalisation (params untouched, in-segment params and wildcards), Accept negotiation exactly like 12.1.0 (Pascal default, camel only for `profile=CamelCase`), `camelJSON` (.NET naming, dictionary keys kept via generated `dto.MapProperties`; matches **7 golden Jellyfin camel/Pascal pairs**), `WriteJSON`/`DecodeJSON` (camelCase bodies OK, 10 MB cap), ordered case-insensitive `Query`, recover/log (no query strings)/CORS (Jellyfin's exact headers). Wired into `main`; 9 tests. Also found: 12.1.0 disables legacy auth by default (DESIGN §3.2)
+- [x] P1.8 `jfapi.ParseAuth` + context middleware (`AuthFrom`): MediaBrowser/Emby header tokenizer (quotes, escapes, commas, URL-decoding, any order/case), Jellyfin's token precedence, placeholder tokens (`"null"`, `""`) ignored; `compat.legacy_auth` (default on, `BLOCKBUSTR_LEGACY_AUTH`) gates X-Emby-*/X-MediaBrowser-Token/`api_key`/Emby scheme. 24 table cases + agreement on all 1,227 captured requests [§3.2]
+- [x] P1.9 `internal/jfapi/handlers`: `/System/Info/Public`, `/System/Ping` (GET+POST → `"Jellyfin Server"`), `/Branding/Configuration`, `/Branding/Css[.css]`; stable server id (migration 00005 `server_settings`, `pg.EnsureServerID`, survives restarts); `LocalAddress` = `server.external_url` or the request's scheme+host. Matches recon Jellyfin field-for-field live. `/System/Info` and `/System/Endpoint` need auth → moved to P1.10
+- [x] P1.10 `internal/auth` (bcrypt, Authenticate, IssueToken: revokes the device's old tokens in PG + Redis, Resolve: Redis sliding cache → PG, Revoke, Bootstrap: create/recover admin from `BLOCKBUSTR_ADMIN_*`) + handlers: `AuthenticateByName` (400/401 text bodies like 12.1.0), `/Users/Me`, `/Users/{id}`, `/Users`, `/Users/Public` (`[]`), `POST /Sessions/Logout`, `/System/Info`, `/System/Endpoint`, `/QuickConnect/Enabled` (false), `requireUser`/`requireAdmin` (bare 401/403). Captured logins replay with identical shape; `/Users/Me` and `/System/Info` match golden 12.1.0 shapes. `internal/testutil` for integration tests. Verified live with curl
+- [x] P1.11 Contract harness (`handlers/contract_test.go`, `recon_test.go`): `capturesFor`, `replay`, `sameShape`/`sameShapeIgnoring` (documented ignore paths), `checkContractOn`, capture-token seeding, response-less captures skipped, recon library seeded under recon ids so item endpoints replay unchanged
+- [x] P1.12 `internal/strm`: jellybird's release-name parser ported unchanged (+ its tests), `IsExtra` (extras folders/suffixes, from jellybird's writer) + `TestResolution`; new `.strm` reader (`ReadFile`/`Read`: first non-comment line, BOM/CRLF tolerant, 64 KB cap, absolute URL with scheme://host or absolute path). The whole recon `~/Videos` library parses correctly (pinned in `TestParseReconLibrary`)
+- [x] P1.13 `internal/media`: ffprobe `Prober` (structure + real-ffmpeg test ported from jollyrogarr; model extended to **every** stream incl. PGS, chapters, attachments count, MKV `BPS` bitrates, dispositions, bit depth, frame rates, colour, Jellyfin `VideoRange`/`VideoRangeType` incl. Dolby Vision variants; remote mode `-probesize 10M -analyzeduration 5M`, context deadline kills ffprobe). Golden tests from real ffprobe output of all 4 recon titles; works with the container's ffprobe 7.1 and host 8.1. HDR10+ not detected (needs frame probing)
+- [x] P1.14 `internal/library` scanner + migration 00006 + `libraries`/`scan` config, wired into `main` (libraries synced at start, scans in the background: on start, every `scan.interval`, and on `POST /Library/Refresh` (admin, 204)). Real scan of `~/Videos` in the container: 3 movies (1 probed, 2 `.strm` remote), MF Ghost → Season 1 → 5 titled episodes with streams/chapters/runtime; rescan via refresh: 0 re-probes, ~9 ms. 11 tests
+- [x] P1.14b Filesystem watcher (fsnotify) to rescan a library shortly after files change, debounced. `library.Scanner.Watch`: every folder watched (new ones added), per-library rescans via `TriggerLibrary` once quiet for `scan.watch_delay` (30s), hidden/partial-download files ignored, overflow → rescan all; `scan.watch`/`scan.watch_delay` config. Tests on real temp dirs (burst = one rescan, new folders, renames, deletes, ignored names, missing root, race-clean ×5). Verified live: a file created + deleted in `~/Videos/Movies` on the host → one Movies rescan 30s later (DESIGN §6 Scanner)
+- [x] P1.15 `.strm` in the scanner (done within P1.14): target read with `strm.ReadFile`, unprobed `Http` remote source, etag = hash of the target (never the URL), container guessed from the URL extension; probing deferred to first PlaybackInfo (P2.4)
+- [x] P1.16 Port the TMDB client and do metadata matching (nfo first, then TMDB) + people/genres/studios. Ticked 2026-10-06: implemented earlier (`internal/metadata`, tests in `make check`, DESIGN §6 Metadata) and exercised by the P1.25 client check
+- [x] P1.17 Images: lazy fetch, resize (`maxWidth/maxHeight/fill*/quality`), disk cache, `tag` = hash, blurhash. Ticked 2026-10-06: implemented earlier (`internal/images`, tests in `make check`, DESIGN §6 Images) and exercised by the P1.25 client check
+- [x] P1.18 `/UserViews` (+ legacy `/Users/{id}/Views`), `/UserViews/GroupingOptions`, `/Library/MediaFolders` + `/Library/VirtualFolders` (admin; Jellyfin's 42 `LibraryOptions` per kind embedded). `handlers/itemdto.go` starts the shared BaseItemDto builder (CollectionFolder, UserData with dashed Key, stable root-folder ParentId). Migration 00008 `libraries.enabled`: libraries dropped from config are disabled, not deleted. `ImageBlurHashes` now generated as a map. Every captured `/UserViews` replays with Jellyfin's shape; goldens match for the rest. Live: Movies (3), Shows (1)
+- [x] P1.19 `/Items` + legacy `/Users/{id}/Items`: `pg.ItemQuery` dynamic SQL (all captured filters, ranked accent-insensitive search, Jellyfin sort/null semantics, cheap counts) + batch-loaded BaseItemDto builder for Movie/Series/Season/Episode with `fields`/image/user-data options (DESIGN §3.6). `Deps.RemoteSearch` hook merges remote results after library matches (§7.4). Contract: recon library seeded under recon ids; all 71 captured `/Items` requests return Jellyfin's items, order and shape. Fixed live: unprobed `.strm` sizes. Live ~6 ms for the full Streamyfin field set
+- [x] P1.20 `/Items/{id}` (+ legacy) with Jellyfin's full detail field set, `/Items/{id}/Ancestors`, UserRootFolder; MediaSources/MediaStreams builder (`handlers/mediasource.go`, reused by P2.1) with placeholder source for unprobed `.strm`; Jellyfin `DisplayTitle` rules (`internal/media/display.go`, all 107 captured streams match); migration 00009 (stream time base + full Dolby Vision record, one-time re-probe). Every captured detail/ancestors request matches Jellyfin's shape (DESIGN §3.7). Live 6–25 ms
+- [x] P1.21 `/Items/Latest` (bare array; per-library newest, episodes→series when `groupItems`, grouped entry carries `ChildCount`; Findroid's pre-probe captures replayed against unprobed sources), `/UserItems/Resume` (DatePlayed desc), `/Shows/NextUp` (`NextUpEpisodeIDs` SQL: first unplayed ep per *started* series, resumable only when asked, `nextUpDateCutoff`, window-count total), `/Shows/{id}/Seasons` (by number), `/Shows/{id}/Episodes` (aired order, `seasonId`, `adjacentTo` = [prev, this, next]), `/Items/{id}/Similar` (every same-kind item, score 3×genres+2×studios+people, year tiebreak; `ProviderIds` always sent). **`OriginalLanguage` now collected from TMDB** (migration 00010, one-time re-refresh, base DTO set for Movie/Series) and its contract ignores removed. All 213 captures replay with Jellyfin's items and order; value tests for NextUp rules (started/resumable/played-out/cutoff) and adjacentTo windows. Verified live on the dev stack (NextUp E1→E2, `en`/`en`/`ja`)
+- [x] P1.22 `/Genres`, `/Studios`, `/Persons`, `/Search/Hints`, `/Items/Filters[2]` (+ `/Artists` → empty, part of Jellyfin Android's search). `pg.QueryNames` lists only names used by visible items, scoped by the `/Items` filter clause (now `ItemQuery.from`), with per-type counts; `pg.ItemFilters` aggregates genres/ratings/years/stream languages in one query. Contract: every captured `/Studios`, `/Persons`, `/Artists`, `/Items/Filters[2]` matches Jellyfin's shape, and studio names/counts, filter genres (ids included), ratings, years and languages match its **values**; `TestFixturesRoundTrip` now 857 responses / 26 endpoints (DESIGN §3.9)
+  - Follow-ups: by-name detail routes (`/Genres/{name}`, `/Studios/{name}`, `/Persons/{name}`) and `/Items/{personId}`; item Tags (Filters `Tags`, `fields=Tags`)
+- [x] P1.23 Stubs returning valid empties: `/Plugins`, `/Packages`, `/ScheduledTasks` (admin), `/Localization/*`, ThemeMedia (+ ThemeSongs/ThemeVideos), SpecialFeatures, LocalTrailers, and the other captured empties: Collections, Intros, `/MediaSegments/{id}`, `/LiveTv/Programs/Recommended`, `/SyncPlay/List`, `/web/ConfigurationPages`. `/DisplayPreferences/{key}` is stored for real (GET/POST per user+key+client, 12.1.0 defaults, Jellyfin's MD5/UTF-16 `Id`). Unknown routes now get Kestrel's bare 404 (harness handles empty bodies). Every captured request matches Jellyfin's shape, and saved prefs read back value-identical; `TestFixturesRoundTrip` 871 responses / 31 endpoints (DESIGN §3.10)
+  - Follow-ups: `/Items/Suggestions` (29 captures, Findroid + Streamyfin home), `/Playback/BitrateTest` (Jellyfin Android), real `/Localization/*` lists if a settings screen needs them
+- [x] P1.24 User data writes: played/unplayed (`/UserPlayedItems/{id}` + legacy `/Users/{u}/PlayedItems/{id}`, recursive over a season/series/library, `datePlayed`), favourite (`/UserFavoriteItems/{id}` + legacy), `GET`/`POST /UserItems/{id}/UserData` (partial update). All answer the updated `UserItemDataDto` (200). Captured legacy favourite on/off replays with Jellyfin's shape and values; rule tests for play counts, dated plays, series roll-up, unplayed reset, partial updates, 404/400/401/403 (DESIGN §3.11)
+  - Follow-ups: `/UserItems/{id}/Rating` (likes); provider-id user-data `Key` like Jellyfin's (TMDB id for movies); capture mark played/unplayed from a client (P0.3 leftover)
+- [x] P1.25 Manual: Findroid + Infuse log in, browse home, libraries, series → seasons → episodes, search, images. 2026-10-06, user-verified on the dev stack over Tailscale (`http://<tailscale-ip>:8097`): the whole browse checklist works, including watched/favourite. Found on the way: blockbustr has its own accounts (admin bootstrapped from `BLOCKBUSTR_ADMIN_*` in `.env`); Jellyfin for Android/browsers request `GET /` → 404 until jellyfin-web is served (Phase 5)
+
+**Exit:** Findroid and Infuse browse a real library with artwork; contract tests are green for all P1 endpoints.
+
+## Phase 2 — Playback
+- [x] P2.1 Port `media/decide.go` from jollyrogarr; adapt it to Jellyfin `DeviceProfile` (DirectPlay/Transcoding/Codec/Subtitle profiles) with tests built from the captured profiles [§8.1]. `media.Decide`: direct play / remux / transcode / none with Jellyfin TranscodeReasons (enum order), Container + Codec profile conditions (`IsRequired`), container and codec aliases, bitrate limit, chosen audio/subtitle tracks, transcode target (codecs filtered to our encoders, limit − audio bitrate, channels, frame rate), per-subtitle delivery (Embed/External/Hls/Encode). **All 25 captured PlaybackInfo decisions reproduced** (flags, container, 85 subtitle methods, both transcodes' reasons/codecs/bitrates); jollyrogarr cases kept; one intended divergence (remote over limit transcodes, P2.4)
+  - Follow-up for P2.2: decode the request profile into `media.DeviceProfile`; apply `Decision.Container`/subtitle `DeliveryMethod`/`DeliveryUrl` to the MediaSourceInfo
+- [x] P2.2 `PlaybackInfo` (GET+POST): MediaSources, MediaStreams, decision flags, `PlaySessionId`. `handlers/playback.go`: body+query request, device profile → `media.Decide` per source, Jellyfin-format `TranscodingUrl` (HLS master), subtitle `DeliveryMethod`/`DeliveryUrl`, `mediaSourceId` filter, play session stored in Redis (`play:{id}`, 24h) for P2.3/P2.6; `Deps.Cache` added. **All 25 captured requests replay with Jellyfin's shape and values** (flags, container, subtitle URLs, every TranscodingUrl parameter except session/device/codec hints); intended remote-over-limit divergence asserted (DESIGN §8.1)
+  - Follow-ups: unprobed `.strm` sources are passed through undecided until P2.4b probes them; Jellyfin's per-codec URL hints (`av1-level=…`) if a client turns out to read them
+- [x] P2.3 `/Videos/{id}/stream[.ext]` for local files: ServeContent + Range + HEAD [§8.2]. `handlers/stream.go`: public like Jellyfin (Findroid sends no token), `mediaSourceId`, Content-Type from `container`/extension route → probed container → file extension. All 14 captured stream requests replay with Jellyfin's status + headers (sparse stand-in files); byte-exact range, HEAD, 304 and 404 tests. Verified live: 6.8 GB episode, HEAD + tail range byte-identical to disk
+  - Note: playback reporting (`/Sessions/Playing*`) is P2.9, so resume points aren't saved yet; `.strm` streams 404 until P2.4b
+- [x] P2.4 Enforce `maxStreamingBitrate` for remote sources too (Jellyfin doesn't; DESIGN §8.3a). Needs a probed bitrate, and assumes over-cap if unknown. The P2.1 decision already applied the cap to every source; unknown remote bitrate = `media.UnknownRemoteBitrate` (80 Mbps: "maximum" settings still direct play, capped phones transcode). Tests in `TestDecideRemoteBitrate`
+- [x] P2.4b `.strm` playback: lazy probe on first PlaybackInfo, always serve via `/Videos/{id}/stream`; redirect only when the scheme is kept, otherwise proxy (ExoPlayer http→https issue) [§6, §8.2]. `Scanner.ProbeRemote` (singleflight, 15s, failures recorded) called from PlaybackInfo; `internal/resolve` (redirect-following resolve, Redis `link:*` 4h, `Open` for proxying); stream endpoint redirects/proxies with Range, re-resolves expired links once, 502 when unresolvable; `compat.proxy_clients`/`redirect_clients`. Media source `Path` is now our stream URL, never the `.strm` target. Tests: real http→https two-hop upstream (proxy, range, HEAD, cache, redirect over https, expiry, overrides, 502), probe once, no raw URL in details; scanner-level probe tests (race-clean). Verified live: Luca `.strm` proxied as Matroska through jellybird → CDN
+  - Verified by the user 2026-10-06: Luca plays from an app; the first-play probe took 2.7s through jellybird (Matroska, 5 streams, 7.9 Mbps, the same as Jellyfin's)
+- [x] P2.5 Port `transcode/` (session, hwaccel) from jollyrogarr. `internal/transcode`: hwaccel ported unchanged (startup test-encodes, choice logged); session manager adapted for HLS play sessions (see DESIGN §8.3), wired in `main` (stale dirs cleared, idle reaper). Dockerfile adds `libmfx-gen1.2`, without which QSV can't open a session. Tests: argument builder, real ffmpeg remux/transcode/restart/failure, stubbed limits + idle reaping, real-QSV encode with exact segment lengths. Verified live: MKII AV1 → h264_qsv 6.0s segments at ~3.9×
+  - Follow-ups: hardware decode (VAAPI/QSV) for AV1/HEVC sources; hardware tonemap; scale to the client's max resolution; Redis `lock:transcode:*` if we ever run more than one instance
+- [x] P2.6 HLS endpoints: master/main playlists generated up front, segments, seek-aware restart, idle kill, `DELETE /Videos/ActiveEncodings` [§8.3]. `handlers/hls.go`, options derived from the TranscodingUrl (stateless), per-session start/restart lock, 3s segments like Jellyfin (default changed). Tests: captured masters match Jellyfin's variant (bandwidth, range, frame rate, link query); captured mains match its format, Streamyfin's to the exact byte count; real ffmpeg PlaybackInfo → master → main → segments with only the ApiKey, past-the-end 404, ActiveEncodings stop + restart; restart rule unit-tested
+  - Follow-ups: scale to fit low bitrates (RESOLUTION); fMP4 segments if a client asks; throttle ffmpeg when far ahead
+- [ ] P2.7 Remux path (`-c copy`) vs full transcode, chosen by the decision
+- [ ] P2.8 Subtitles: embedded text → VTT/SRT extraction, external sidecars, `Subtitles/{idx}/Stream.{fmt}`, burn-in for image subs
+- [ ] P2.9 Sessions: `Capabilities[/Full]`, `Playing`, `Progress`, `Stopped`, `Ping`, `GET /Sessions`; resume/played rules [§8.4]
+- [ ] P2.10 WebSocket `/socket`: KeepAlive/ForceKeepAlive, `UserDataChanged`, `LibraryChanged`, `Sessions`; Redis pub/sub fan-out [§2 events]
+- [ ] P2.11 UDP 7359 server discovery (Q3)
+- [ ] P2.12 QuickConnect
+- [ ] P2.13 Manual matrix: every MVP client does direct play, remux, transcode, seek, subtitle switching, audio track switching, resume across devices, `.strm` playback
+
+**Exit:** all six MVP clients play, seek and resume local files and `.strm`.
+
+## Phase 3 — Debrid and Stremio addons
+- [ ] P3.1 Port `provider/` (interface, realdebrid, torbox) + tests from jellybird; keys stored encrypted in `debrid_accounts`
+- [ ] P3.2 `resolve/`: Source types (file, strm-url, debrid torrent+file, stremio stream) → URL; Redis `link:*` cache; jellybird URL mapping [§6 .strm]
+- [ ] P3.3 `stremio/` client: manifest, catalog (with extras), meta, stream, subtitles; timeouts; URL-as-secret handling [§7.1]
+- [ ] P3.4 Migrations + admin API for `stremio_addons` / `stremio_catalogs`
+- [ ] P3.5 Catalog sync job → `stremio` libraries; series episodes from `meta.videos`; TMDB enrichment [§7.2]
+- [ ] P3.6 Stream collection + ranking (score function with unit tests) [§7.3]
+- [ ] P3.7 Multiple MediaSources per item for the top-N streams, with readable `Name` labels
+- [ ] P3.8 Resolve on stream request: infoHash → AddMagnet → file select → unrestrict; uncached handling + background download [§7.3]
+- [ ] P3.9 Stremio subtitles → external subtitle streams
+- [ ] P3.10 Signed, expiring blockbustr stream URLs (no raw debrid links to clients) [AGENTS Safety]
+- [ ] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources
+
+- [ ] P3.12 `search.Provider` interface + Cinemeta provider (no key) + TMDB provider (when keyed) + addon search catalogs; parallel fan-out with a time budget, Redis `search:*` cache [§7.4]
+- [ ] P3.13 Hidden `discover` library + deterministic UUIDv5 item IDs + upsert of remote results (with posters/backdrops into `images`) + retention GC
+- [ ] P3.14 Merge remote results into `/Items?searchTerm=` (and `/Search/Hints`): library first, dedupe by provider IDs, honour type filters and limits
+- [ ] P3.15 Remote series on demand: Seasons/Episodes from addon `meta.videos` or TMDB with deterministic IDs
+- [ ] P3.16 Remote item presentation: placeholder MediaSource, `LocationType`, source line in Overview; verify Play button and visibility in every MVP client (R6)
+- [ ] P3.17 Manual: in Findroid, Streamyfin and Jellyfin Android, search "the matrix" (not in library) → open → play via debrid; search a show → season → episode → play
+
+**Exit:** Stremio catalogs show up as libraries and play through debrid on MVP clients, **and searching inside each MVP client finds and plays titles that aren't in the library.**
+
+## Phase 4 — Hardening
+- [ ] P4.1 User policy: library access, parental ratings, admin vs user, disable user
+- [ ] P4.2 Kodi Sync Queue endpoints backed by `library_events` [§3.5]
+- [ ] P4.3 Admin web UI (React + Vite, embedded): libraries, users, addons, debrid, scans, sessions
+- [ ] P4.4 Prometheus `/metrics`; pprof behind admin
+- [ ] P4.5 `scripts/seed` 50k items + vegeta load test; hit p95 targets [§1, §9.6]
+- [ ] P4.6 Backups: pg_dump job docs; Redis rebuild-from-PG test
+- [ ] P4.7 Release: multi-arch Docker image, versioning, README, LICENSE choice
+
+## Phase 5 — Later
+- [ ] Serve `jellyfin-web` unmodified (dashboard/config endpoints, plugins API stubs)
+- [ ] Live TV / IPTV (M3U + XMLTV)
+- [ ] Music, audiobooks
+- [ ] SyncPlay
+- [ ] NVENC / VideoToolbox hwaccel
+- [ ] Trickplay thumbnails, intro/credit detection
+- [ ] Jellyseerr integration (port from jellybird `watchlist/`)

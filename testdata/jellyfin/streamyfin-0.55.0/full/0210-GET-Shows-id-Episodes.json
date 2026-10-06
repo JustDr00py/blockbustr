@@ -1,0 +1,393 @@
+{
+  "seq": 210,
+  "endpoint": "GET /Shows/{id}/Episodes",
+  "time": "2026-10-05T22:27:06.973Z",
+  "request": {
+    "method": "GET",
+    "path": "/Shows/73ecf1e6db425eb1214bb7c9cb74dfe6/Episodes",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "fields": [
+        "ItemCounts",
+        "PrimaryImageAspectRatio",
+        "CanDelete",
+        "MediaSourceCount",
+        "Overview"
+      ],
+      "seasonId": [
+        "c4f64bdf1f4027e19eefa42f9ddce58f"
+      ],
+      "enableUserData": [
+        "true"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "bb6bc4cc23b34ad2b154616b653c40f5-a3a5012b2d508ef0-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=bb6bc4cc23b34ad2b154616b653c40f5,sentry-org_id=4509610343596032,sentry-transaction=%2Fitems%2Fpage,sentry-sampled=false,sentry-sample_rand=0.6469343169613591,sentry-sample_rate=0",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:26:12 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:27:06 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "43.7641"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "The Challenger from England",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "551ae82823de5533467c046377c55afb",
+          "CanDelete": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+          "ChannelId": null,
+          "Overview": "Kanata Rivington arrives in Japan from England with the intention of racing in a relatively new motorsports category that's taken the world by storm: MFG.",
+          "CommunityRating": 6.6,
+          "RunTimeTicks": 14219650000,
+          "ProductionYear": 2023,
+          "IndexNumber": 1,
+          "ParentIndexNumber": 1,
+          "IsFolder": false,
+          "Type": "Episode",
+          "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropImageTags": [
+            "a7e894c96d34ed85682e44601acd088f"
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 2,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:26:14.2689887Z",
+            "Played": false,
+            "Key": "551ae828-23de-5533-467c-046377c55afb",
+            "ItemId": "551ae82823de5533467c046377c55afb"
+          },
+          "SeriesName": "MF GHOST",
+          "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "SeasonId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "PrimaryImageAspectRatio": 1.7777777777777777,
+          "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+          "SeasonName": "Season 1",
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "b21120d25f459814d07a081444120eb0"
+          },
+          "BackdropImageTags": [],
+          "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "ImageBlurHashes": {
+            "Primary": {
+              "b21120d25f459814d07a081444120eb0": "WoFiJf~q-;x^xvx]RQWEWBRkWCV@D*IURjNGM{adj?WBRjWCfRfk",
+              "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7",
+              "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4"
+            },
+            "Logo": {
+              "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+            },
+            "Thumb": {
+              "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+            },
+            "Backdrop": {
+              "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+            }
+          },
+          "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+          "ParentPrimaryImageItemId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "ParentPrimaryImageTag": "3429f9000cfcd41b31987973ba55e382",
+          "LocationType": "FileSystem",
+          "MediaType": "Video"
+        },
+        {
+          "Name": "The Shocking New MFG Generation",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "ea567e5fce4a1440f06ec79059453f4b",
+          "CanDelete": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2023-10-09T00:00:00.0000000Z",
+          "ChannelId": null,
+          "Overview": "Kanata begins his qualifying run around the 40 kilometer-long Odawara Pikes Peak, aiming to set a quick time. But with a seriously underpowered car compared to his rivals, how high up the leaderboard can he get?",
+          "CommunityRating": 7.444,
+          "RunTimeTicks": 14220500000,
+          "ProductionYear": 2023,
+          "IndexNumber": 2,
+          "ParentIndexNumber": 1,
+          "IsFolder": false,
+          "Type": "Episode",
+          "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropImageTags": [
+            "a7e894c96d34ed85682e44601acd088f"
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "414207001002",
+            "ItemId": "ea567e5fce4a1440f06ec79059453f4b"
+          },
+          "SeriesName": "MF GHOST",
+          "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "SeasonId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "PrimaryImageAspectRatio": 1.7777777777777777,
+          "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+          "SeasonName": "Season 1",
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "91e77595c5948f1df45584b6f7911317"
+          },
+          "BackdropImageTags": [],
+          "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "ImageBlurHashes": {
+            "Primary": {
+              "91e77595c5948f1df45584b6f7911317": "WZDS?,WBD%a}M{j]M|tRofRjoeay00WB%Mofxaj]%2M_RjtRWBay",
+              "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7",
+              "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4"
+            },
+            "Logo": {
+              "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+            },
+            "Thumb": {
+              "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+            },
+            "Backdrop": {
+              "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+            }
+          },
+          "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+          "ParentPrimaryImageItemId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "ParentPrimaryImageTag": "3429f9000cfcd41b31987973ba55e382",
+          "LocationType": "FileSystem",
+          "MediaType": "Video"
+        },
+        {
+          "Name": "The Kamaboko Straight",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "76a553eeb41eef6a40bfc69fa1fe88af",
+          "CanDelete": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2023-10-16T00:00:00.0000000Z",
+          "ChannelId": null,
+          "Overview": "Impressing everyone with his drifting abilities, Kanata aims to finish his qualifying lap with a flourish. But with a long straight just before the line exposing his car's deficiencies, will he make it into the race proper?",
+          "CommunityRating": 7.429,
+          "RunTimeTicks": 14221300000,
+          "ProductionYear": 2023,
+          "IndexNumber": 3,
+          "ParentIndexNumber": 1,
+          "IsFolder": false,
+          "Type": "Episode",
+          "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropImageTags": [
+            "a7e894c96d34ed85682e44601acd088f"
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "414207001003",
+            "ItemId": "76a553eeb41eef6a40bfc69fa1fe88af"
+          },
+          "SeriesName": "MF GHOST",
+          "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "SeasonId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "PrimaryImageAspectRatio": 1.7777777777777777,
+          "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+          "SeasonName": "Season 1",
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "88e03b84e6d9c31a67a41aec54c8af33"
+          },
+          "BackdropImageTags": [],
+          "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "ImageBlurHashes": {
+            "Primary": {
+              "88e03b84e6d9c31a67a41aec54c8af33": "WQECXf9v0L={t6N?9#%KtQxaf6IpOrxu%1E1WB%M-.W=R,V[xZt6",
+              "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7",
+              "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4"
+            },
+            "Logo": {
+              "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+            },
+            "Thumb": {
+              "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+            },
+            "Backdrop": {
+              "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+            }
+          },
+          "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+          "ParentPrimaryImageItemId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "ParentPrimaryImageTag": "3429f9000cfcd41b31987973ba55e382",
+          "LocationType": "FileSystem",
+          "MediaType": "Video"
+        },
+        {
+          "Name": "Tire Management",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "380c92fc58cefd34310a480e054f7eb2",
+          "CanDelete": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2023-10-23T00:00:00.0000000Z",
+          "ChannelId": null,
+          "Overview": "Ren and Kanata continue their tour of Kamakura in the hopes of finding the place where Kanata's parents took their photograph together.",
+          "CommunityRating": 6.571,
+          "RunTimeTicks": 14220900000,
+          "ProductionYear": 2023,
+          "IndexNumber": 4,
+          "ParentIndexNumber": 1,
+          "IsFolder": false,
+          "Type": "Episode",
+          "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropImageTags": [
+            "a7e894c96d34ed85682e44601acd088f"
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "414207001004",
+            "ItemId": "380c92fc58cefd34310a480e054f7eb2"
+          },
+          "SeriesName": "MF GHOST",
+          "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "SeasonId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "PrimaryImageAspectRatio": 1.7777777777777777,
+          "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+          "SeasonName": "Season 1",
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "2d77afa9501fe8ca84f56db8415af059"
+          },
+          "BackdropImageTags": [],
+          "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "ImageBlurHashes": {
+            "Primary": {
+              "2d77afa9501fe8ca84f56db8415af059": "W~K2bMxakBxujFbF_NxtofogjukCtSt7jZbFoff+tSRiWBj[jYof",
+              "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7",
+              "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4"
+            },
+            "Logo": {
+              "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+            },
+            "Thumb": {
+              "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+            },
+            "Backdrop": {
+              "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+            }
+          },
+          "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+          "ParentPrimaryImageItemId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "ParentPrimaryImageTag": "3429f9000cfcd41b31987973ba55e382",
+          "LocationType": "FileSystem",
+          "MediaType": "Video"
+        },
+        {
+          "Name": "Teamwork",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "5ceb8b90240c0e856f2be3c7c309c51c",
+          "CanDelete": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2023-10-30T00:00:00.0000000Z",
+          "ChannelId": null,
+          "Overview": "The two-lap race of Odawara Pikes Peak is underway. With his tires now up to temperature, can Kanata start making his way through the field despite his power disadvantage?",
+          "CommunityRating": 6.5,
+          "RunTimeTicks": 14220500000,
+          "ProductionYear": 2023,
+          "IndexNumber": 5,
+          "ParentIndexNumber": 1,
+          "IsFolder": false,
+          "Type": "Episode",
+          "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropImageTags": [
+            "a7e894c96d34ed85682e44601acd088f"
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "414207001005",
+            "ItemId": "5ceb8b90240c0e856f2be3c7c309c51c"
+          },
+          "SeriesName": "MF GHOST",
+          "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "SeasonId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "PrimaryImageAspectRatio": 1.7777777777777777,
+          "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+          "SeasonName": "Season 1",
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "d876e542dd09d87e82f424411a791b1d"
+          },
+          "BackdropImageTags": [],
+          "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "ImageBlurHashes": {
+            "Primary": {
+              "d876e542dd09d87e82f424411a791b1d": "WNBV|$#,Vs-Vi_tR%MjvRjoeWBbH0|K4ozJ7XRV@9aXRtRNGozV@",
+              "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7",
+              "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4"
+            },
+            "Logo": {
+              "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+            },
+            "Thumb": {
+              "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+            },
+            "Backdrop": {
+              "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+            }
+          },
+          "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+          "ParentPrimaryImageItemId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "ParentPrimaryImageTag": "3429f9000cfcd41b31987973ba55e382",
+          "LocationType": "FileSystem",
+          "MediaType": "Video"
+        }
+      ],
+      "TotalRecordCount": 5,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 58
+}

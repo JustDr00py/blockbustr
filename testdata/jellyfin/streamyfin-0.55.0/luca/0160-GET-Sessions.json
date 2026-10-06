@@ -1,0 +1,316 @@
+{
+  "seq": 160,
+  "endpoint": "GET /Sessions",
+  "time": "2026-10-05T22:41:49.499Z",
+  "request": {
+    "method": "GET",
+    "path": "/Sessions",
+    "query": {
+      "activeWithinSeconds": [
+        "360"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "fef3407170e24eb7b32ee59e6b82c613-b58eb31deb4d1458",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=fef3407170e24eb7b32ee59e6b82c613,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:41:44 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:41:49 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "25.2077"
+    },
+    "body": [
+      {
+        "PlayState": {
+          "PositionTicks": 1487810000,
+          "CanSeek": true,
+          "IsPaused": false,
+          "IsMuted": false,
+          "VolumeLevel": 60,
+          "AudioStreamIndex": 1,
+          "MediaSourceId": "1f77a87a9603bff7d1589d1e076f060c",
+          "PlayMethod": "DirectPlay",
+          "RepeatMode": "RepeatNone",
+          "PlaybackOrder": "Default"
+        },
+        "AdditionalUsers": [],
+        "Capabilities": {
+          "PlayableMediaTypes": [],
+          "SupportedCommands": [],
+          "SupportsMediaControl": false,
+          "SupportsPersistentIdentifier": true
+        },
+        "RemoteEndPoint": "192.0.2.1",
+        "PlayableMediaTypes": [],
+        "Id": "eeee0000000000000000000000000001",
+        "UserId": "bbbb0000000000000000000000000001",
+        "UserName": "user1",
+        "Client": "Jellyfin for Android",
+        "LastActivityDate": "2026-10-05T22:41:49.4425781Z",
+        "LastPlaybackCheckIn": "2026-10-05T22:39:30.4335841Z",
+        "DeviceName": "Device 2",
+        "NowPlayingItem": {
+          "Name": "Mortal Kombat II",
+          "OriginalTitle": "Mortal Kombat II",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "1f77a87a9603bff7d1589d1e076f060c",
+          "DateCreated": "2026-05-31T23:12:04.4261116Z",
+          "Container": "mov,mp4,m4a,3gp,3g2,mj2",
+          "PremiereDate": "2026-05-06T00:00:00.0000000Z",
+          "ExternalUrls": [
+            {
+              "Name": "IMDb",
+              "Url": "https://www.imdb.com/title/tt17490712"
+            },
+            {
+              "Name": "TMDB",
+              "Url": "https://www.themoviedb.org/movie/931285"
+            }
+          ],
+          "CriticRating": 64,
+          "Path": "/media/Movies/Mortal Kombat II (2026)/Mortal Kombat II (2026).mp4",
+          "EnableMediaSourceDisplay": true,
+          "OfficialRating": "R",
+          "ChannelId": null,
+          "Overview": "The fan favorite champions—now joined by Johnny Cage himself—are pitted against one another in the ultimate, no-holds barred, gory battle to defeat the dark rule of Shao Kahn that threatens the very existence of the Earthrealm and its defenders.",
+          "Taglines": [
+            "Their fight. Our future."
+          ],
+          "Genres": [
+            "Action",
+            "Fantasy",
+            "Adventure"
+          ],
+          "CommunityRating": 7.786,
+          "RunTimeTicks": 63585920000,
+          "ProductionYear": 2026,
+          "ProviderIds": {
+            "Imdb": "tt17490712",
+            "Tmdb": "931285",
+            "TmdbCollection": "931431"
+          },
+          "IsHD": true,
+          "IsFolder": false,
+          "ParentId": "e675012a1892a87530d2c0b0d14a9026",
+          "Type": "Movie",
+          "Studios": [
+            {
+              "Name": "New Line Cinema",
+              "Id": "7873ccad8e0c6cb8e4381eaf1d35e7fa"
+            },
+            {
+              "Name": "Atomic Monster",
+              "Id": "18f86fa916fe6e03d3dc690d7db9f650"
+            },
+            {
+              "Name": "Broken Road Productions",
+              "Id": "4147100fa0fc9dc162cab294943c53e7"
+            },
+            {
+              "Name": "Fireside Films",
+              "Id": "da8dc08b1f5d6bfaee5360475c10b9f8"
+            },
+            {
+              "Name": "Domain Entertainment",
+              "Id": "9009b257eee3208f4383638cb9ad992e"
+            }
+          ],
+          "GenreItems": [
+            {
+              "Name": "Action",
+              "Id": "ce06903d834d2c3417e0889dd4049f3b"
+            },
+            {
+              "Name": "Fantasy",
+              "Id": "a30dcc65be22eb3c21c03f7c1c7a57d1"
+            },
+            {
+              "Name": "Adventure",
+              "Id": "51cec9645b896084d12b259acd05ccb1"
+            }
+          ],
+          "LocalTrailerCount": 0,
+          "SpecialFeatureCount": 0,
+          "PrimaryImageAspectRatio": 0.6666666666666666,
+          "MediaStreams": [
+            {
+              "Codec": "av1",
+              "Language": "und",
+              "ColorSpace": "bt709",
+              "ColorTransfer": "bt709",
+              "ColorPrimaries": "bt709",
+              "TimeBase": "1/90000",
+              "VideoRange": "SDR",
+              "VideoRangeType": "SDR",
+              "AudioSpatialFormat": "None",
+              "DisplayTitle": "1080p AV1 SDR",
+              "IsInterlaced": false,
+              "BitRate": 9464833,
+              "BitDepth": 8,
+              "RefFrames": 1,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 804,
+              "Width": 1920,
+              "AverageFrameRate": 24,
+              "RealFrameRate": 24,
+              "ReferenceFrameRate": 24,
+              "Profile": "Main",
+              "Type": "Video",
+              "AspectRatio": "2.40:1",
+              "Index": 0,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false,
+              "PixelFormat": "yuv420p",
+              "Level": 8,
+              "IsAnamorphic": false
+            },
+            {
+              "Codec": "aac",
+              "Language": "eng",
+              "TimeBase": "1/48000",
+              "Title": "Stereo",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "English",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "Stereo - English - AAC - Default",
+              "IsInterlaced": false,
+              "ChannelLayout": "stereo",
+              "BitRate": 160461,
+              "Channels": 2,
+              "SampleRate": 48000,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Profile": "LC",
+              "Type": "Audio",
+              "Index": 1,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            }
+          ],
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Thumb": "0b55d0c947c87a51d12fca0a5d68010e",
+            "Primary": "24ab56762c9d8cb3d25f4323853b0389",
+            "Logo": "94051eb91d590f014438cce01f89754c"
+          },
+          "BackdropImageTags": [
+            "be8c66e5b7827b6a0aae6ecdbe0c61d8"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "be8c66e5b7827b6a0aae6ecdbe0c61d8": "WKF2*9oL9^#mSzt6w{JSSfjZSMa|1JJ8-AbbjHWB$gWV$PSNa#WV"
+            },
+            "Thumb": {
+              "0b55d0c947c87a51d12fca0a5d68010e": "W67,uyD%57xuIp%fEgNHt7xZaJxG0e%M%1RjozIV=xxaE2RkxuNG"
+            },
+            "Primary": {
+              "24ab56762c9d8cb3d25f4323853b0389": "dD9%9p$gIVof-psTELNa0LODNaR-awWX%2-VxuNHxas."
+            },
+            "Logo": {
+              "94051eb91d590f014438cce01f89754c": "PB84;{j[IAj[%NWBIUjt-;j[jaj[kBj[V[ae4TfkRPaetRt7WAWB"
+            }
+          },
+          "Chapters": [],
+          "Trickplay": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "Width": 1920,
+          "Height": 804,
+          "OriginalLanguage": "en"
+        },
+        "DeviceId": "device-0002",
+        "ApplicationVersion": "2.7.3",
+        "IsActive": true,
+        "SupportsMediaControl": false,
+        "SupportsRemoteControl": false,
+        "NowPlayingQueue": [],
+        "HasCustomDeviceName": false,
+        "ServerId": "cccc0000000000000000000000000001",
+        "SupportedCommands": []
+      },
+      {
+        "PlayState": {
+          "CanSeek": false,
+          "IsPaused": false,
+          "IsMuted": false,
+          "RepeatMode": "RepeatNone",
+          "PlaybackOrder": "Default"
+        },
+        "AdditionalUsers": [],
+        "Capabilities": {
+          "PlayableMediaTypes": [
+            "Audio",
+            "Video"
+          ],
+          "SupportedCommands": [
+            "Play"
+          ],
+          "SupportsMediaControl": true,
+          "SupportsPersistentIdentifier": true,
+          "AppStoreUrl": "https://apps.apple.com/us/app/streamyfin/id6593660679",
+          "IconUrl": "https://raw.githubusercontent.com/streamyfin/streamyfin/refs/heads/develop/assets/images/streamyfin-client-badge.png"
+        },
+        "RemoteEndPoint": "192.0.2.2",
+        "PlayableMediaTypes": [
+          "Audio",
+          "Video"
+        ],
+        "Id": "eeee0000000000000000000000000002",
+        "UserId": "bbbb0000000000000000000000000001",
+        "UserName": "user1",
+        "Client": "Streamyfin",
+        "LastActivityDate": "2026-10-05T22:41:29.0935006Z",
+        "LastPlaybackCheckIn": "2026-10-05T22:41:27.037801Z",
+        "LastPausedDate": "2026-10-05T22:41:27.0378011Z",
+        "DeviceName": "Device 2",
+        "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+        "ApplicationVersion": "0.55.0",
+        "IsActive": true,
+        "SupportsMediaControl": true,
+        "SupportsRemoteControl": true,
+        "NowPlayingQueue": [],
+        "HasCustomDeviceName": false,
+        "ServerId": "cccc0000000000000000000000000001",
+        "SupportedCommands": [
+          "Play"
+        ]
+      }
+    ]
+  },
+  "duration_ms": 34
+}

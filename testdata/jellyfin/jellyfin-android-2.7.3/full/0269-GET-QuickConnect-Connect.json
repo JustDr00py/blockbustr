@@ -1,0 +1,57 @@
+{
+  "seq": 269,
+  "endpoint": "GET /QuickConnect/Connect",
+  "time": "2026-10-05T22:32:47.252Z",
+  "request": {
+    "method": "GET",
+    "path": "/QuickConnect/Connect",
+    "query": {
+      "Secret": [
+        "5B261CA709E47B92BA224DFC0A0E561B7642940A4595D1E62AF9FF19BBD19F6D"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "accept": "application/json",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:32:47 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "9.9216"
+    },
+    "body": {
+      "Authenticated": false,
+      "Secret": "5B261CA709E47B92BA224DFC0A0E561B7642940A4595D1E62AF9FF19BBD19F6D",
+      "Code": "211030",
+      "DeviceId": "device-0001",
+      "DeviceName": "Device 1",
+      "AppName": "Jellyfin for Android",
+      "AppVersion": "2.7.3",
+      "DateAdded": "2026-10-05T22:30:37.124162Z"
+    }
+  },
+  "duration_ms": 17
+}

@@ -1,0 +1,17 @@
+{
+  "PlayDefaultAudioTrack": true,
+  "SubtitleLanguagePreference": "",
+  "DisplayMissingEpisodes": false,
+  "GroupedFolders": [],
+  "SubtitleMode": "Default",
+  "DisplayCollectionsView": false,
+  "EnableLocalPassword": false,
+  "OrderedViews": [],
+  "LatestItemsExcludes": [],
+  "MyMediaExcludes": [],
+  "HidePlayedInLatest": true,
+  "RememberAudioSelections": true,
+  "RememberSubtitleSelections": true,
+  "EnableNextEpisodeAutoPlay": true,
+  "CastReceiverId": "F007D354"
+}

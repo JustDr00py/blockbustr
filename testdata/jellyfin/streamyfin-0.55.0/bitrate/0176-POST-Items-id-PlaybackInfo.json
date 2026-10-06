@@ -1,0 +1,520 @@
+{
+  "seq": 176,
+  "endpoint": "POST /Items/{id}/PlaybackInfo",
+  "time": "2026-10-05T22:47:12.426Z",
+  "request": {
+    "method": "POST",
+    "path": "/Items/84088e11eb6351255c08507602d79a0f/PlaybackInfo",
+    "query": {},
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "cb48448e70804650b077757d76367a4a-9ac0f30367973dac-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=cb48448e70804650b077757d76367a4a,sentry-org_id=4509610343596032,sentry-transaction=%2Fplayer%2Fdirect-player,sentry-sampled=false,sentry-sample_rand=0.7013101642174265,sentry-sample_rate=0",
+      "Content-Type": "application/json",
+      "Content-Length": "3264",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": {
+      "userId": "bbbb0000000000000000000000000001",
+      "deviceProfile": {
+        "Name": "1. MPV",
+        "MaxStaticBitrate": 999999999,
+        "MaxStreamingBitrate": 999999999,
+        "CodecProfiles": [
+          {
+            "Type": "Video",
+            "Codec": "h264,mpeg4,divx,xvid,wmv,vc1,vp8,vp9,av1"
+          },
+          {
+            "Type": "Video",
+            "Codec": "hevc,h265",
+            "Conditions": [
+              {
+                "Condition": "LessThanEqual",
+                "Property": "VideoLevel",
+                "Value": "153",
+                "IsRequired": false
+              },
+              {
+                "Condition": "NotEquals",
+                "Property": "VideoRangeType",
+                "Value": "DOVI",
+                "IsRequired": true
+              }
+            ]
+          },
+          {
+            "Type": "Audio",
+            "Codec": "aac,ac3,eac3,mp3,flac,vorbis,opus,pcm"
+          }
+        ],
+        "DirectPlayProfiles": [
+          {
+            "Type": "Video",
+            "Container": "mp4,mkv,avi,mov,flv,ts,m2ts,webm,ogv,3gp,hls",
+            "VideoCodec": "h264,hevc,mpeg4,divx,xvid,wmv,vc1,vp8,vp9,av1,avi,mpeg,mpeg2video",
+            "AudioCodec": "aac,mp3,flac,opus,vorbis,ac3,eac3,dts,truehd,wma"
+          },
+          {
+            "Type": "Audio",
+            "Container": "mp3,m4a,aac,ogg,flac,wav,webm,mka",
+            "AudioCodec": "mp3,aac,flac,vorbis,opus,pcm"
+          }
+        ],
+        "TranscodingProfiles": [
+          {
+            "Type": "Video",
+            "Context": "Streaming",
+            "Protocol": "hls",
+            "Container": "ts",
+            "VideoCodec": "h264,hevc",
+            "AudioCodec": "aac,mp3,ac3,dts",
+            "MaxAudioChannels": "6"
+          },
+          {
+            "Type": "Audio",
+            "Context": "Streaming",
+            "Protocol": "http",
+            "Container": "mp3",
+            "AudioCodec": "mp3",
+            "MaxAudioChannels": "2"
+          }
+        ],
+        "SubtitleProfiles": [
+          {
+            "Format": "dvdsub",
+            "Method": "Embed"
+          },
+          {
+            "Format": "dvdsub",
+            "Method": "Encode"
+          },
+          {
+            "Format": "idx",
+            "Method": "Embed"
+          },
+          {
+            "Format": "idx",
+            "Method": "Encode"
+          },
+          {
+            "Format": "pgs",
+            "Method": "Embed"
+          },
+          {
+            "Format": "pgs",
+            "Method": "Encode"
+          },
+          {
+            "Format": "pgssub",
+            "Method": "Embed"
+          },
+          {
+            "Format": "pgssub",
+            "Method": "Encode"
+          },
+          {
+            "Format": "teletext",
+            "Method": "Embed"
+          },
+          {
+            "Format": "teletext",
+            "Method": "Encode"
+          },
+          {
+            "Format": "vobsub",
+            "Method": "Embed"
+          },
+          {
+            "Format": "vobsub",
+            "Method": "Encode"
+          },
+          {
+            "Format": "xsub",
+            "Method": "Embed"
+          },
+          {
+            "Format": "xsub",
+            "Method": "Encode"
+          },
+          {
+            "Format": "webvtt",
+            "Method": "Embed"
+          },
+          {
+            "Format": "vtt",
+            "Method": "Embed"
+          },
+          {
+            "Format": "vtt",
+            "Method": "External"
+          },
+          {
+            "Format": "srt",
+            "Method": "Embed"
+          },
+          {
+            "Format": "srt",
+            "Method": "External"
+          },
+          {
+            "Format": "subrip",
+            "Method": "Embed"
+          },
+          {
+            "Format": "subrip",
+            "Method": "External"
+          },
+          {
+            "Format": "ttml",
+            "Method": "Embed"
+          },
+          {
+            "Format": "ttml",
+            "Method": "External"
+          },
+          {
+            "Format": "ass",
+            "Method": "Embed"
+          },
+          {
+            "Format": "ass",
+            "Method": "External"
+          },
+          {
+            "Format": "ssa",
+            "Method": "Embed"
+          },
+          {
+            "Format": "ssa",
+            "Method": "External"
+          },
+          {
+            "Format": "microdvd",
+            "Method": "Embed"
+          },
+          {
+            "Format": "microdvd",
+            "Method": "External"
+          },
+          {
+            "Format": "mov_text",
+            "Method": "Embed"
+          },
+          {
+            "Format": "mov_text",
+            "Method": "External"
+          },
+          {
+            "Format": "mpl2",
+            "Method": "Embed"
+          },
+          {
+            "Format": "mpl2",
+            "Method": "External"
+          },
+          {
+            "Format": "pjs",
+            "Method": "Embed"
+          },
+          {
+            "Format": "pjs",
+            "Method": "External"
+          },
+          {
+            "Format": "realtext",
+            "Method": "Embed"
+          },
+          {
+            "Format": "realtext",
+            "Method": "External"
+          },
+          {
+            "Format": "scc",
+            "Method": "Embed"
+          },
+          {
+            "Format": "scc",
+            "Method": "External"
+          },
+          {
+            "Format": "smi",
+            "Method": "Embed"
+          },
+          {
+            "Format": "smi",
+            "Method": "External"
+          },
+          {
+            "Format": "stl",
+            "Method": "Embed"
+          },
+          {
+            "Format": "stl",
+            "Method": "External"
+          },
+          {
+            "Format": "sub",
+            "Method": "Embed"
+          },
+          {
+            "Format": "sub",
+            "Method": "External"
+          },
+          {
+            "Format": "subviewer",
+            "Method": "Embed"
+          },
+          {
+            "Format": "subviewer",
+            "Method": "External"
+          },
+          {
+            "Format": "text",
+            "Method": "Embed"
+          },
+          {
+            "Format": "text",
+            "Method": "External"
+          },
+          {
+            "Format": "vplayer",
+            "Method": "Embed"
+          },
+          {
+            "Format": "vplayer",
+            "Method": "External"
+          }
+        ]
+      },
+      "subtitleStreamIndex": -1,
+      "startTimeTicks": 0,
+      "isPlayback": true,
+      "autoOpenLiveStream": true,
+      "maxStreamingBitrate": 8000000,
+      "audioStreamIndex": 2,
+      "mediaSourceId": "84088e11eb6351255c08507602d79a0f"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:47:14 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "2183.7544"
+    },
+    "body": {
+      "MediaSources": [
+        {
+          "Protocol": "Http",
+          "Id": "84088e11eb6351255c08507602d79a0f",
+          "Path": "http://redacted1:8097/stream/realdebrid/TORRENTID/1?sig=REDACTED",
+          "Type": "Default",
+          "Container": "mkv",
+          "Size": 80,
+          "Name": "Luca (2021)",
+          "IsRemote": true,
+          "ETag": "33e0ab41b6c4ccd5458eb199fcae8a01",
+          "RunTimeTicks": 57152000000,
+          "ReadAtNativeFramerate": false,
+          "IgnoreDts": false,
+          "IgnoreIndex": false,
+          "GenPtsInput": false,
+          "SupportsTranscoding": true,
+          "SupportsDirectStream": true,
+          "SupportsDirectPlay": true,
+          "IsInfiniteStream": false,
+          "UseMostCompatibleTranscodingProfile": false,
+          "RequiresOpening": false,
+          "RequiresClosing": false,
+          "RequiresLooping": false,
+          "SupportsProbing": true,
+          "VideoType": "VideoFile",
+          "MediaStreams": [
+            {
+              "Codec": "hevc",
+              "Language": "ita",
+              "ColorSpace": "bt2020nc",
+              "ColorTransfer": "smpte2084",
+              "ColorPrimaries": "bt2020",
+              "DvVersionMajor": 1,
+              "DvVersionMinor": 0,
+              "DvProfile": 8,
+              "DvLevel": 6,
+              "RpuPresentFlag": 1,
+              "ElPresentFlag": 0,
+              "BlPresentFlag": 1,
+              "DvBlSignalCompatibilityId": 1,
+              "TimeBase": "1/1000",
+              "Title": "Video 2160p",
+              "VideoRange": "HDR",
+              "VideoRangeType": "DOVIWithHDR10",
+              "VideoDoViTitle": "Dolby Vision Profile 8.1 (HDR10)",
+              "AudioSpatialFormat": "None",
+              "DisplayTitle": "Video 2160p - 4K - HEVC - Dolby Vision Profile 8.1 (HDR10)",
+              "IsInterlaced": false,
+              "BitRate": 6621773,
+              "BitDepth": 10,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 2076,
+              "Width": 3840,
+              "AverageFrameRate": 23.976025,
+              "RealFrameRate": 23.976025,
+              "ReferenceFrameRate": 23.976025,
+              "Profile": "Main 10",
+              "Type": "Video",
+              "AspectRatio": "1.85:1",
+              "Index": 0,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false,
+              "PixelFormat": "yuv420p10le",
+              "Level": 150,
+              "IsAnamorphic": false
+            },
+            {
+              "Codec": "ac3",
+              "Language": "ita",
+              "TimeBase": "1/1000",
+              "Title": "Italiano AC-3 5.1",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "Italian",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "Italiano AC-3 5.1 - Dolby Digital - Default",
+              "IsInterlaced": false,
+              "ChannelLayout": "5.1",
+              "BitRate": 640000,
+              "Channels": 6,
+              "SampleRate": 48000,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Audio",
+              "Index": 1,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            },
+            {
+              "Codec": "ac3",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "Title": "English AC-3 5.1",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "English",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "English AC-3 5.1 - Dolby Digital",
+              "IsInterlaced": false,
+              "ChannelLayout": "5.1",
+              "BitRate": 640000,
+              "Channels": 6,
+              "SampleRate": 48000,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Audio",
+              "Index": 2,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            },
+            {
+              "Codec": "subrip",
+              "Language": "ita",
+              "TimeBase": "1/1000",
+              "Title": "Italiano",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedUndefined": "Undefined",
+              "LocalizedDefault": "Default",
+              "LocalizedForced": "Forced",
+              "LocalizedExternal": "External",
+              "LocalizedHearingImpaired": "Hearing Impaired",
+              "LocalizedLanguage": "Italian",
+              "DisplayTitle": "Italiano - SUBRIP",
+              "IsInterlaced": false,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Subtitle",
+              "Index": 3,
+              "IsExternal": false,
+              "DeliveryMethod": "Embed",
+              "IsTextSubtitleStream": true,
+              "SupportsExternalStream": true
+            },
+            {
+              "Codec": "subrip",
+              "Language": "eng",
+              "TimeBase": "1/1000",
+              "Title": "English",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedUndefined": "Undefined",
+              "LocalizedDefault": "Default",
+              "LocalizedForced": "Forced",
+              "LocalizedExternal": "External",
+              "LocalizedHearingImpaired": "Hearing Impaired",
+              "LocalizedLanguage": "English",
+              "DisplayTitle": "English - SUBRIP",
+              "IsInterlaced": false,
+              "IsDefault": false,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Type": "Subtitle",
+              "Index": 4,
+              "IsExternal": false,
+              "DeliveryMethod": "Embed",
+              "IsTextSubtitleStream": true,
+              "SupportsExternalStream": true
+            }
+          ],
+          "MediaAttachments": [],
+          "Formats": [],
+          "Bitrate": 7904052,
+          "RequiredHttpHeaders": {},
+          "TranscodingSubProtocol": "http",
+          "DefaultAudioStreamIndex": 2,
+          "DefaultSubtitleStreamIndex": -1,
+          "HasSegments": false
+        }
+      ],
+      "PlaySessionId": "b4f5cacbd82b49c88326d5ce6131212d"
+    }
+  },
+  "duration_ms": 2189
+}

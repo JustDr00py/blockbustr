@@ -1,0 +1,41 @@
+{
+  "seq": 46,
+  "endpoint": "GET /web/25348.10043daf2671fc8859af.css",
+  "time": "2026-10-05T22:30:29.408Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/25348.10043daf2671fc8859af.css",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "text/css,*/*;q=0.1",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/css",
+      "Date": "Mon, 05 Oct 2026 22:30:29 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb386\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.5155"
+    },
+    "body": {
+      "_text": "html{font-size:93%;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;text-size-adjust:100%;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}h1{font-size:1.8em}h1,h2{font-weight:400}h2{font-size:1.5em}h3{font-size:1.17em;font-weight:400}.textarea-mono{font-family:ui-monospace,Menlo,Monaco,Cascadia Mono,Segoe UI Mono,Roboto Mono,Oxygen Mono,Ubuntu Mono,Source Code Pro,Fira Mono,Droid Sans Mono,Consolas,Courier New,monospace!important}.layout-tv{font-size:125%}.layout-mobile{font-size:90%}\n"
+    }
+  },
+  "duration_ms": 11
+}

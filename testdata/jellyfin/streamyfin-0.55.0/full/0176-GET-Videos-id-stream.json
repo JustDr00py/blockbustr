@@ -1,0 +1,73 @@
+{
+  "seq": 176,
+  "endpoint": "GET /Videos/{id}/stream",
+  "time": "2026-10-05T22:26:15.558Z",
+  "request": {
+    "method": "GET",
+    "path": "/Videos/551ae82823de5533467c046377c55afb/stream",
+    "query": {
+      "static": [
+        "true"
+      ],
+      "container": [
+        "mkv"
+      ],
+      "mediaSourceId": [
+        "551ae82823de5533467c046377c55afb"
+      ],
+      "subtitleStreamIndex": [
+        "3"
+      ],
+      "audioStreamIndex": [
+        "1"
+      ],
+      "deviceId": [
+        "dddd0000-0000-0000-0000-000000000001"
+      ],
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ],
+      "startTimeTicks": [
+        "0"
+      ],
+      "maxStreamingBitrate": [
+        ""
+      ],
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ]
+    },
+    "headers": {
+      "User-Agent": "libmpv",
+      "Accept": "*/*",
+      "Range": "bytes=8022935-",
+      "Connection": "close",
+      "Host": "jellyfin:8096",
+      "Icy-MetaData": "1",
+      "Authorization": "MediaBrowser Token=\"aaaa0000000000000000000000000001\""
+    },
+    "auth": {
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 206,
+    "headers": {
+      "Content-Length": "6783157937",
+      "Connection": "close",
+      "Content-Type": "video/x-matroska",
+      "Date": "Mon, 05 Oct 2026 22:26:15 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Language": "en-US",
+      "Content-Range": "bytes 8022935-6791180871/6791180872",
+      "Last-Modified": "Sat, 22 Aug 2026 03:25:27 GMT",
+      "X-Response-Time-ms": "15.5097"
+    },
+    "body": null,
+    "body_omitted": "video/x-matroska streamed (not captured)"
+  },
+  "duration_ms": null
+}

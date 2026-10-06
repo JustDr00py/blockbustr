@@ -1,0 +1,50 @@
+{
+  "seq": 20,
+  "endpoint": "GET /Items/{id}/Images/Logo",
+  "time": "2026-10-05T22:25:08.694Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/d48b8adc50a77956fcee8210661176fb/Images/Logo",
+    "query": {
+      "quality": [
+        "90"
+      ],
+      "fillHeight": [
+        "120"
+      ],
+      "tag": [
+        "240eb4d4be0863d139f98fd2128d6e48"
+      ]
+    },
+    "headers": {
+      "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 14; Device Build/REDACTED)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "17853",
+      "Content-Type": "image/png",
+      "Date": "Mon, 05 Oct 2026 22:25:08 GMT",
+      "Server": "Kestrel",
+      "Age": "0",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Language": "en-US",
+      "ETag": "\"240eb4d4be0863d139f98fd2128d6e48\"",
+      "Last-Modified": "Mon, 05 Oct 2026 22:25:08 GMT",
+      "Vary": "Accept",
+      "transferMode.dlna.org": "Interactive",
+      "realTimeInfo.dlna.org": "DLNA.ORG_TLAG=*",
+      "Content-Disposition": "attachment",
+      "X-Response-Time-ms": "23.8155"
+    },
+    "body": null,
+    "body_omitted": "image/png 17853 B"
+  },
+  "duration_ms": 35
+}

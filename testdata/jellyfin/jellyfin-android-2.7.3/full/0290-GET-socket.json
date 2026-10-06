@@ -1,0 +1,101 @@
+{
+  "seq": 290,
+  "endpoint": "GET /socket",
+  "time": "2026-10-05T22:34:24.753Z",
+  "request": {
+    "method": "GET",
+    "path": "/socket",
+    "query": {
+      "ApiKey": [
+        "aaaa0000000000000000000000000001"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "Upgrade",
+      "Pragma": "no-cache",
+      "Cache-Control": "no-cache",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Upgrade": "websocket",
+      "Origin": "http://192.0.2.2:8096",
+      "Sec-WebSocket-Version": "13",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Sec-WebSocket-Key": "QhlkoX52tc8uOjsHYvWBKQ==",
+      "Sec-WebSocket-Extensions": "permessage-deflate; client_max_window_bits"
+    },
+    "auth": {
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "query:apikey"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 101,
+    "headers": {
+      "Connection": "Upgrade",
+      "Date": "Mon, 05 Oct 2026 22:34:24 GMT",
+      "Server": "Kestrel",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Language": "en-US",
+      "Upgrade": "websocket",
+      "Sec-WebSocket-Accept": "esHkW0Gm6R+gZ0hwvI+Qu97rJAI=",
+      "X-Response-Time-ms": "44.7671"
+    },
+    "body": null
+  },
+  "duration_ms": 52,
+  "websocket": {
+    "messages": [
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:34:24.816Z",
+        "data": {
+          "MessageId": "a118732d7dee4f7a9ab4cdb633fd759b",
+          "Data": 60,
+          "MessageType": "ForceKeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:34:24.826Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:34:24.832Z",
+        "data": {
+          "MessageId": "ea9776558b1b43ad9989697288aea7e4",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": true,
+        "time": "2026-10-05T22:34:55.466Z",
+        "data": {
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:34:55.469Z",
+        "data": {
+          "MessageId": "072396bddac94c37aa69422242b9cee1",
+          "MessageType": "KeepAlive"
+        }
+      },
+      {
+        "from_client": false,
+        "time": "2026-10-05T22:35:47.371Z",
+        "data": {
+          "MessageId": "fb944df6273f44d2ac7f27536a47075b",
+          "Data": 60,
+          "MessageType": "ForceKeepAlive"
+        }
+      }
+    ],
+    "truncated": false
+  }
+}

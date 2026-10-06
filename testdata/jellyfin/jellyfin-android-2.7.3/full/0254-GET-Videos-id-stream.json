@@ -1,0 +1,61 @@
+{
+  "seq": 254,
+  "endpoint": "GET /Videos/{id}/stream",
+  "time": "2026-10-05T22:32:32.384Z",
+  "request": {
+    "method": "GET",
+    "path": "/Videos/1f77a87a-9603-bff7-d158-9d1e076f060c/stream",
+    "query": {
+      "static": [
+        "true"
+      ],
+      "playSessionId": [
+        "2e0c6c5c54be44478def69125644a988"
+      ],
+      "mediaSourceId": [
+        "1f77a87a9603bff7d1589d1e076f060c"
+      ],
+      "deviceId": [
+        "device-0002"
+      ],
+      "streamOptions": [
+        "{}"
+      ],
+      "enableAudioVbrEncoding": [
+        "true"
+      ]
+    },
+    "headers": {
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0002\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 (Linux;Android 14) AndroidXMedia3/1.8.0",
+      "Accept-Encoding": "identity",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0002",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "7654835338",
+      "Content-Type": "video/mp4",
+      "Date": "Mon, 05 Oct 2026 22:32:32 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Language": "en-US",
+      "Last-Modified": "Sun, 31 May 2026 23:12:04 GMT",
+      "X-Response-Time-ms": "18.6823"
+    },
+    "body": null,
+    "body_omitted": "video/mp4 streamed (not captured)"
+  },
+  "duration_ms": null
+}

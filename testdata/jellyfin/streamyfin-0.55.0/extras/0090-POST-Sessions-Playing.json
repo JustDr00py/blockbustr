@@ -1,0 +1,55 @@
+{
+  "seq": 90,
+  "endpoint": "POST /Sessions/Playing",
+  "time": "2026-10-05T22:39:52.410Z",
+  "request": {
+    "method": "POST",
+    "path": "/Sessions/Playing",
+    "query": {},
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "a2c8d992d4214c0fac65534ccf186ce6-a66f2e558dc5ee3a-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=a2c8d992d4214c0fac65534ccf186ce6,sentry-org_id=4509610343596032,sentry-transaction=%2Fplayer%2Fdirect-player,sentry-sampled=false,sentry-sample_rand=0.021680399665497112,sentry-sample_rate=0",
+      "Content-Type": "application/json",
+      "Content-Length": "336",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": {
+      "ItemId": "1f77a87a9603bff7d1589d1e076f060c",
+      "AudioStreamIndex": 1,
+      "SubtitleStreamIndex": -1,
+      "MediaSourceId": "1f77a87a9603bff7d1589d1e076f060c",
+      "PositionTicks": 0,
+      "IsPaused": false,
+      "PlayMethod": "Transcode",
+      "PlaySessionId": "96d14f860c744041b8f0e1963fca49aa",
+      "IsMuted": false,
+      "CanSeek": true,
+      "RepeatMode": "RepeatNone",
+      "PlaybackOrder": "Default"
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "Date": "Mon, 05 Oct 2026 22:39:52 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "43.9802"
+    },
+    "body": null
+  },
+  "duration_ms": 49
+}

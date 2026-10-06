@@ -1,0 +1,117 @@
+{
+  "seq": 225,
+  "endpoint": "GET /UserItems/Resume",
+  "time": "2026-10-05T22:27:08.366Z",
+  "request": {
+    "method": "GET",
+    "path": "/UserItems/Resume",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "startIndex": [
+        "0"
+      ],
+      "limit": [
+        "10"
+      ],
+      "enableImageTypes": [
+        "Primary",
+        "Backdrop",
+        "Thumb"
+      ],
+      "includeItemTypes": [
+        "Movie",
+        "Episode"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "bb6bc4cc23b34ad2b154616b653c40f5-b31f871fc6a6665f",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=bb6bc4cc23b34ad2b154616b653c40f5,sentry-org_id=4509610343596032",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0",
+      "If-Modified-Since": "Mon, 05 Oct 2026 22:27:07 GMT"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:27:08 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "50.584"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Little Fockers",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "d48b8adc50a77956fcee8210661176fb",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2010-12-21T00:00:00.0000000Z",
+          "CriticRating": 9,
+          "OfficialRating": "PG-13",
+          "ChannelId": null,
+          "CommunityRating": 5.7,
+          "RunTimeTicks": 58597330000,
+          "ProductionYear": 2010,
+          "IsFolder": false,
+          "Type": "Movie",
+          "UserData": {
+            "PlayedPercentage": 44.99295445713994,
+            "PlaybackPositionTicks": 26364670000,
+            "PlayCount": 6,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:25:17.4253737Z",
+            "Played": false,
+            "Key": "d48b8adc-50a7-7956-fcee-8210661176fb",
+            "ItemId": "d48b8adc50a77956fcee8210661176fb"
+          },
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "d4b6a694a799811a5de4806201fec13a",
+            "Thumb": "3adf6a330f10b3c9d57498be6541c003"
+          },
+          "BackdropImageTags": [
+            "3a6bf2bce119fbad29a0cf419169fe0e"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "3a6bf2bce119fbad29a0cf419169fe0e": "WqR3H0%M_N.8D%-p?bofjtjuoft7-=kCIAaKxuj[_3oMbHt7WBWB"
+            },
+            "Primary": {
+              "d4b6a694a799811a5de4806201fec13a": "dnOf.E-U?b-;~qt7IoW=_4W=M{t7s:aK%LxtxvofV[WW"
+            },
+            "Thumb": {
+              "3adf6a330f10b3c9d57498be6541c003": "WsN9|H-pH=xt.8sl~qxuE1WBozoeE2t7W=Rjadbb-;X8RjjZt7WB"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 61
+}

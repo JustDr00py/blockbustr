@@ -1,0 +1,175 @@
+{
+  "seq": 38,
+  "endpoint": "GET /Items/{id}/Similar",
+  "time": "2026-10-05T22:53:02.190Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/1f77a87a9603bff7d1589d1e076f060c/Similar",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "limit": [
+        "12"
+      ],
+      "fields": [
+        "PrimaryImageAspectRatio,CanDelete"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "accept": "application/json",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:53:01 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "49.525"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Luca",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "84088e11eb6351255c08507602d79a0f",
+          "CanDelete": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2021-06-17T00:00:00.0000000Z",
+          "CriticRating": 91,
+          "OfficialRating": "PG",
+          "ChannelId": null,
+          "CommunityRating": 7.772,
+          "RunTimeTicks": 57152000000,
+          "ProductionYear": 2021,
+          "ProviderIds": {
+            "Imdb": "tt12801262",
+            "Tmdb": "508943"
+          },
+          "IsFolder": false,
+          "Type": "Movie",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 9,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:50:54.9568254Z",
+            "Played": false,
+            "Key": "84088e11-eb63-5125-5c08-507602d79a0f",
+            "ItemId": "84088e11eb6351255c08507602d79a0f"
+          },
+          "PrimaryImageAspectRatio": 0.6666666666666666,
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Thumb": "0a5b46e408f8db9f056bb2263054b886",
+            "Primary": "ad87e578b85b2f6a6c71fc16131a3049",
+            "Logo": "609cce5f84918f5400e1cb942144686a"
+          },
+          "BackdropImageTags": [
+            "dca946bc61eed45a3973e668c7255e33"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "dca946bc61eed45a3973e668c7255e33": "WQGR^@.APAo#J:XnGJO_pKa%S6X9PDOwp0t8sDs;pxx^ozS2r?of"
+            },
+            "Thumb": {
+              "0a5b46e408f8db9f056bb2263054b886": "W?9AXLo#bbbci_j^ysbIkCozslofbwWBoMofoeoyoifjn$RkR+kD"
+            },
+            "Primary": {
+              "ad87e578b85b2f6a6c71fc16131a3049": "dnE;4ct3V]xv?wo#oxozF~R.xCR.GdR*sDR:j1WZbwaf"
+            },
+            "Logo": {
+              "609cce5f84918f5400e1cb942144686a": "VOK1%f?b-;-;-;M{M{xut7t700xuof-;RjIURjt7ofWB"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        },
+        {
+          "Name": "Little Fockers",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "d48b8adc50a77956fcee8210661176fb",
+          "CanDelete": true,
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2010-12-21T00:00:00.0000000Z",
+          "CriticRating": 9,
+          "OfficialRating": "PG-13",
+          "ChannelId": null,
+          "CommunityRating": 5.7,
+          "RunTimeTicks": 58597330000,
+          "ProductionYear": 2010,
+          "ProviderIds": {
+            "Imdb": "tt0970866",
+            "Tmdb": "39451",
+            "TmdbCollection": "51509"
+          },
+          "IsFolder": false,
+          "Type": "Movie",
+          "UserData": {
+            "PlayedPercentage": 44.99295445713994,
+            "PlaybackPositionTicks": 26364670000,
+            "PlayCount": 6,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:25:17.4253737Z",
+            "Played": false,
+            "Key": "d48b8adc-50a7-7956-fcee-8210661176fb",
+            "ItemId": "d48b8adc50a77956fcee8210661176fb"
+          },
+          "PrimaryImageAspectRatio": 0.6666666666666666,
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "d4b6a694a799811a5de4806201fec13a",
+            "Thumb": "3adf6a330f10b3c9d57498be6541c003",
+            "Logo": "240eb4d4be0863d139f98fd2128d6e48"
+          },
+          "BackdropImageTags": [
+            "3a6bf2bce119fbad29a0cf419169fe0e"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "3a6bf2bce119fbad29a0cf419169fe0e": "WqR3H0%M_N.8D%-p?bofjtjuoft7-=kCIAaKxuj[_3oMbHt7WBWB"
+            },
+            "Primary": {
+              "d4b6a694a799811a5de4806201fec13a": "dnOf.E-U?b-;~qt7IoW=_4W=M{t7s:aK%LxtxvofV[WW"
+            },
+            "Thumb": {
+              "3adf6a330f10b3c9d57498be6541c003": "WsN9|H-pH=xt.8sl~qxuE1WBozoeE2t7W=Rjadbb-;X8RjjZt7WB"
+            },
+            "Logo": {
+              "240eb4d4be0863d139f98fd2128d6e48": "NCCL[RfQ6g$6a|SM2DsUN[jtSLSLJkSMwyN[SMWp"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 2,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 54
+}

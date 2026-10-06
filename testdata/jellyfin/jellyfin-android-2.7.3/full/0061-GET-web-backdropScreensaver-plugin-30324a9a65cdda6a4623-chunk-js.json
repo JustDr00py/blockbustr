@@ -1,0 +1,41 @@
+{
+  "seq": 61,
+  "endpoint": "GET /web/backdropScreensaver-plugin.30324a9a65cdda6a4623.chunk.js",
+  "time": "2026-10-05T22:30:29.476Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/backdropScreensaver-plugin.30324a9a65cdda6a4623.chunk.js",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "*/*",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/javascript",
+      "Date": "Mon, 05 Oct 2026 22:30:29 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb608\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.652"
+    },
+    "body": {
+      "_text": "\"use strict\";(self.webpackChunk=self.webpackChunk||[]).push([[86040],{53286:function(e,t,r){r.r(t),r(29305),r(32733),r(84701),r(81678),r(44962),r(4754),r(94),r(36947),r(78557),r(90076),r(83994),r(82367);var n=r(15995),o=r(67430),i=r(95569);function s(e){return s=\"function\"==typeof Symbol&&\"symbol\"==typeof Symbol.iterator?function(e){return typeof e}:function(e){return e&&\"function\"==typeof Symbol&&e.constructor===Symbol&&e!==Symbol.prototype?\"symbol\":typeof e},s(e)}function u(e,t){for(var r=0;r<t.length;r++){var n=t[r];n.enumerable=n.enumerable||!1,n.configurable=!0,\"value\"in n&&(n.writable=!0),Object.defineProperty(e,a(n.key),n)}}function a(e){var t=function(e){if(\"object\"!=s(e)||!e)return e;var t=e[Symbol.toPrimitive];if(void 0!==t){var r=t.call(e,\"string\");if(\"object\"!=s(r))return r;throw new TypeError(\"@@toPrimitive must return a primitive value.\")}return String(e)}(e);return\"symbol\"==s(t)?t:t+\"\"}var c=function(){return e=function e(){!function(e,t){if(!(e instanceof t))throw new TypeError(\"Cannot call a class as a function\")}(this,e),this.name=\"BackdropScreensaver\",this.type=n.Q.Screensaver,this.id=\"backdropscreensaver\",this.supportsAnonymous=!1},(t=[{key:\"show\",value:function(){var e=this,t=o.tF.currentApiClient();t.getItems(t.getCurrentUserId(),{ImageTypes:\"Backdrop\",EnableImageTypes:\"Backdrop\",IncludeItemTypes:\"Movie,Series,MusicArtist\",SortBy:\"Random\",Recursive:!0,Fields:\"Taglines\",ImageTypeLimit:10,StartIndex:0,Limit:200}).then((function(t){t.Items.length&&r.e(27884).then(r.bind(r,27884)).then((function(r){var n=new(0,r.default)({showTitle:!0,cover:!0,items:t.Items,autoplay:{delay:1e3*i.dE()}});n.show(),e.currentSlideshow=n})).catch(console.error)}))}},{key:\"hide\",value:function(){return this.currentSlideshow&&(this.currentSlideshow.hide(),this.currentSlideshow=null),Promise.resolve()}}])&&u(e.prototype,t),Object.defineProperty(e,\"prototype\",{writable:!1}),e;var e,t}();t.default=c}}]);"
+    }
+  },
+  "duration_ms": 9
+}

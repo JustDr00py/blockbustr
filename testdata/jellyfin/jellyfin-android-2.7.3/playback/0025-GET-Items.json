@@ -1,0 +1,197 @@
+{
+  "seq": 25,
+  "endpoint": "GET /Items",
+  "time": "2026-10-05T22:52:56.332Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "limit": [
+        "20"
+      ],
+      "recursive": [
+        "true"
+      ],
+      "includeItemTypes": [
+        "Movie",
+        "Series",
+        "MusicArtist"
+      ],
+      "sortBy": [
+        "IsFavoriteOrLiked",
+        "Random"
+      ],
+      "imageTypeLimit": [
+        "0"
+      ],
+      "enableTotalRecordCount": [
+        "false"
+      ],
+      "enableImages": [
+        "false"
+      ]
+    },
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Accept-Language": "en-us,en",
+      "Accept": "application/json,application/json; profile=CamelCase,application/json; profile=PascalCase,text/html",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:52:56 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "90.8926"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Luca",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "84088e11eb6351255c08507602d79a0f",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2021-06-17T00:00:00.0000000Z",
+          "CriticRating": 91,
+          "OfficialRating": "PG",
+          "ChannelId": null,
+          "CommunityRating": 7.772,
+          "RunTimeTicks": 57152000000,
+          "ProductionYear": 2021,
+          "IsFolder": false,
+          "Type": "Movie",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 9,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:50:54.9568254Z",
+            "Played": false,
+            "Key": "84088e11-eb63-5125-5c08-507602d79a0f",
+            "ItemId": "84088e11eb6351255c08507602d79a0f"
+          },
+          "VideoType": "VideoFile",
+          "ImageBlurHashes": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        },
+        {
+          "Name": "MF GHOST",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+          "OfficialRating": "TV-14",
+          "ChannelId": null,
+          "CommunityRating": 8.2,
+          "RunTimeTicks": 14400000000,
+          "ProductionYear": 2023,
+          "IsFolder": true,
+          "Type": "Series",
+          "UserData": {
+            "PlayedPercentage": 0,
+            "UnplayedItemCount": 5,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "414207",
+            "ItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6"
+          },
+          "Status": "Continuing",
+          "AirDays": [],
+          "ImageBlurHashes": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown",
+          "EndDate": "2026-03-29T00:00:00.0000000Z",
+          "OriginalLanguage": "ja"
+        },
+        {
+          "Name": "Little Fockers",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "d48b8adc50a77956fcee8210661176fb",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2010-12-21T00:00:00.0000000Z",
+          "CriticRating": 9,
+          "OfficialRating": "PG-13",
+          "ChannelId": null,
+          "CommunityRating": 5.7,
+          "RunTimeTicks": 58597330000,
+          "ProductionYear": 2010,
+          "IsFolder": false,
+          "Type": "Movie",
+          "UserData": {
+            "PlayedPercentage": 44.99295445713994,
+            "PlaybackPositionTicks": 26364670000,
+            "PlayCount": 6,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:25:17.4253737Z",
+            "Played": false,
+            "Key": "d48b8adc-50a7-7956-fcee-8210661176fb",
+            "ItemId": "d48b8adc50a77956fcee8210661176fb"
+          },
+          "VideoType": "VideoFile",
+          "ImageBlurHashes": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        },
+        {
+          "Name": "Mortal Kombat II",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "1f77a87a9603bff7d1589d1e076f060c",
+          "Container": "mov,mp4,m4a,3gp,3g2,mj2",
+          "PremiereDate": "2026-05-06T00:00:00.0000000Z",
+          "CriticRating": 64,
+          "OfficialRating": "R",
+          "ChannelId": null,
+          "CommunityRating": 7.786,
+          "RunTimeTicks": 63585920000,
+          "ProductionYear": 2026,
+          "IsFolder": false,
+          "Type": "Movie",
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 3,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:39:52.4503623Z",
+            "Played": false,
+            "Key": "1f77a87a-9603-bff7-d158-9d1e076f060c",
+            "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+          },
+          "VideoType": "VideoFile",
+          "ImageBlurHashes": {},
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 4,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 96
+}

@@ -1,0 +1,55 @@
+{
+  "seq": 178,
+  "endpoint": "POST /Sessions/Playing/Progress",
+  "time": "2026-10-05T22:26:15.663Z",
+  "request": {
+    "method": "POST",
+    "path": "/Sessions/Playing/Progress",
+    "query": {},
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "be80f6c88b514cfd9b7ab3fcc9531c36-949e9c7e3a9ef4b4-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=be80f6c88b514cfd9b7ab3fcc9531c36,sentry-org_id=4509610343596032,sentry-transaction=Route%20Change,sentry-sampled=false,sentry-sample_rand=0.014512070942507097,sentry-sample_rate=0",
+      "Content-Type": "application/json",
+      "Content-Length": "338",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": {
+      "ItemId": "551ae82823de5533467c046377c55afb",
+      "AudioStreamIndex": 1,
+      "SubtitleStreamIndex": 3,
+      "MediaSourceId": "551ae82823de5533467c046377c55afb",
+      "PositionTicks": 0,
+      "IsPaused": false,
+      "PlayMethod": "DirectStream",
+      "PlaySessionId": "eda4a1f71cdb41a29a9826915c284dc8",
+      "IsMuted": false,
+      "CanSeek": true,
+      "RepeatMode": "RepeatNone",
+      "PlaybackOrder": "Default"
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "Date": "Mon, 05 Oct 2026 22:26:15 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "200.4757"
+    },
+    "body": null
+  },
+  "duration_ms": 207
+}

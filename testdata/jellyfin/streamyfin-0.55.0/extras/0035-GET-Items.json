@@ -1,0 +1,375 @@
+{
+  "seq": 35,
+  "endpoint": "GET /Items",
+  "time": "2026-10-05T22:39:39.477Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "userId": [
+        "bbbb0000000000000000000000000001"
+      ],
+      "fields": [
+        "People"
+      ],
+      "ids": [
+        "1f77a87a9603bff7d1589d1e076f060c"
+      ]
+    },
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "a8e44bc2754441da82388e1bc2ac77f7-9dd3070e52851ad3-0",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=a8e44bc2754441da82388e1bc2ac77f7,sentry-org_id=4509610343596032,sentry-transaction=%2Fitems%2Fpage,sentry-sampled=false,sentry-sample_rand=0.6809700419804019,sentry-sample_rate=0",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:39:39 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "100.1639"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Mortal Kombat II",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "1f77a87a9603bff7d1589d1e076f060c",
+          "Container": "mov,mp4,m4a,3gp,3g2,mj2",
+          "PremiereDate": "2026-05-06T00:00:00.0000000Z",
+          "CriticRating": 64,
+          "OfficialRating": "R",
+          "ChannelId": null,
+          "CommunityRating": 7.786,
+          "RunTimeTicks": 63585920000,
+          "ProductionYear": 2026,
+          "IsFolder": false,
+          "Type": "Movie",
+          "People": [
+            {
+              "Name": "Karl Urban",
+              "Id": "9f86e2961d0c91c0bfb5e3a4a195a2de",
+              "Role": "Johnny Cage",
+              "Type": "Actor",
+              "PrimaryImageTag": "76de3d7ab171c2c4bae4e5d03b5db955",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "76de3d7ab171c2c4bae4e5d03b5db955": "dbNSfT=_~L%X:%t5-5wKpHWUNLW;$ds,%1xZ-4WosWxZ"
+                }
+              }
+            },
+            {
+              "Name": "Adeline Rudolph",
+              "Id": "40d49cf68ff8c44c223455b1f3093d8a",
+              "Role": "Kitana",
+              "Type": "Actor",
+              "PrimaryImageTag": "35ecba6fd14c8ab76e3603e203b7996e",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "35ecba6fd14c8ab76e3603e203b7996e": "dODc2Q?HKQ9^~qxa%MoztlR+%M%1kqWXxaxtxuofofof"
+                }
+              }
+            },
+            {
+              "Name": "Ludi Lin",
+              "Id": "6ae38e45ea0894299c8043cc0483b1cc",
+              "Role": "Liu Kang",
+              "Type": "Actor",
+              "PrimaryImageTag": "73473ae0fc0bc19efc8406f36ee8a0bd",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "73473ae0fc0bc19efc8406f36ee8a0bd": "dRG7}L%10#Ip56aexaIpNdRkxZ-VNGR+xZoMEMWVs.oe"
+                }
+              }
+            },
+            {
+              "Name": "Jessica McNamee",
+              "Id": "d8b7f5eda39eda148ca671965eb7f3b8",
+              "Role": "Sonya Blade",
+              "Type": "Actor",
+              "PrimaryImageTag": "7e1a23071d04d7c28ea9f711c347ff7c",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "7e1a23071d04d7c28ea9f711c347ff7c": "deJaTI-VTeo}~qoz-;%MXnozxGoz%Njss.of%MbHjYoJ"
+                }
+              }
+            },
+            {
+              "Name": "Martyn Ford",
+              "Id": "91e1bbe9f6cdae53ab4ad416461dc699",
+              "Role": "Shao Kahn",
+              "Type": "Actor",
+              "PrimaryImageTag": "9af980a4bc8a6a1cc32286b5ca023f39",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "9af980a4bc8a6a1cc32286b5ca023f39": "dMJkAZ?ayr~pDjt6tlay-;V?RPM{?vM_xat6Nyoct7k8"
+                }
+              }
+            },
+            {
+              "Name": "Josh Lawson",
+              "Id": "0ea0a9bc86ed5e91b6f5666cad04ea0c",
+              "Role": "Kano",
+              "Type": "Actor",
+              "PrimaryImageTag": "73c2ab5e226cf5166f92574f1a00d074",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "73c2ab5e226cf5166f92574f1a00d074": "dbG9BgwJ2{OtT1n$T1R-JBR+$Ls:PCWYo~g4OZWXxat7"
+                }
+              }
+            },
+            {
+              "Name": "Tati Gabrielle",
+              "Id": "5104a6d49b6af0bcc781520acdd91279",
+              "Role": "Jade",
+              "Type": "Actor",
+              "PrimaryImageTag": "9eb2c97c0d755603e2b751a2bfda1622",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "9eb2c97c0d755603e2b751a2bfda1622": "drI4R|tQ-=x]}[f+t8t7R5oziwsnnPt8xFs:w{Rjaee."
+                }
+              }
+            },
+            {
+              "Name": "Mehcad Brooks",
+              "Id": "655d9ee4b104a4b867180844e4037d70",
+              "Role": "Jax Briggs",
+              "Type": "Actor",
+              "PrimaryImageTag": "2062a3aaaa2bbbf1d5e48084c2400331",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "2062a3aaaa2bbbf1d5e48084c2400331": "dQH1*@%1T|x^~Wt7XUozE2bbM{R*yER*xut8tmbIs:t7"
+                }
+              }
+            },
+            {
+              "Name": "Tadanobu Asano",
+              "Id": "0f0f26550677c530b3723e5909425a10",
+              "Role": "Lord Raiden",
+              "Type": "Actor",
+              "PrimaryImageTag": "a087c2d72b13daf76592b97526b80c2a",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "a087c2d72b13daf76592b97526b80c2a": "dLBMb|xZ0fIoM_s:ofWBNeRjs.t69ZWB-pt7s:WVaeof"
+                }
+              }
+            },
+            {
+              "Name": "Chin Han",
+              "Id": "21a5473242c9a3f9b3ba44741136705f",
+              "Role": "Shang Tsung",
+              "Type": "Actor",
+              "PrimaryImageTag": "4bc5fffa3805c54d13c417bd3dfc0dd3",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "4bc5fffa3805c54d13c417bd3dfc0dd3": "dvHnHTWB0et7M_t6t7Rj9]j[xYa}RjR*t7s:R*WVs.jY"
+                }
+              }
+            },
+            {
+              "Name": "Damon Herriman",
+              "Id": "44858f13a3ef0a37f7bff6278dcd2d6f",
+              "Role": "Quan Chi",
+              "Type": "Actor",
+              "PrimaryImageTag": "f9fd49b9fef4912a17f23d4a5fd0a9b1",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "f9fd49b9fef4912a17f23d4a5fd0a9b1": "dOEVpR%20fNxrWs:IoIo9uof-Uj]EMRj-pt7IBM|ays:"
+                }
+              }
+            },
+            {
+              "Name": "Joe Taslim",
+              "Id": "a36fd1c33b8f4b96bfacf67a925f8feb",
+              "Role": "Bi-Han",
+              "Type": "Actor",
+              "PrimaryImageTag": "3c0e5e0d0c1e5c71a37d32aaa6cbd94b",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "3c0e5e0d0c1e5c71a37d32aaa6cbd94b": "dxKd#q%L.8x]~qs:tRt7E1RkRioKx]a}t7xt-;j[oft7"
+                }
+              }
+            },
+            {
+              "Name": "Hiroyuki Sanada",
+              "Id": "d47179e931d22aef5de2bb21f2fd4e12",
+              "Role": "Hanzo Hasashi / Scorpion",
+              "Type": "Actor",
+              "PrimaryImageTag": "9c7e70da01965152ca0861fb7914fc19",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "9c7e70da01965152ca0861fb7914fc19": "dcIgyD%1yDS$~WWBxvxaI=WCe-a}tRbHxa%2-pj]xaxu"
+                }
+              }
+            },
+            {
+              "Name": "Max Huang",
+              "Id": "e6b8502b2b8436a668d7e7ceb7aaa0c2",
+              "Role": "Kung Lao",
+              "Type": "Actor",
+              "PrimaryImageTag": "19ff8e00b8d6f82177187c805704ee69",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "19ff8e00b8d6f82177187c805704ee69": "dUHnmSx]%$?H~VM_tRM{0fM_slIVS$xv-p%MogWAxut7"
+                }
+              }
+            },
+            {
+              "Name": "Lewis Tan",
+              "Id": "7e47ea88a8d7bd961e0d75050eb7b1f2",
+              "Role": "Cole Young",
+              "Type": "Actor",
+              "PrimaryImageTag": "2631a69fec159c0e65d7ba22bd7ab732",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "2631a69fec159c0e65d7ba22bd7ab732": "dUMGq_xZ.T?vWGxaxuM|yYS4-o%M%hkD%MxuRkRjIAV@"
+                }
+              }
+            },
+            {
+              "Name": "Simon McQuoid",
+              "Id": "33152eba49d37be3c387b6d3611cee33",
+              "Role": "Director",
+              "Type": "Director",
+              "PrimaryImageTag": "2ed4f851dfc69bb404ca9314147460f1",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "2ed4f851dfc69bb404ca9314147460f1": "dXDI?@-;0L4.R5M{XS%MIoj[%2f6o}t7aJM{IoRjt6xu"
+                }
+              }
+            },
+            {
+              "Name": "Jeremy Slater",
+              "Id": "4b4ddd7bc6f7d7b994383392388f2de2",
+              "Role": "Writer",
+              "Type": "Writer",
+              "PrimaryImageTag": "9508491ff76867be2d6619a82af667ba",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "9508491ff76867be2d6619a82af667ba": "dJBCoe%20fE2=|oLIVWB57NH%2xZ5RbH%2WCELf6%1of"
+                }
+              }
+            },
+            {
+              "Name": "James Wan",
+              "Id": "5873459e155b84a1e4c9121b93bd0b6a",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "b3eb153fdb0d5e17f053a2a17b9ed71d",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "b3eb153fdb0d5e17f053a2a17b9ed71d": "dEEC8{^PL3KQ-=x^x]$%0$Nx#+jE.AWA%1g4xvogaenh"
+                }
+              }
+            },
+            {
+              "Name": "Todd Garner",
+              "Id": "e03dc4231af9597e6a9210c30bbaabbb",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "33a1dc3243d6e8ba3bbfc216d38a8845",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "33a1dc3243d6e8ba3bbfc216d38a8845": "dA9%P9~B9u5R;e={S49tIobbw^xZJ.Ioxa-o9tIoaysm"
+                }
+              }
+            },
+            {
+              "Name": "Toby Emmerich",
+              "Id": "6b5c70d6e8f784c9c4344eaabd333904",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "5474c7064699a6c5d5ed76035d97c1bc",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "5474c7064699a6c5d5ed76035d97c1bc": "dqG8TPxa0LNGwuoeSiR*S$WWnhoJNHWWs:j@NGaes:kC"
+                }
+              }
+            },
+            {
+              "Name": "Simon McQuoid",
+              "Id": "33152eba49d37be3c387b6d3611cee33",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "2ed4f851dfc69bb404ca9314147460f1",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "2ed4f851dfc69bb404ca9314147460f1": "dXDI?@-;0L4.R5M{XS%MIoj[%2f6o}t7aJM{IoRjt6xu"
+                }
+              }
+            },
+            {
+              "Name": "E. Bennett Walsh",
+              "Id": "18ec0d3d0c504025206ef7637b2452fb",
+              "Role": "Producer",
+              "Type": "Producer",
+              "PrimaryImageTag": "3c7104debcac4b1e5efaab2b749af238",
+              "ImageBlurHashes": {
+                "Primary": {
+                  "3c7104debcac4b1e5efaab2b749af238": "ddE{kNxuRjxu~qt7WBxuayofoft7M{WBj[j[ofRjRjRj"
+                }
+              }
+            }
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 1,
+            "IsFavorite": false,
+            "LastPlayedDate": "2026-10-05T22:32:41.1404894Z",
+            "Played": false,
+            "Key": "1f77a87a-9603-bff7-d158-9d1e076f060c",
+            "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+          },
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Thumb": "0b55d0c947c87a51d12fca0a5d68010e",
+            "Primary": "24ab56762c9d8cb3d25f4323853b0389",
+            "Logo": "94051eb91d590f014438cce01f89754c"
+          },
+          "BackdropImageTags": [
+            "be8c66e5b7827b6a0aae6ecdbe0c61d8"
+          ],
+          "ImageBlurHashes": {
+            "Backdrop": {
+              "be8c66e5b7827b6a0aae6ecdbe0c61d8": "WKF2*9oL9^#mSzt6w{JSSfjZSMa|1JJ8-AbbjHWB$gWV$PSNa#WV"
+            },
+            "Thumb": {
+              "0b55d0c947c87a51d12fca0a5d68010e": "W67,uyD%57xuIp%fEgNHt7xZaJxG0e%M%1RjozIV=xxaE2RkxuNG"
+            },
+            "Primary": {
+              "24ab56762c9d8cb3d25f4323853b0389": "dD9%9p$gIVof-psTELNa0LODNaR-awWX%2-VxuNHxas."
+            },
+            "Logo": {
+              "94051eb91d590f014438cce01f89754c": "PB84;{j[IAj[%NWBIUjt-;j[jaj[kBj[V[ae4TfkRPaetRt7WAWB"
+            }
+          },
+          "LocationType": "FileSystem",
+          "MediaType": "Video",
+          "OriginalLanguage": "en"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 105
+}

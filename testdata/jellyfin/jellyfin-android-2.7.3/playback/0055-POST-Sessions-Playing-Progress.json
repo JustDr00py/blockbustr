@@ -1,0 +1,52 @@
+{
+  "seq": 55,
+  "endpoint": "POST /Sessions/Playing/Progress",
+  "time": "2026-10-05T22:53:13.801Z",
+  "request": {
+    "method": "POST",
+    "path": "/Sessions/Playing/Progress",
+    "query": {},
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0002\", Device=\"Device 2\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 via jellyfin-sdk-kotlin (OkHttp/4.12.0)",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "282",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0002",
+      "Device": "Device 2",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": {
+      "CanSeek": true,
+      "ItemId": "1f77a87a-9603-bff7-d158-9d1e076f060c",
+      "AudioStreamIndex": 1,
+      "IsPaused": false,
+      "IsMuted": false,
+      "PositionTicks": 0,
+      "VolumeLevel": 60,
+      "PlayMethod": "DirectPlay",
+      "PlaySessionId": "c7a7c73115884abe873b626a27598085",
+      "RepeatMode": "RepeatNone",
+      "PlaybackOrder": "Default"
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "Date": "Mon, 05 Oct 2026 22:53:13 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "38.0849"
+    },
+    "body": null
+  },
+  "duration_ms": 43
+}

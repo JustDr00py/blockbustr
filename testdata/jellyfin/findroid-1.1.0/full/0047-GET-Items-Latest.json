@@ -1,0 +1,107 @@
+{
+  "seq": 47,
+  "endpoint": "GET /Items/Latest",
+  "time": "2026-10-05T21:24:46.980Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/Latest",
+    "query": {
+      "userId": [
+        "bbbb0000-0000-0000-0000-000000000001"
+      ],
+      "parentId": [
+        "a656b907-eb3a-7353-2e40-e44b968d0225"
+      ],
+      "limit": [
+        "16"
+      ],
+      "groupItems": [
+        "true"
+      ]
+    },
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Findroid\", Version=\"1.1.0\", DeviceId=\"device-0001\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Findroid/1.1.0 via jellyfin-sdk-kotlin (OkHttp/5.4.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Findroid",
+      "Version": "1.1.0",
+      "DeviceId": "device-0001",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 21:24:46 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "27.7761"
+    },
+    "body": [
+      {
+        "Name": "MF GHOST",
+        "ServerId": "cccc0000000000000000000000000001",
+        "Id": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+        "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+        "OfficialRating": "TV-14",
+        "ChannelId": null,
+        "CommunityRating": 8.2,
+        "RunTimeTicks": 14400000000,
+        "ProductionYear": 2023,
+        "IsFolder": true,
+        "Type": "Series",
+        "UserData": {
+          "PlayedPercentage": 0,
+          "UnplayedItemCount": 5,
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "414207",
+          "ItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6"
+        },
+        "Status": "Continuing",
+        "AirDays": [],
+        "ImageTags": {
+          "Logo": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "Thumb": "9821b022da26e338a777d06ebd13bd58",
+          "Primary": "36b84fbe87e05c068310b61dd183265b"
+        },
+        "BackdropImageTags": [
+          "a7e894c96d34ed85682e44601acd088f"
+        ],
+        "ImageBlurHashes": {
+          "Backdrop": {
+            "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+          },
+          "Logo": {
+            "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+          },
+          "Thumb": {
+            "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+          },
+          "Primary": {
+            "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7"
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown",
+        "EndDate": "2026-03-29T00:00:00.0000000Z",
+        "OriginalLanguage": "ja"
+      }
+    ]
+  },
+  "duration_ms": 32
+}

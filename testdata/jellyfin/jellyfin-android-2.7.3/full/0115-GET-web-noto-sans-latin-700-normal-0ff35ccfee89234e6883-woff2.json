@@ -1,0 +1,41 @@
+{
+  "seq": 115,
+  "endpoint": "GET /web/noto-sans-latin-700-normal.0ff35ccfee89234e6883.woff2",
+  "time": "2026-10-05T22:30:30.416Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/noto-sans-latin-700-normal.0ff35ccfee89234e6883.woff2",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Origin": "http://192.0.2.2:8096",
+      "Accept": "*/*",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Referer": "http://192.0.2.2:8096/web/73560.49e7c92878ed0bb4fad6.css",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "13464",
+      "Content-Type": "font/woff2",
+      "Date": "Mon, 05 Oct 2026 22:30:30 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77272f98\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:50 GMT",
+      "X-Response-Time-ms": "2.2596"
+    },
+    "body": null,
+    "body_omitted": "font/woff2 13464 B"
+  },
+  "duration_ms": 6
+}

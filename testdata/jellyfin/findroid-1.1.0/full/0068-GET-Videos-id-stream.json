@@ -1,0 +1,48 @@
+{
+  "seq": 68,
+  "endpoint": "GET /Videos/{id}/stream",
+  "time": "2026-10-05T21:24:52.549Z",
+  "request": {
+    "method": "GET",
+    "path": "/Videos/551ae828-23de-5533-467c-046377c55afb/stream",
+    "query": {
+      "static": [
+        "true"
+      ],
+      "mediaSourceId": [
+        "551ae82823de5533467c046377c55afb"
+      ],
+      "streamOptions": [
+        "{}"
+      ],
+      "enableAudioVbrEncoding": [
+        "true"
+      ]
+    },
+    "headers": {
+      "Icy-MetaData": "1",
+      "Accept-Encoding": "identity",
+      "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 14; Device Build/REDACTED)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Length": "6791180872",
+      "Content-Type": "video/x-matroska",
+      "Date": "Mon, 05 Oct 2026 21:24:52 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Language": "en-US",
+      "Last-Modified": "Sat, 22 Aug 2026 03:25:27 GMT",
+      "X-Response-Time-ms": "64.966"
+    },
+    "body": null,
+    "body_omitted": "video/x-matroska streamed (not captured)"
+  },
+  "duration_ms": null
+}

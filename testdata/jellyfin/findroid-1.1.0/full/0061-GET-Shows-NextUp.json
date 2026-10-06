@@ -1,0 +1,128 @@
+{
+  "seq": 61,
+  "endpoint": "GET /Shows/NextUp",
+  "time": "2026-10-05T21:24:52.239Z",
+  "request": {
+    "method": "GET",
+    "path": "/Shows/NextUp",
+    "query": {
+      "userId": [
+        "bbbb0000-0000-0000-0000-000000000001"
+      ],
+      "limit": [
+        "24"
+      ],
+      "seriesId": [
+        "73ecf1e6-db42-5eb1-214b-b7c9cb74dfe6"
+      ],
+      "enableTotalRecordCount": [
+        "true"
+      ],
+      "enableResumable": [
+        "false"
+      ],
+      "enableRewatching": [
+        "false"
+      ]
+    },
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Findroid\", Version=\"1.1.0\", DeviceId=\"device-0001\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Findroid/1.1.0 via jellyfin-sdk-kotlin (OkHttp/5.4.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Findroid",
+      "Version": "1.1.0",
+      "DeviceId": "device-0001",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 21:24:52 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "31.0996"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "The Challenger from England",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "551ae82823de5533467c046377c55afb",
+          "HasSubtitles": true,
+          "Container": "mkv",
+          "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+          "ChannelId": null,
+          "CommunityRating": 6.6,
+          "RunTimeTicks": 14219650000,
+          "ProductionYear": 2023,
+          "IndexNumber": 1,
+          "ParentIndexNumber": 1,
+          "IsFolder": false,
+          "Type": "Episode",
+          "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropImageTags": [
+            "a7e894c96d34ed85682e44601acd088f"
+          ],
+          "UserData": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "414207001001",
+            "ItemId": "551ae82823de5533467c046377c55afb"
+          },
+          "SeriesName": "MF GHOST",
+          "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "SeasonId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+          "SeasonName": "Season 1",
+          "VideoType": "VideoFile",
+          "ImageTags": {
+            "Primary": "b21120d25f459814d07a081444120eb0"
+          },
+          "BackdropImageTags": [],
+          "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "ImageBlurHashes": {
+            "Primary": {
+              "b21120d25f459814d07a081444120eb0": "WoFiJf~q-;x^xvx]RQWEWBRkWCV@D*IURjNGM{adj?WBRjWCfRfk",
+              "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7",
+              "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4"
+            },
+            "Logo": {
+              "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+            },
+            "Thumb": {
+              "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+            },
+            "Backdrop": {
+              "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+            }
+          },
+          "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+          "ParentPrimaryImageItemId": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "ParentPrimaryImageTag": "3429f9000cfcd41b31987973ba55e382",
+          "LocationType": "FileSystem",
+          "MediaType": "Video"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 37
+}

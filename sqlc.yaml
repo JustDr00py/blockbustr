@@ -1,0 +1,44 @@
+# sqlc config (TASKS P1.4). Regenerate with `make generate`; `make sqlc-check`
+# fails if internal/store/pg/db is stale.
+version: "2"
+sql:
+  - engine: postgresql
+    schema: internal/store/pg/migrations   # goose Down sections are ignored
+    queries: internal/store/pg/queries
+    gen:
+      go:
+        package: db
+        out: internal/store/pg/db
+        sql_package: pgx/v5
+        emit_pointers_for_null_types: true
+        emit_empty_slices: true
+        overrides:
+          - db_type: uuid
+            go_type: github.com/google/uuid.UUID
+          - db_type: uuid
+            nullable: true
+            go_type:
+              import: github.com/google/uuid
+              type: UUID
+              pointer: true
+          - db_type: jsonb
+            go_type: encoding/json.RawMessage
+          - db_type: jsonb
+            nullable: true
+            go_type: encoding/json.RawMessage   # nil RawMessage = SQL NULL
+          - db_type: timestamptz
+            go_type: time.Time
+          - db_type: timestamptz
+            nullable: true
+            go_type:
+              type: time.Time
+              pointer: true
+          - db_type: date
+            go_type: time.Time
+          - db_type: date
+            nullable: true
+            go_type:
+              type: time.Time
+              pointer: true
+          - db_type: citext
+            go_type: string

@@ -1,0 +1,104 @@
+{
+  "seq": 50,
+  "endpoint": "GET /Shows/{id}/Seasons",
+  "time": "2026-10-05T21:24:51.075Z",
+  "request": {
+    "method": "GET",
+    "path": "/Shows/73ecf1e6-db42-5eb1-214b-b7c9cb74dfe6/Seasons",
+    "query": {
+      "userId": [
+        "bbbb0000-0000-0000-0000-000000000001"
+      ]
+    },
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Findroid\", Version=\"1.1.0\", DeviceId=\"device-0001\", Device=\"Device 1\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Findroid/1.1.0 via jellyfin-sdk-kotlin (OkHttp/5.4.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Findroid",
+      "Version": "1.1.0",
+      "DeviceId": "device-0001",
+      "Device": "Device 1",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 21:24:50 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "108.7982"
+    },
+    "body": {
+      "Items": [
+        {
+          "Name": "Season 1",
+          "ServerId": "cccc0000000000000000000000000001",
+          "Id": "c4f64bdf1f4027e19eefa42f9ddce58f",
+          "PremiereDate": "2023-10-02T00:00:00.0000000Z",
+          "ChannelId": null,
+          "ProductionYear": 2023,
+          "IndexNumber": 1,
+          "IsFolder": true,
+          "Type": "Season",
+          "ParentLogoItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentBackdropImageTags": [
+            "a7e894c96d34ed85682e44601acd088f"
+          ],
+          "UserData": {
+            "PlayedPercentage": 0,
+            "UnplayedItemCount": 5,
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "414207001",
+            "ItemId": "c4f64bdf1f4027e19eefa42f9ddce58f"
+          },
+          "SeriesName": "MF GHOST",
+          "SeriesId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "SeriesPrimaryImageTag": "36b84fbe87e05c068310b61dd183265b",
+          "ImageTags": {
+            "Primary": "3429f9000cfcd41b31987973ba55e382"
+          },
+          "BackdropImageTags": [],
+          "ParentLogoImageTag": "9298fc9f9fcde0aed398191b2da6b8d9",
+          "ImageBlurHashes": {
+            "Primary": {
+              "3429f9000cfcd41b31987973ba55e382": "dhG+g*w#E1tSUao#rWt6ctXTwu%2pdxaxuSO%NxZkWS4",
+              "36b84fbe87e05c068310b61dd183265b": "daH324-pGC%gGtgiPAS#9zR-xvNe?wofRPogS%kWSzt7"
+            },
+            "Logo": {
+              "9298fc9f9fcde0aed398191b2da6b8d9": "PEKG,U#p1c}GNZSh64AC|_S#,@J8NbEzSgjZv$K4r]I:snsCwcf5"
+            },
+            "Thumb": {
+              "9821b022da26e338a777d06ebd13bd58": "WkH{WfxbT0%gbuxuy?x^bbR*XRWqC7XmbbR*ofW;p_XRnOs:sobb"
+            },
+            "Backdrop": {
+              "a7e894c96d34ed85682e44601acd088f": "WxEr%vC,PoxaX7tSPoo}nNeTkWX8N|nit5R*jcbH%#S2S#kVn%ag"
+            }
+          },
+          "ParentThumbItemId": "73ecf1e6db425eb1214bb7c9cb74dfe6",
+          "ParentThumbImageTag": "9821b022da26e338a777d06ebd13bd58",
+          "LocationType": "FileSystem",
+          "MediaType": "Unknown"
+        }
+      ],
+      "TotalRecordCount": 1,
+      "StartIndex": 0
+    }
+  },
+  "duration_ms": 113
+}

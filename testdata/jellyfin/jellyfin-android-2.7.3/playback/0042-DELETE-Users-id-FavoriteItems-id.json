@@ -1,0 +1,54 @@
+{
+  "seq": 42,
+  "endpoint": "DELETE /Users/{id}/FavoriteItems/{id}",
+  "time": "2026-10-05T22:53:06.745Z",
+  "request": {
+    "method": "DELETE",
+    "path": "/Users/bbbb0000000000000000000000000001/FavoriteItems/1f77a87a9603bff7d1589d1e076f060c",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "accept": "application/json",
+      "Authorization": "MediaBrowser Client=\"Jellyfin%20for%20Android\", Device=\"Device 2\", DeviceId=\"device-0001\", Version=\"2.7.3\", Token=\"aaaa0000000000000000000000000001\"",
+      "Origin": "http://192.0.2.2:8096",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": {
+      "Client": "Jellyfin%20for%20Android",
+      "Device": "Device 2",
+      "DeviceId": "device-0001",
+      "Version": "2.7.3",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:53:06 GMT",
+      "Server": "Kestrel",
+      "Access-Control-Allow-Origin": "*",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "48.9461"
+    },
+    "body": {
+      "PlaybackPositionTicks": 0,
+      "PlayCount": 3,
+      "IsFavorite": false,
+      "LastPlayedDate": "2026-10-05T22:39:52.4503623Z",
+      "Played": false,
+      "Key": "931285",
+      "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+    }
+  },
+  "duration_ms": 56
+}

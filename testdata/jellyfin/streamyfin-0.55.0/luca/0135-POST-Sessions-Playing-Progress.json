@@ -1,0 +1,55 @@
+{
+  "seq": 135,
+  "endpoint": "POST /Sessions/Playing/Progress",
+  "time": "2026-10-05T22:41:27.004Z",
+  "request": {
+    "method": "POST",
+    "path": "/Sessions/Playing/Progress",
+    "query": {},
+    "headers": {
+      "accept": "application/json, text/plain, */*",
+      "authorization": "MediaBrowser Client=\"Streamyfin\", Device=\"Device 2\", DeviceId=\"dddd0000-0000-0000-0000-000000000001\", Version=\"0.55.0\", Token=\"aaaa0000000000000000000000000001\"",
+      "sentry-trace": "bfb8d76e28444f2f8a26ad1fef918086-982b2317eb42e545",
+      "baggage": "sentry-environment=production,sentry-public_key=5c548edf47663532bb529ba72b2ddbb1,sentry-trace_id=bfb8d76e28444f2f8a26ad1fef918086,sentry-org_id=4509610343596032",
+      "Content-Type": "application/json",
+      "Content-Length": "344",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip",
+      "User-Agent": "okhttp/4.12.0"
+    },
+    "auth": {
+      "Client": "Streamyfin",
+      "Device": "Device 2",
+      "DeviceId": "dddd0000-0000-0000-0000-000000000001",
+      "Version": "0.55.0",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": {
+      "ItemId": "84088e11eb6351255c08507602d79a0f",
+      "AudioStreamIndex": 2,
+      "SubtitleStreamIndex": -1,
+      "MediaSourceId": "84088e11eb6351255c08507602d79a0f",
+      "PositionTicks": 276109999,
+      "IsPaused": true,
+      "PlayMethod": "DirectPlay",
+      "PlaySessionId": "b836ca6c6ec04b3d9b3f4c0b459416bc",
+      "IsMuted": false,
+      "CanSeek": true,
+      "RepeatMode": "RepeatNone",
+      "PlaybackOrder": "Default"
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "Date": "Mon, 05 Oct 2026 22:41:26 GMT",
+      "Server": "Kestrel",
+      "Content-Language": "en-US",
+      "X-Response-Time-ms": "38.8968"
+    },
+    "body": null
+  },
+  "duration_ms": 46
+}

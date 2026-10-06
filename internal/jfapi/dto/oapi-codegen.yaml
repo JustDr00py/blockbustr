@@ -1,0 +1,7 @@
+# oapi-codegen config for the Jellyfin DTOs (TASKS P1.6). Run via scripts/gen-dto.py
+# (`make dto`), which preprocesses openapi.json first and passes -o; don't run it directly.
+package: dto
+generate:
+  models: true
+output-options:
+  skip-prune: true   # keep every schema, not only those reachable from operations

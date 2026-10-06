@@ -1,0 +1,772 @@
+{
+  "seq": 50,
+  "endpoint": "GET /Items/{id}",
+  "time": "2026-10-05T22:53:11.947Z",
+  "request": {
+    "method": "GET",
+    "path": "/Items/1f77a87a-9603-bff7-d158-9d1e076f060c",
+    "query": {},
+    "headers": {
+      "Accept": "application/json, application/octet-stream;q=0.9, */*;q=0.8",
+      "Authorization": "MediaBrowser Client=\"Jellyfin+for+Android\", Version=\"2.7.3\", DeviceId=\"device-0002\", Device=\"Device 2\", Token=\"aaaa0000000000000000000000000001\"",
+      "User-Agent": "Jellyfin for Android/2.7.3 via jellyfin-sdk-kotlin (OkHttp/4.12.0)",
+      "Host": "jellyfin:8096",
+      "Connection": "Keep-Alive",
+      "Accept-Encoding": "gzip"
+    },
+    "auth": {
+      "Client": "Jellyfin+for+Android",
+      "Version": "2.7.3",
+      "DeviceId": "device-0002",
+      "Device": "Device 2",
+      "Token": "aaaa0000000000000000000000000001",
+      "_source": "authorization"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json; charset=utf-8",
+      "Date": "Mon, 05 Oct 2026 22:53:11 GMT",
+      "Server": "Kestrel",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "48.0979"
+    },
+    "body": {
+      "Name": "Mortal Kombat II",
+      "OriginalTitle": "Mortal Kombat II",
+      "ServerId": "cccc0000000000000000000000000001",
+      "Id": "1f77a87a9603bff7d1589d1e076f060c",
+      "Etag": "b03b95fa72af2e5520d7ff22ca140156",
+      "DateCreated": "2026-05-31T23:12:04.4261116Z",
+      "CanDelete": true,
+      "CanDownload": true,
+      "Container": "mov,mp4,m4a,3gp,3g2,mj2",
+      "SortName": "mortal kombat ii",
+      "PremiereDate": "2026-05-06T00:00:00.0000000Z",
+      "ExternalUrls": [
+        {
+          "Name": "IMDb",
+          "Url": "https://www.imdb.com/title/tt17490712"
+        },
+        {
+          "Name": "TMDB",
+          "Url": "https://www.themoviedb.org/movie/931285"
+        }
+      ],
+      "MediaSources": [
+        {
+          "Protocol": "File",
+          "Id": "1f77a87a9603bff7d1589d1e076f060c",
+          "Path": "/media/Movies/Mortal Kombat II (2026)/Mortal Kombat II (2026).mp4",
+          "Type": "Default",
+          "Container": "mp4",
+          "Size": 7654835338,
+          "Name": "Mortal Kombat II (2026)",
+          "IsRemote": false,
+          "ETag": "95c3644a7f226bcbcc8f8f306cfe3448",
+          "RunTimeTicks": 63585920000,
+          "ReadAtNativeFramerate": false,
+          "IgnoreDts": false,
+          "IgnoreIndex": false,
+          "GenPtsInput": false,
+          "SupportsTranscoding": true,
+          "SupportsDirectStream": true,
+          "SupportsDirectPlay": true,
+          "IsInfiniteStream": false,
+          "UseMostCompatibleTranscodingProfile": false,
+          "RequiresOpening": false,
+          "RequiresClosing": false,
+          "RequiresLooping": false,
+          "SupportsProbing": true,
+          "VideoType": "VideoFile",
+          "MediaStreams": [
+            {
+              "Codec": "av1",
+              "Language": "und",
+              "ColorSpace": "bt709",
+              "ColorTransfer": "bt709",
+              "ColorPrimaries": "bt709",
+              "TimeBase": "1/90000",
+              "VideoRange": "SDR",
+              "VideoRangeType": "SDR",
+              "AudioSpatialFormat": "None",
+              "DisplayTitle": "1080p AV1 SDR",
+              "IsInterlaced": false,
+              "BitRate": 9464833,
+              "BitDepth": 8,
+              "RefFrames": 1,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Height": 804,
+              "Width": 1920,
+              "AverageFrameRate": 24,
+              "RealFrameRate": 24,
+              "ReferenceFrameRate": 24,
+              "Profile": "Main",
+              "Type": "Video",
+              "AspectRatio": "2.40:1",
+              "Index": 0,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false,
+              "PixelFormat": "yuv420p",
+              "Level": 8,
+              "IsAnamorphic": false
+            },
+            {
+              "Codec": "aac",
+              "Language": "eng",
+              "TimeBase": "1/48000",
+              "Title": "Stereo",
+              "VideoRange": "Unknown",
+              "VideoRangeType": "Unknown",
+              "AudioSpatialFormat": "None",
+              "LocalizedDefault": "Default",
+              "LocalizedExternal": "External",
+              "LocalizedLanguage": "English",
+              "LocalizedOriginal": "Original",
+              "DisplayTitle": "Stereo - English - AAC - Default",
+              "IsInterlaced": false,
+              "ChannelLayout": "stereo",
+              "BitRate": 160461,
+              "Channels": 2,
+              "SampleRate": 48000,
+              "IsDefault": true,
+              "IsForced": false,
+              "IsHearingImpaired": false,
+              "IsOriginal": false,
+              "Profile": "LC",
+              "Type": "Audio",
+              "Index": 1,
+              "IsExternal": false,
+              "IsTextSubtitleStream": false,
+              "SupportsExternalStream": false
+            }
+          ],
+          "MediaAttachments": [],
+          "Formats": [],
+          "Bitrate": 9630855,
+          "RequiredHttpHeaders": {},
+          "TranscodingSubProtocol": "http",
+          "DefaultAudioStreamIndex": 1,
+          "DefaultSubtitleStreamIndex": -1,
+          "HasSegments": false
+        }
+      ],
+      "CriticRating": 64,
+      "ProductionLocations": [
+        "United States of America"
+      ],
+      "Path": "/media/Movies/Mortal Kombat II (2026)/Mortal Kombat II (2026).mp4",
+      "EnableMediaSourceDisplay": true,
+      "OfficialRating": "R",
+      "ChannelId": null,
+      "Overview": "The fan favorite champions—now joined by Johnny Cage himself—are pitted against one another in the ultimate, no-holds barred, gory battle to defeat the dark rule of Shao Kahn that threatens the very existence of the Earthrealm and its defenders.",
+      "Taglines": [
+        "Their fight. Our future."
+      ],
+      "Genres": [
+        "Action",
+        "Fantasy",
+        "Adventure"
+      ],
+      "CommunityRating": 7.786,
+      "RunTimeTicks": 63585920000,
+      "PlayAccess": "Full",
+      "ProductionYear": 2026,
+      "RemoteTrailers": [
+        {
+          "Url": "https://www.youtube.com/watch?v=qGyIEis2T2o",
+          "Name": "Official American Sign Language Trailer"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=zva2PQ-ud5Y",
+          "Name": "Tickets On Sale"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=b24oG7qCwp4",
+          "Name": "Official Trailer II"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=ZdC5mFHPldg",
+          "Name": "Official Trailer"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=Vdl23CwNeIM",
+          "Name": "The tournament has begun. What was your favourite MORTAL KOMBAT II fight?"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=RXkyTUwIVG4",
+          "Name": "Shao Kahn is bringing the blood-spattering action to MORTAL KOMBAT II"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=Ht0SHqJ-ga0",
+          "Name": "Now Playing In Cinemas"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=8_NRLRSSgHI",
+          "Name": "See all your MORTAL KOMBAT II faves in cinema and IMAX now"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=j8JS0AiHzQ8",
+          "Name": "It's showtime."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=rS5RTYFEEHQ",
+          "Name": "It's showtime!"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=nyG0hn1hfRk",
+          "Name": "Scorpion is king of iconic lines"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=Og9B2NwVkAQ",
+          "Name": "Every fatality feels bigger in IMAX"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=fZGqtippCSc",
+          "Name": "Only In Cinemas 7 May"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=ul90WGVm5aU",
+          "Name": "Only In Cinemas 7 May"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=aJWOaLdyQRg",
+          "Name": "The time for kombat is NOW!"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=dNGKvEa8aUQ",
+          "Name": "No messing with Kitana"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=CKPuuxCWY9E",
+          "Name": "Get Tickets Now"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=OYAWMf5CO5I",
+          "Name": "Get Tickets Now"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=ul4M0n21hIs",
+          "Name": "You know what time it is."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=hpp6D8de6pI",
+          "Name": "It's the tournament you've been waiting for"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=F9wTeQKOma8",
+          "Name": "What will be the top fatality? GET OVER HERE and find out!"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=U01HR8yAX1k",
+          "Name": "Let's F'ckn Go"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=1vJHTsMneYU",
+          "Name": "Get Tickets Now"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=iBWa8b4gcSs",
+          "Name": "This isn't a game. This is pure vengeance."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=XhOuHV3r8Lo",
+          "Name": "Feel the fatalities."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=MnZ1iv8KHls",
+          "Name": "No mercy. Endless squeaks."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=bwJD1SXBq7M",
+          "Name": "All action, no brakes. You down?"
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=6iviLLXHS3Q",
+          "Name": "Shoutout to Johnny Cage for always keeping it real in MORTAL KOMBAT II."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=U9tnPOLEydk",
+          "Name": "Looking for khaos? We got you."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=NFYiO0xS2aM",
+          "Name": "Trust us, you’re in for a bloody good time."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=iD9AdGgPaTQ",
+          "Name": "Lock in. It’s time."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=lW3BA5TDyQY",
+          "Name": "No matter how you slice it, this is going to be krazy."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=wOE9QyjNb0Q",
+          "Name": "You’ve been chosen."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=BmwlzjAPtgs",
+          "Name": "Don’t miss out on the main event."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=8II8tAJpZjI",
+          "Name": "No thoughts. Just Kombat."
+        },
+        {
+          "Url": "https://www.youtube.com/watch?v=3SteHIucVFk",
+          "Name": "We don’t just break bones, we break records, too. Thank you to all our fans."
+        }
+      ],
+      "ProviderIds": {
+        "Imdb": "tt17490712",
+        "Tmdb": "931285",
+        "TmdbCollection": "931431"
+      },
+      "IsHD": true,
+      "IsFolder": false,
+      "ParentId": "e675012a1892a87530d2c0b0d14a9026",
+      "Type": "Movie",
+      "People": [
+        {
+          "Name": "Karl Urban",
+          "Id": "9f86e2961d0c91c0bfb5e3a4a195a2de",
+          "Role": "Johnny Cage",
+          "Type": "Actor",
+          "PrimaryImageTag": "76de3d7ab171c2c4bae4e5d03b5db955",
+          "ImageBlurHashes": {
+            "Primary": {
+              "76de3d7ab171c2c4bae4e5d03b5db955": "dbNSfT=_~L%X:%t5-5wKpHWUNLW;$ds,%1xZ-4WosWxZ"
+            }
+          }
+        },
+        {
+          "Name": "Adeline Rudolph",
+          "Id": "40d49cf68ff8c44c223455b1f3093d8a",
+          "Role": "Kitana",
+          "Type": "Actor",
+          "PrimaryImageTag": "35ecba6fd14c8ab76e3603e203b7996e",
+          "ImageBlurHashes": {
+            "Primary": {
+              "35ecba6fd14c8ab76e3603e203b7996e": "dODc2Q?HKQ9^~qxa%MoztlR+%M%1kqWXxaxtxuofofof"
+            }
+          }
+        },
+        {
+          "Name": "Ludi Lin",
+          "Id": "6ae38e45ea0894299c8043cc0483b1cc",
+          "Role": "Liu Kang",
+          "Type": "Actor",
+          "PrimaryImageTag": "73473ae0fc0bc19efc8406f36ee8a0bd",
+          "ImageBlurHashes": {
+            "Primary": {
+              "73473ae0fc0bc19efc8406f36ee8a0bd": "dRG7}L%10#Ip56aexaIpNdRkxZ-VNGR+xZoMEMWVs.oe"
+            }
+          }
+        },
+        {
+          "Name": "Jessica McNamee",
+          "Id": "d8b7f5eda39eda148ca671965eb7f3b8",
+          "Role": "Sonya Blade",
+          "Type": "Actor",
+          "PrimaryImageTag": "7e1a23071d04d7c28ea9f711c347ff7c",
+          "ImageBlurHashes": {
+            "Primary": {
+              "7e1a23071d04d7c28ea9f711c347ff7c": "deJaTI-VTeo}~qoz-;%MXnozxGoz%Njss.of%MbHjYoJ"
+            }
+          }
+        },
+        {
+          "Name": "Martyn Ford",
+          "Id": "91e1bbe9f6cdae53ab4ad416461dc699",
+          "Role": "Shao Kahn",
+          "Type": "Actor",
+          "PrimaryImageTag": "9af980a4bc8a6a1cc32286b5ca023f39",
+          "ImageBlurHashes": {
+            "Primary": {
+              "9af980a4bc8a6a1cc32286b5ca023f39": "dMJkAZ?ayr~pDjt6tlay-;V?RPM{?vM_xat6Nyoct7k8"
+            }
+          }
+        },
+        {
+          "Name": "Josh Lawson",
+          "Id": "0ea0a9bc86ed5e91b6f5666cad04ea0c",
+          "Role": "Kano",
+          "Type": "Actor",
+          "PrimaryImageTag": "73c2ab5e226cf5166f92574f1a00d074",
+          "ImageBlurHashes": {
+            "Primary": {
+              "73c2ab5e226cf5166f92574f1a00d074": "dbG9BgwJ2{OtT1n$T1R-JBR+$Ls:PCWYo~g4OZWXxat7"
+            }
+          }
+        },
+        {
+          "Name": "Tati Gabrielle",
+          "Id": "5104a6d49b6af0bcc781520acdd91279",
+          "Role": "Jade",
+          "Type": "Actor",
+          "PrimaryImageTag": "9eb2c97c0d755603e2b751a2bfda1622",
+          "ImageBlurHashes": {
+            "Primary": {
+              "9eb2c97c0d755603e2b751a2bfda1622": "drI4R|tQ-=x]}[f+t8t7R5oziwsnnPt8xFs:w{Rjaee."
+            }
+          }
+        },
+        {
+          "Name": "Mehcad Brooks",
+          "Id": "655d9ee4b104a4b867180844e4037d70",
+          "Role": "Jax Briggs",
+          "Type": "Actor",
+          "PrimaryImageTag": "2062a3aaaa2bbbf1d5e48084c2400331",
+          "ImageBlurHashes": {
+            "Primary": {
+              "2062a3aaaa2bbbf1d5e48084c2400331": "dQH1*@%1T|x^~Wt7XUozE2bbM{R*yER*xut8tmbIs:t7"
+            }
+          }
+        },
+        {
+          "Name": "Tadanobu Asano",
+          "Id": "0f0f26550677c530b3723e5909425a10",
+          "Role": "Lord Raiden",
+          "Type": "Actor",
+          "PrimaryImageTag": "a087c2d72b13daf76592b97526b80c2a",
+          "ImageBlurHashes": {
+            "Primary": {
+              "a087c2d72b13daf76592b97526b80c2a": "dLBMb|xZ0fIoM_s:ofWBNeRjs.t69ZWB-pt7s:WVaeof"
+            }
+          }
+        },
+        {
+          "Name": "Chin Han",
+          "Id": "21a5473242c9a3f9b3ba44741136705f",
+          "Role": "Shang Tsung",
+          "Type": "Actor",
+          "PrimaryImageTag": "4bc5fffa3805c54d13c417bd3dfc0dd3",
+          "ImageBlurHashes": {
+            "Primary": {
+              "4bc5fffa3805c54d13c417bd3dfc0dd3": "dvHnHTWB0et7M_t6t7Rj9]j[xYa}RjR*t7s:R*WVs.jY"
+            }
+          }
+        },
+        {
+          "Name": "Damon Herriman",
+          "Id": "44858f13a3ef0a37f7bff6278dcd2d6f",
+          "Role": "Quan Chi",
+          "Type": "Actor",
+          "PrimaryImageTag": "f9fd49b9fef4912a17f23d4a5fd0a9b1",
+          "ImageBlurHashes": {
+            "Primary": {
+              "f9fd49b9fef4912a17f23d4a5fd0a9b1": "dOEVpR%20fNxrWs:IoIo9uof-Uj]EMRj-pt7IBM|ays:"
+            }
+          }
+        },
+        {
+          "Name": "Joe Taslim",
+          "Id": "a36fd1c33b8f4b96bfacf67a925f8feb",
+          "Role": "Bi-Han",
+          "Type": "Actor",
+          "PrimaryImageTag": "3c0e5e0d0c1e5c71a37d32aaa6cbd94b",
+          "ImageBlurHashes": {
+            "Primary": {
+              "3c0e5e0d0c1e5c71a37d32aaa6cbd94b": "dxKd#q%L.8x]~qs:tRt7E1RkRioKx]a}t7xt-;j[oft7"
+            }
+          }
+        },
+        {
+          "Name": "Hiroyuki Sanada",
+          "Id": "d47179e931d22aef5de2bb21f2fd4e12",
+          "Role": "Hanzo Hasashi / Scorpion",
+          "Type": "Actor",
+          "PrimaryImageTag": "9c7e70da01965152ca0861fb7914fc19",
+          "ImageBlurHashes": {
+            "Primary": {
+              "9c7e70da01965152ca0861fb7914fc19": "dcIgyD%1yDS$~WWBxvxaI=WCe-a}tRbHxa%2-pj]xaxu"
+            }
+          }
+        },
+        {
+          "Name": "Max Huang",
+          "Id": "e6b8502b2b8436a668d7e7ceb7aaa0c2",
+          "Role": "Kung Lao",
+          "Type": "Actor",
+          "PrimaryImageTag": "19ff8e00b8d6f82177187c805704ee69",
+          "ImageBlurHashes": {
+            "Primary": {
+              "19ff8e00b8d6f82177187c805704ee69": "dUHnmSx]%$?H~VM_tRM{0fM_slIVS$xv-p%MogWAxut7"
+            }
+          }
+        },
+        {
+          "Name": "Lewis Tan",
+          "Id": "7e47ea88a8d7bd961e0d75050eb7b1f2",
+          "Role": "Cole Young",
+          "Type": "Actor",
+          "PrimaryImageTag": "2631a69fec159c0e65d7ba22bd7ab732",
+          "ImageBlurHashes": {
+            "Primary": {
+              "2631a69fec159c0e65d7ba22bd7ab732": "dUMGq_xZ.T?vWGxaxuM|yYS4-o%M%hkD%MxuRkRjIAV@"
+            }
+          }
+        },
+        {
+          "Name": "Simon McQuoid",
+          "Id": "33152eba49d37be3c387b6d3611cee33",
+          "Role": "Director",
+          "Type": "Director",
+          "PrimaryImageTag": "2ed4f851dfc69bb404ca9314147460f1",
+          "ImageBlurHashes": {
+            "Primary": {
+              "2ed4f851dfc69bb404ca9314147460f1": "dXDI?@-;0L4.R5M{XS%MIoj[%2f6o}t7aJM{IoRjt6xu"
+            }
+          }
+        },
+        {
+          "Name": "Jeremy Slater",
+          "Id": "4b4ddd7bc6f7d7b994383392388f2de2",
+          "Role": "Writer",
+          "Type": "Writer",
+          "PrimaryImageTag": "9508491ff76867be2d6619a82af667ba",
+          "ImageBlurHashes": {
+            "Primary": {
+              "9508491ff76867be2d6619a82af667ba": "dJBCoe%20fE2=|oLIVWB57NH%2xZ5RbH%2WCELf6%1of"
+            }
+          }
+        },
+        {
+          "Name": "James Wan",
+          "Id": "5873459e155b84a1e4c9121b93bd0b6a",
+          "Role": "Producer",
+          "Type": "Producer",
+          "PrimaryImageTag": "b3eb153fdb0d5e17f053a2a17b9ed71d",
+          "ImageBlurHashes": {
+            "Primary": {
+              "b3eb153fdb0d5e17f053a2a17b9ed71d": "dEEC8{^PL3KQ-=x^x]$%0$Nx#+jE.AWA%1g4xvogaenh"
+            }
+          }
+        },
+        {
+          "Name": "Todd Garner",
+          "Id": "e03dc4231af9597e6a9210c30bbaabbb",
+          "Role": "Producer",
+          "Type": "Producer",
+          "PrimaryImageTag": "33a1dc3243d6e8ba3bbfc216d38a8845",
+          "ImageBlurHashes": {
+            "Primary": {
+              "33a1dc3243d6e8ba3bbfc216d38a8845": "dA9%P9~B9u5R;e={S49tIobbw^xZJ.Ioxa-o9tIoaysm"
+            }
+          }
+        },
+        {
+          "Name": "Toby Emmerich",
+          "Id": "6b5c70d6e8f784c9c4344eaabd333904",
+          "Role": "Producer",
+          "Type": "Producer",
+          "PrimaryImageTag": "5474c7064699a6c5d5ed76035d97c1bc",
+          "ImageBlurHashes": {
+            "Primary": {
+              "5474c7064699a6c5d5ed76035d97c1bc": "dqG8TPxa0LNGwuoeSiR*S$WWnhoJNHWWs:j@NGaes:kC"
+            }
+          }
+        },
+        {
+          "Name": "Simon McQuoid",
+          "Id": "33152eba49d37be3c387b6d3611cee33",
+          "Role": "Producer",
+          "Type": "Producer",
+          "PrimaryImageTag": "2ed4f851dfc69bb404ca9314147460f1",
+          "ImageBlurHashes": {
+            "Primary": {
+              "2ed4f851dfc69bb404ca9314147460f1": "dXDI?@-;0L4.R5M{XS%MIoj[%2f6o}t7aJM{IoRjt6xu"
+            }
+          }
+        },
+        {
+          "Name": "E. Bennett Walsh",
+          "Id": "18ec0d3d0c504025206ef7637b2452fb",
+          "Role": "Producer",
+          "Type": "Producer",
+          "PrimaryImageTag": "3c7104debcac4b1e5efaab2b749af238",
+          "ImageBlurHashes": {
+            "Primary": {
+              "3c7104debcac4b1e5efaab2b749af238": "ddE{kNxuRjxu~qt7WBxuayofoft7M{WBj[j[ofRjRjRj"
+            }
+          }
+        }
+      ],
+      "Studios": [
+        {
+          "Name": "New Line Cinema",
+          "Id": "7873ccad8e0c6cb8e4381eaf1d35e7fa"
+        },
+        {
+          "Name": "Atomic Monster",
+          "Id": "18f86fa916fe6e03d3dc690d7db9f650"
+        },
+        {
+          "Name": "Broken Road Productions",
+          "Id": "4147100fa0fc9dc162cab294943c53e7"
+        },
+        {
+          "Name": "Fireside Films",
+          "Id": "da8dc08b1f5d6bfaee5360475c10b9f8"
+        },
+        {
+          "Name": "Domain Entertainment",
+          "Id": "9009b257eee3208f4383638cb9ad992e"
+        }
+      ],
+      "GenreItems": [
+        {
+          "Name": "Action",
+          "Id": "ce06903d834d2c3417e0889dd4049f3b"
+        },
+        {
+          "Name": "Fantasy",
+          "Id": "a30dcc65be22eb3c21c03f7c1c7a57d1"
+        },
+        {
+          "Name": "Adventure",
+          "Id": "51cec9645b896084d12b259acd05ccb1"
+        }
+      ],
+      "LocalTrailerCount": 0,
+      "UserData": {
+        "PlaybackPositionTicks": 0,
+        "PlayCount": 3,
+        "IsFavorite": false,
+        "LastPlayedDate": "2026-10-05T22:39:52.4503623Z",
+        "Played": false,
+        "Key": "931285",
+        "ItemId": "1f77a87a9603bff7d1589d1e076f060c"
+      },
+      "SpecialFeatureCount": 0,
+      "DisplayPreferencesId": "dbf7709c41faaa746463d67978eb863d",
+      "Tags": [
+        "martial arts",
+        "magic",
+        "ninja fighter",
+        "gore",
+        "sequel",
+        "god",
+        "alternate dimension",
+        "ninja",
+        "fighting",
+        "based on video game",
+        "martial arts tournament",
+        "struggling actor",
+        "hand to hand combat",
+        "aggressive",
+        "amused"
+      ],
+      "PrimaryImageAspectRatio": 0.6666666666666666,
+      "MediaStreams": [
+        {
+          "Codec": "av1",
+          "Language": "und",
+          "ColorSpace": "bt709",
+          "ColorTransfer": "bt709",
+          "ColorPrimaries": "bt709",
+          "TimeBase": "1/90000",
+          "VideoRange": "SDR",
+          "VideoRangeType": "SDR",
+          "AudioSpatialFormat": "None",
+          "DisplayTitle": "1080p AV1 SDR",
+          "IsInterlaced": false,
+          "BitRate": 9464833,
+          "BitDepth": 8,
+          "RefFrames": 1,
+          "IsDefault": true,
+          "IsForced": false,
+          "IsHearingImpaired": false,
+          "IsOriginal": false,
+          "Height": 804,
+          "Width": 1920,
+          "AverageFrameRate": 24,
+          "RealFrameRate": 24,
+          "ReferenceFrameRate": 24,
+          "Profile": "Main",
+          "Type": "Video",
+          "AspectRatio": "2.40:1",
+          "Index": 0,
+          "IsExternal": false,
+          "IsTextSubtitleStream": false,
+          "SupportsExternalStream": false,
+          "PixelFormat": "yuv420p",
+          "Level": 8,
+          "IsAnamorphic": false
+        },
+        {
+          "Codec": "aac",
+          "Language": "eng",
+          "TimeBase": "1/48000",
+          "Title": "Stereo",
+          "VideoRange": "Unknown",
+          "VideoRangeType": "Unknown",
+          "AudioSpatialFormat": "None",
+          "LocalizedDefault": "Default",
+          "LocalizedExternal": "External",
+          "LocalizedLanguage": "English",
+          "LocalizedOriginal": "Original",
+          "DisplayTitle": "Stereo - English - AAC - Default",
+          "IsInterlaced": false,
+          "ChannelLayout": "stereo",
+          "BitRate": 160461,
+          "Channels": 2,
+          "SampleRate": 48000,
+          "IsDefault": true,
+          "IsForced": false,
+          "IsHearingImpaired": false,
+          "IsOriginal": false,
+          "Profile": "LC",
+          "Type": "Audio",
+          "Index": 1,
+          "IsExternal": false,
+          "IsTextSubtitleStream": false,
+          "SupportsExternalStream": false
+        }
+      ],
+      "VideoType": "VideoFile",
+      "ImageTags": {
+        "Thumb": "0b55d0c947c87a51d12fca0a5d68010e",
+        "Primary": "24ab56762c9d8cb3d25f4323853b0389",
+        "Logo": "94051eb91d590f014438cce01f89754c"
+      },
+      "BackdropImageTags": [
+        "be8c66e5b7827b6a0aae6ecdbe0c61d8"
+      ],
+      "ImageBlurHashes": {
+        "Backdrop": {
+          "be8c66e5b7827b6a0aae6ecdbe0c61d8": "WKF2*9oL9^#mSzt6w{JSSfjZSMa|1JJ8-AbbjHWB$gWV$PSNa#WV"
+        },
+        "Thumb": {
+          "0b55d0c947c87a51d12fca0a5d68010e": "W67,uyD%57xuIp%fEgNHt7xZaJxG0e%M%1RjozIV=xxaE2RkxuNG"
+        },
+        "Primary": {
+          "24ab56762c9d8cb3d25f4323853b0389": "dD9%9p$gIVof-psTELNa0LODNaR-awWX%2-VxuNHxas."
+        },
+        "Logo": {
+          "94051eb91d590f014438cce01f89754c": "PB84;{j[IAj[%NWBIUjt-;j[jaj[kBj[V[ae4TfkRPaetRt7WAWB"
+        }
+      },
+      "Chapters": [],
+      "Trickplay": {},
+      "LocationType": "FileSystem",
+      "MediaType": "Video",
+      "LockedFields": [],
+      "LockData": false,
+      "Width": 1920,
+      "Height": 804,
+      "OriginalLanguage": "en"
+    }
+  },
+  "duration_ms": 53
+}

@@ -1,0 +1,41 @@
+{
+  "seq": 47,
+  "endpoint": "GET /web/25348.a5fe264650ffc6a300ef.chunk.js",
+  "time": "2026-10-05T22:30:29.411Z",
+  "request": {
+    "method": "GET",
+    "path": "/web/25348.a5fe264650ffc6a300ef.chunk.js",
+    "query": {},
+    "headers": {
+      "Host": "jellyfin:8096",
+      "Connection": "keep-alive",
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Device Build/REDACTED; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/153.0.8010.36 Mobile Safari/537.36",
+      "Accept": "*/*",
+      "X-Requested-With": "org.jellyfin.mobile",
+      "Accept-Encoding": "gzip, deflate",
+      "Accept-Language": "en-US,en;q=0.9"
+    },
+    "auth": null,
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/javascript",
+      "Date": "Mon, 05 Oct 2026 22:30:29 GMT",
+      "Server": "Kestrel",
+      "Accept-Ranges": "bytes",
+      "Content-Encoding": "gzip",
+      "Content-Language": "en-US",
+      "ETag": "\"1dd44af77bfb1e7\"",
+      "Last-Modified": "Tue, 15 Sep 2026 01:13:51 GMT",
+      "Transfer-Encoding": "chunked",
+      "Vary": "Accept-Encoding",
+      "X-Response-Time-ms": "0.4885"
+    },
+    "body": {
+      "_text": "\"use strict\";(self.webpackChunk=self.webpackChunk||[]).push([[25348],{25348:function(e,s,u){u.r(s)}}]);"
+    }
+  },
+  "duration_ms": 14
+}
