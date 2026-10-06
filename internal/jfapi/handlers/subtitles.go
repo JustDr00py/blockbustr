@@ -35,16 +35,21 @@ func (a *api) registerSubtitles(rt *jfapi.Router) {
 }
 
 // subtitleSource describes a media source's subtitle tracks for the store.
-// The key changes with the source's etag, so a replaced file is re-read.
-func (a *api) subtitleSource(r *http.Request, src db.MediaSource, streams []db.MediaStream) (subtitles.Source, error) {
+// The key changes with the source's etag, so a replaced file is re-read. A
+// remote source is only resolved when track index is inside it: an
+// external track (a sidecar, an addon's subtitle) is a file of its own, so
+// it's served even while the video can't be (a torrent still downloading).
+func (a *api) subtitleSource(r *http.Request, src db.MediaSource, streams []db.MediaStream, index int) (subtitles.Source, error) {
 	sum := sha256.Sum256([]byte(src.ID.String() + "|" + deref(src.Etag)))
 	out := subtitles.Source{Key: hex.EncodeToString(sum[:12]), Input: src.PathOrUrl}
+	separate := false
 	for _, st := range streams {
 		if st.Type == "Subtitle" {
 			out.Tracks = append(out.Tracks, subtitles.Track{Index: int(st.Idx), Codec: deref(st.Codec), Path: deref(st.ExternalPath)})
+			separate = separate || (int(st.Idx) == index && deref(st.ExternalPath) != "")
 		}
 	}
-	if src.IsRemote || !strings.EqualFold(src.Protocol, "File") {
+	if !separate && (src.IsRemote || !strings.EqualFold(src.Protocol, "File")) {
 		if a.Resolver == nil {
 			return out, errors.New("remote source without a resolver")
 		}
@@ -93,7 +98,7 @@ func (a *api) subtitleFile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	ss, err := a.subtitleSource(r, src, b.streams[src.ID])
+	ss, err := a.subtitleSource(r, src, b.streams[src.ID], index)
 	if err != nil {
 		a.Log.WarnContext(r.Context(), "subtitle source unavailable", "item", it.ID, "err", err)
 		errorText(w, http.StatusInternalServerError)
@@ -147,7 +152,7 @@ func (a *api) burnOptions(r *http.Request, j hlsJob, o *transcode.StartOptions, 
 	if a.Subtitles == nil {
 		return errors.New("text subtitle burn-in without a subtitle store")
 	}
-	ss, err := a.subtitleSource(r, j.src, streams)
+	ss, err := a.subtitleSource(r, j.src, streams, idx)
 	if err != nil {
 		return err
 	}

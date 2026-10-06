@@ -3,6 +3,9 @@ package subtitles
 import (
 	"context"
 	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -145,5 +148,39 @@ func TestShiftCues(t *testing.T) {
 	assIn := "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:02.00,0:00:04.00,Default,,0,0,0,,Gone\nDialogue: 0,0:00:09.50,0:00:12.00,Default,,0,0,0,,Kept, with commas\n"
 	if got := string(shiftCues([]byte(assIn), "ass", 5*time.Second)); got != "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:04.50,0:00:07.00,Default,,0,0,0,,Kept, with commas\n" {
 		t.Errorf("ass:\n%q", got)
+	}
+}
+
+func TestRemoteTrack(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		if r.URL.Path != "/sub/1" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = io.WriteString(w, "1\n00:00:01,000 --> 00:00:02,000\nHello\n")
+	}))
+	t.Cleanup(srv.Close)
+	s := &Store{Dir: t.TempDir()}
+	src := Source{Key: "k", Tracks: []Track{{Index: 100, Codec: "subrip", Path: srv.URL + "/sub/1"}, {Index: 101, Codec: "subrip", Path: srv.URL + "/missing"}}}
+	for range 2 {
+		f, err := s.File(t.Context(), src, 100)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.HasSuffix(f, ".srt") || !strings.HasPrefix(f, s.Dir) {
+			t.Errorf("file = %s", f)
+		}
+		body, err := Convert(t.Context(), f, "srt", 0)
+		if err != nil || !strings.Contains(string(body), "Hello") {
+			t.Errorf("Convert = %q, %v", body, err)
+		}
+	}
+	if hits.Load() != 1 {
+		t.Errorf("downloaded %d times, want once", hits.Load())
+	}
+	if _, err := s.File(t.Context(), src, 101); err == nil {
+		t.Error("a 404 subtitle gave a file")
 	}
 }

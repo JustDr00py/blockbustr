@@ -19,6 +19,7 @@ const (
 	ProbeTTL          = 30 * 24 * time.Hour
 	StremioStreamsTTL = 30 * time.Minute
 	StremioMetaTTL    = 24 * time.Hour
+	StremioSubsTTL    = 6 * time.Hour
 	QueryTTL          = 5 * time.Minute // Latest / NextUp results, purged on events
 	TranscodeLockTTL  = 30 * time.Second
 	ScanLockTTL       = 10 * time.Minute
@@ -58,6 +59,11 @@ func StremioStreamsKey(addon, typ, id string) Key {
 // StreamSetKey holds the addon streams offered as an item's media sources
 // (DESIGN §7.3), so stream requests find the one a client picked.
 func StreamSetKey(item string) Key { return Key("streamset:" + item) }
+
+// StremioSubtitlesKey caches an addon's subtitle list for one title.
+func StremioSubtitlesKey(addon, typ, id string) Key {
+	return Key("stremio:subs:" + addon + ":" + typ + ":" + id)
+}
 
 // StremioMetaKey caches an addon's meta for one title.
 func StremioMetaKey(addon, typ, id string) Key {

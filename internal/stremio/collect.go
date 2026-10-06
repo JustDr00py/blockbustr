@@ -43,21 +43,11 @@ type Collector struct {
 // Collect returns the offers for typ ("movie", "series") and id ("tt0133093",
 // or "tt0944947:1:2" for an episode), grouped by addon in priority order.
 func (c *Collector) Collect(ctx context.Context, typ, id string) ([]Offer, error) {
-	list := c.addons
-	if list == nil {
-		list = func(ctx context.Context) ([]addonInfo, error) {
-			_, order, err := c.Registry.openAddons(ctx, c.Log)
-			return order, err
-		}
-	}
-	addons, err := list(ctx)
+	addons, err := c.list(ctx)
 	if err != nil {
 		return nil, err
 	}
-	timeout := c.Timeout
-	if timeout <= 0 {
-		timeout = 6 * time.Second
-	}
+	timeout := c.timeout()
 
 	per := make([][]Offer, len(addons))
 	var wg sync.WaitGroup
@@ -88,6 +78,66 @@ func (c *Collector) Collect(ctx context.Context, typ, id string) ([]Offer, error
 	}
 	c.markCached(ctx, out)
 	return out, nil
+}
+
+// SubtitleOffer is one subtitle an addon offers for a title.
+type SubtitleOffer struct {
+	Subtitle Subtitle
+	Addon    string
+}
+
+// Subtitles returns the subtitles every enabled addon serving them offers
+// for typ and id, in addon priority order. Like Collect, a slow or failing
+// addon is logged and left out.
+func (c *Collector) Subtitles(ctx context.Context, typ, id string) ([]SubtitleOffer, error) {
+	addons, err := c.list(ctx)
+	if err != nil {
+		return nil, err
+	}
+	per := make([][]SubtitleOffer, len(addons))
+	var wg sync.WaitGroup
+	for i, ad := range addons {
+		if !ad.manifest.Supports("subtitles", typ, id) {
+			continue
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			actx, cancel := context.WithTimeout(ctx, c.timeout())
+			defer cancel()
+			subs, err := c.Registry.Client.Subtitles(actx, ad.base, typ, id)
+			if err != nil {
+				c.Log.Warn("stremio subtitles failed", "host", ad.row.Host, "type", typ, "id", id, "err", err)
+				return
+			}
+			for _, s := range subs {
+				if s.URL != "" {
+					per[i] = append(per[i], SubtitleOffer{Subtitle: s, Addon: ad.manifest.Name})
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	var out []SubtitleOffer
+	for _, o := range per {
+		out = append(out, o...)
+	}
+	return out, nil
+}
+
+func (c *Collector) list(ctx context.Context) ([]addonInfo, error) {
+	if c.addons != nil {
+		return c.addons(ctx)
+	}
+	_, order, err := c.Registry.openAddons(ctx, c.Log)
+	return order, err
+}
+
+func (c *Collector) timeout() time.Duration {
+	if c.Timeout <= 0 {
+		return 6 * time.Second
+	}
+	return c.Timeout
 }
 
 // markCached marks the torrents among offers that are cached: ready on an

@@ -52,3 +52,6 @@ stremio:                       # addons themselves are managed through /blockbus
     languages: []              # preferred audio, ISO 639-1 (e.g. [en, de])
     allow_groups: []           # release groups ranked higher
     deny_groups: []            # release groups never offered
+  subtitles:                   # from subtitle addons (e.g. OpenSubtitles v3)
+    languages: []              # ISO 639-1 (e.g. [en, fr]); empty = English
+    per_language: 3            # tracks offered per language

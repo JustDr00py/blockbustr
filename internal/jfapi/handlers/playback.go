@@ -175,7 +175,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	rows := b.sources[it.ID]
 	allSources := false
 	if _, _, ok := stremioRef(it); ok && len(rows) == 0 {
-		rows = a.offerStreams(r, it, streamPrefs(profile, maxBitrate), req.MediaSourceId)
+		rows = a.offerStreams(r, b, it, streamPrefs(profile, maxBitrate), req.MediaSourceId)
 		// The item id stands for the best choice: a client asking for it
 		// (from the details' placeholder) gets every choice.
 		allSources = req.MediaSourceId != nil && sameID(*req.MediaSourceId, dto.IDFromUUID(it.ID).String())
@@ -207,12 +207,16 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 			(i >= len(rows) || !sameID(*req.MediaSourceId, dto.IDFromUUID(rows[i].ID).String())) {
 			continue
 		}
-		// An unprobed source (a .strm before first play) can't be decided
-		// yet: it keeps the details' answer until P2.4b probes it here.
-		if i < len(rows) && len(b.streams[rows[i].ID]) > 0 {
+		// An unprobed source (a .strm before first play, an addon stream)
+		// can't be decided: it keeps the details' answer, plus delivery of
+		// any external subtitles (an addon's) as files.
+		switch {
+		case i < len(rows) && hasVideo(b.streams[rows[i].ID]):
 			d := media.Decide(profile, decisionSource(rows[i], b.streams[rows[i].ID]), opts)
 			applyDecision(&dtos[i], d, it, msID, u)
 			session.Sources[msID] = d
+		case i < len(rows):
+			deliverSubtitles(&dtos[i], externalTextSubtitles(b.streams[rows[i].ID]), it.ID.String(), msID, u.token)
 		}
 		out = append(out, dtos[i])
 	}
@@ -229,11 +233,12 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 // §7.3) and returns them as sources, best first. An earlier choice the
 // client asks for by id is added after them. When collection fails or finds
 // nothing, the item keeps its placeholder.
-func (a *api) offerStreams(r *http.Request, it db.Item, prefs stremio.Prefs, want *string) []db.MediaSource {
-	choices, err := a.pickStreams(r.Context(), it, prefs)
+func (a *api) offerStreams(r *http.Request, b *itemBatch, it db.Item, prefs stremio.Prefs, want *string) []db.MediaSource {
+	pick, err := a.pickStreams(r.Context(), it, prefs)
 	if err != nil {
 		a.Log.WarnContext(r.Context(), "stream collection failed", "item", it.ID, "err", err)
 	}
+	choices := pick.Choices
 	if want != nil && *want != "" && !sameID(*want, dto.IDFromUUID(it.ID).String()) {
 		if set, ok := a.loadStreamSet(r.Context(), it.ID); ok {
 			for _, c := range set.Choices {
@@ -243,7 +248,11 @@ func (a *api) offerStreams(r *http.Request, it db.Item, prefs stremio.Prefs, wan
 			}
 		}
 	}
-	return choiceSources(it, choices)
+	rows, streams := choiceSources(it, choices, pick.Subtitles)
+	for id, st := range streams {
+		b.streams[id] = st
+	}
+	return rows
 }
 
 // playbackSources loads the item's sources, first probing a .strm that was
@@ -299,6 +308,33 @@ func applyDecision(ms *dto.MediaSourceInfo, d media.Decision, it db.Item, msID s
 		ms.TranscodingSubProtocol = ptr(dto.MediaStreamProtocol(t.Protocol))
 		ms.TranscodingContainer = ptr(t.Container)
 	}
+	deliverSubtitles(ms, d.Subtitles, dashed, msID, u.token)
+}
+
+func hasVideo(streams []db.MediaStream) bool {
+	for _, s := range streams {
+		if s.Type == "Video" {
+			return true
+		}
+	}
+	return false
+}
+
+// externalTextSubtitles are the delivery methods for an undecided source:
+// its external text subtitles as files.
+func externalTextSubtitles(streams []db.MediaStream) map[int]string {
+	out := map[int]string{}
+	for _, s := range streams {
+		if s.Type == "Subtitle" && s.IsExternal && textSubtitleCodecs[deref(s.Codec)] {
+			out[int(s.Idx)] = "External"
+		}
+	}
+	return out
+}
+
+// deliverSubtitles sets each subtitle's DeliveryMethod from methods (by
+// index) and, for External, its DeliveryUrl.
+func deliverSubtitles(ms *dto.MediaSourceInfo, methods map[int]string, dashed, msID, token string) {
 	if ms.MediaStreams == nil {
 		return
 	}
@@ -307,14 +343,14 @@ func applyDecision(ms *dto.MediaSourceInfo, d media.Decision, it db.Item, msID s
 		if st.Type == nil || *st.Type != dto.MediaStreamTypeSubtitle || st.Index == nil {
 			continue
 		}
-		method, ok := d.Subtitles[int(*st.Index)]
+		method, ok := methods[int(*st.Index)]
 		if !ok {
 			continue
 		}
 		st.DeliveryMethod = ptr(dto.SubtitleDeliveryMethod(method))
 		if method == "External" {
 			st.DeliveryUrl = ptr("/Videos/" + dashed + "/" + msID + "/Subtitles/" + strconv.Itoa(int(*st.Index)) +
-				"/0/Stream." + subtitleExt(deref(st.Codec)) + "?ApiKey=" + url.QueryEscape(u.token))
+				"/0/Stream." + subtitleExt(deref(st.Codec)) + "?ApiKey=" + url.QueryEscape(token))
 		}
 	}
 }

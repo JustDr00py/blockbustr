@@ -170,11 +170,21 @@ func (c *Client) Streams(ctx context.Context, base, typ, id string) ([]Stream, e
 
 // Subtitles fetches the subtitles offered for a title.
 func (c *Client) Subtitles(ctx context.Context, base, typ, id string) ([]Subtitle, error) {
+	key := cache.StremioSubtitlesKey(AddonKey(base), typ, id)
 	var out struct {
 		Subtitles []Subtitle `json:"subtitles"`
 	}
-	err := c.get(ctx, base, "subtitles/"+seg(typ)+"/"+seg(id)+".json", &out)
-	return out.Subtitles, err
+	if c.cached(ctx, key, &out.Subtitles) {
+		return out.Subtitles, nil
+	}
+	if err := c.get(ctx, base, "subtitles/"+seg(typ)+"/"+seg(id)+".json", &out); err != nil {
+		return nil, err
+	}
+	if out.Subtitles == nil {
+		out.Subtitles = []Subtitle{}
+	}
+	c.store(ctx, key, out.Subtitles, cache.StremioSubsTTL)
+	return out.Subtitles, nil
 }
 
 // seg escapes a path segment, keeping ':' (episode ids) readable.

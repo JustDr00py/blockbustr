@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P3.9 Stremio subtitles → external subtitle streams
+- [ ] P3.10 Signed, expiring blockbustr stream URLs (no raw debrid links to clients) [AGENTS Safety]
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -141,7 +141,9 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
   - Done 2026-10-06 (DESIGN §4, §7.3): Torrent sources resolve through debrid (`resolve/torrent.go`): known torrent (migration 00014 `debrid_torrents`) or added to the account that has it cached / the first by priority, file by name → index → largest video, link cached. Still downloading → 503 + `Retry-After` while the account keeps downloading; failed torrents deleted and forgotten. Played-once torrents rank as cached (RD has no cache check). Providers gained `Torrent(id)`.
   - Not yet live: no debrid key and no addons configured on the dev server; P3.11 is the manual check
   - Follow-ups: offered streams aren't probed, so they have no MediaStreams or play decision (clients direct-play whatever they get); probe a choice on its first resolve and store the result. Downloads started by a client that gave up are never cleaned from the account.
-- [ ] P3.9 Stremio subtitles → external subtitle streams
+- [x] P3.9 Stremio subtitles → external subtitle streams
+  - Done 2026-10-06 (DESIGN §7.3): subtitle addons asked alongside streams at PlaybackInfo (`Collector.Subtitles`, lists cached 6 h); picked by `stremio.subtitles` (languages, default English; 3 per language, 20 max; OpenSubtitles codes like `pob` mapped); offered as external SubRip tracks (index 100+) on every choice with External delivery URLs; the subtitle store downloads remote tracks once (5 MB cap), so conversion and burn-in work; external tracks never resolve the video, so they load while a torrent downloads. Live: OpenSubtitles v3 lists 92 for GoT S01E02, serving UTF-8 SubRip.
+  - Follow-up: per-user subtitle language preferences (`SubtitleLanguagePreference`) aren't used, only the server config
 - [ ] P3.10 Signed, expiring blockbustr stream URLs (no raw debrid links to clients) [AGENTS Safety]
 - [ ] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources
 

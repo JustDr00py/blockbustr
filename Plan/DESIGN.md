@@ -496,6 +496,11 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
   4. **Uncached at PlaybackInfo:** nothing is added when sources are offered, so browsing never fills an account. The download starts on the first stream request of an uncached choice; that's how step 5's "start it in the background" is done.
   5. **Feedback into ranking:** torrents `ready` in `debrid_torrents` count as cached when ranking (`Collector.Known`). Real-Debrid can't be asked about its cache any more, so a title played once ranks as cached afterwards.
   - Providers gained `Torrent(ctx, id)`: RD `/torrents/info/{id}`, TorBox `/torrents/mylist?id=` (bypassing TorBox's list cache).
+- **Implemented (P3.9, addon subtitles):** at PlaybackInfo on a catalog title, every enabled addon serving `subtitles` for the type and id prefix is asked in parallel with the streams (same timeout; lists cached 6 h in `stremio:subs:*`). OpenSubtitles v3 lists dozens per title (92 for one Game of Thrones episode).
+  - **Picked:** the languages in `stremio.subtitles.languages` (ISO 639-1; empty means English), up to `per_language` (3) each and 20 in all, in that language order and then the addons' order, deduplicated by URL. Codes are read as ISO 639-2 (`eng`, `ger`→`deu`, and OpenSubtitles' own `pob`→`por`, `scc`→`srp`, `chi`/`zht`→`zho`).
+  - **Offered:** remembered with the stream set and attached to **every** choice as external SubRip tracks from index 100, which leaves the low indexes free for the choice's own tracks once probed. The track's `Title` is the addon's name. An undecided source (no video stream known) still gets `DeliveryMethod: External` and a `DeliveryUrl` for them, and its direct-play answer is left alone.
+  - **Served:** through the usual subtitle endpoint. The subtitle store downloads a remote track once into its cache (at most 5 MB), so conversion (SRT/WebVTT/ASS, `startTicks` shift) and burn-in work as they do for a sidecar file. A request for an external track never resolves the video, so subtitles load even while a torrent is still downloading.
+  - **Config:** `stremio.subtitles: { languages: [], per_language: 3 }`.
 
 ### 7.4 In-client search and discovery (core feature)
 Every captured client searches through `GET /Items?searchTerm=…&recursive=true` (Jellyfin Android sends three in parallel, split by `includeItemTypes`/`excludeItemTypes`/`mediaTypes`; §3.5). blockbustr answers those with **library matches first, then remote matches**, so the app's normal search becomes "search everything".
@@ -705,7 +710,8 @@ transcode: { hwaccel: auto, segment_seconds: 3, max_sessions: 4 }   # hwaccel: a
 metadata:  { tmdb_api_key: "", language: en-US }                    # BLOCKBUSTR_TMDB_API_KEY
 debrid:    { realdebrid_api_key: "", torbox_api_key: "" }           # BLOCKBUSTR_REALDEBRID_API_KEY / _TORBOX_API_KEY
 stremio:   { sync_interval: 6h, catalog_pages: 2,                  # addons themselves: /blockbustr/addons
-             streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] } }
+             streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] },
+             subtitles: { languages: [], per_language: 3 } }
 log:       { level: info, format: text }                            # format: text|json
 ```
 Port 8096 matches Jellyfin, so clients find it with the default port. Secrets belong in env (`.env.example`), not YAML.

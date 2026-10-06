@@ -192,3 +192,34 @@ func TestCollectKnownTorrents(t *testing.T) {
 		t.Errorf("cached = %v %v, asked %v", got[0].Cached, got[1].Cached, asked)
 	}
 }
+
+func TestCollectSubtitles(t *testing.T) {
+	subs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/subtitles/series/tt0944947:1:2.json" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = io.WriteString(w, `{"subtitles":[{"id":"1","url":"https://subs.example/1","lang":"eng"},{"id":"2","url":"","lang":"eng"},{"id":"3","url":"https://subs.example/3","lang":"pob"}]}`)
+	}))
+	t.Cleanup(subs.Close)
+	broken := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(500) }))
+	t.Cleanup(broken.Close)
+	var streamHits atomic.Int32
+	streamsOnly := streamAddon(t, nil, 0, &streamHits)
+	subManifest := Manifest{Types: []string{"movie", "series"}, IDPrefixes: []string{"tt"}, Resources: []Resource{{Name: "subtitles"}}}
+	c := testCollector(
+		testAddon("OpenSubtitles", subs.URL, 5, subManifest),
+		testAddon("Broken", broken.URL, 4, subManifest),
+		testAddon("Torrentio", streamsOnly.URL, 3, streamManifest),
+	)
+	got, err := c.Subtitles(context.Background(), "series", "tt0944947:1:2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].Subtitle.ID != "1" || got[1].Subtitle.Lang != "pob" || got[0].Addon != "OpenSubtitles" {
+		t.Errorf("subtitles = %+v (entries without a url dropped)", got)
+	}
+	if streamHits.Load() != 0 {
+		t.Error("a stream-only addon was asked for subtitles")
+	}
+}

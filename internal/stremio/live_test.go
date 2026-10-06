@@ -66,4 +66,18 @@ func TestLive(t *testing.T) {
 	if ranked[0].Info.Height != 1080 {
 		t.Errorf("a 1080p-capped H.264 client got %dp first", ranked[0].Info.Height)
 	}
+
+	opensubs, _ := BaseURL("https://opensubtitles-v3.strem.io/manifest.json")
+	om, err := c.Manifest(t.Context(), opensubs)
+	if err != nil || !om.Supports("subtitles", "series", "tt0944947:1:2") {
+		t.Fatalf("opensubtitles manifest: %v", err)
+	}
+	col.addons = func(context.Context) ([]addonInfo, error) {
+		return []addonInfo{testAddon("OpenSubtitles", opensubs, 0, om)}, nil
+	}
+	subs, err := col.Subtitles(t.Context(), "series", "tt0944947:1:2")
+	if err != nil || len(subs) == 0 || subs[0].Subtitle.URL == "" {
+		t.Errorf("subtitles: %d, %v", len(subs), err)
+	}
+	t.Logf("opensubtitles: %d subtitles for S01E02", len(subs))
 }

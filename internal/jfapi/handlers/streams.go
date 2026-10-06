@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/text/language"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/media"
@@ -23,11 +24,14 @@ import (
 // ranks them and offers the best few as MediaSources; the choices are kept
 // in Redis (streamset:{item}) so the stream, HLS and subtitle endpoints find
 // the one a client picked, and item details can list them as versions.
+// Subtitle addons' subtitles (P3.9) ride along as external tracks of every
+// choice.
 
 // StreamCollector gathers the streams addons offer for a title
 // (stremio.Collector).
 type StreamCollector interface {
 	Collect(ctx context.Context, typ, id string) ([]stremio.Offer, error)
+	Subtitles(ctx context.Context, typ, id string) ([]stremio.SubtitleOffer, error)
 }
 
 // StreamChoice is one addon stream offered as a media source.
@@ -39,11 +43,23 @@ type StreamChoice struct {
 	Size      int64
 }
 
-// streamSet is what streamset:{item} holds: the latest offer first, then
-// earlier offers a client may still be playing.
-type streamSet struct {
-	Choices []StreamChoice
+// SubtitleChoice is one addon subtitle offered as an external track.
+type SubtitleChoice struct {
+	Language string // ISO 639-2, as ffprobe reports embedded tracks
+	URL      string
+	Addon    string
 }
+
+// streamSet is what streamset:{item} holds: the latest offer first, then
+// earlier offers a client may still be playing, and the title's subtitles.
+type streamSet struct {
+	Choices   []StreamChoice
+	Subtitles []SubtitleChoice
+}
+
+// firstAddonSubtitle is the index of a choice's first addon subtitle,
+// leaving the low indexes to its own tracks once it's probed.
+const firstAddonSubtitle = 100
 
 // maxStreamSet bounds how many choices are remembered per item.
 const maxStreamSet = 12
@@ -62,10 +78,18 @@ func stremioRef(it db.Item) (typ, id string, ok bool) {
 	return typ, id, ok && id != ""
 }
 
-// choiceSources are the sources a set's choices stand for, in its order.
-func choiceSources(it db.Item, choices []StreamChoice) []db.MediaSource {
+// choiceSources are the sources a set's choices stand for, in its order,
+// and their streams: the set's subtitles, as external text tracks.
+func choiceSources(it db.Item, choices []StreamChoice, subs []SubtitleChoice) ([]db.MediaSource, map[uuid.UUID][]db.MediaStream) {
 	out := make([]db.MediaSource, 0, len(choices))
+	streams := map[uuid.UUID][]db.MediaStream{}
 	for _, c := range choices {
+		for i, sub := range subs {
+			streams[c.ID] = append(streams[c.ID], db.MediaStream{
+				MediaSourceID: c.ID, Idx: int32(firstAddonSubtitle + i), Type: "Subtitle", Codec: ptr("subrip"),
+				Language: ptr(sub.Language), Title: ptr(sub.Addon), IsExternal: true, ExternalPath: ptr(sub.URL),
+			})
+		}
 		src := db.MediaSource{
 			ID: c.ID, ItemID: it.ID, Protocol: "Http", IsRemote: true, PathOrUrl: c.Target,
 			Name: c.Name, RuntimeTicks: it.RuntimeTicks, Etag: it.Etag,
@@ -82,7 +106,7 @@ func choiceSources(it db.Item, choices []StreamChoice) []db.MediaSource {
 		}
 		out = append(out, src)
 	}
-	return out
+	return out, streams
 }
 
 func (a *api) loadStreamSet(ctx context.Context, item uuid.UUID) (streamSet, bool) {
@@ -103,14 +127,17 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 	}
 	set, ok := a.loadStreamSet(ctx, it.ID)
 	if !ok && collect {
-		choices, err := a.pickStreams(ctx, it, prefs)
-		if err != nil {
+		var err error
+		if set, err = a.pickStreams(ctx, it, prefs); err != nil {
 			return err
 		}
-		set.Choices = choices
 	}
 	if len(set.Choices) > 0 {
-		b.sources[it.ID] = choiceSources(it, set.Choices)
+		var streams map[uuid.UUID][]db.MediaStream
+		b.sources[it.ID], streams = choiceSources(it, set.Choices, set.Subtitles)
+		for id, st := range streams {
+			b.streams[id] = st
+		}
 	}
 	return nil
 }
@@ -126,18 +153,29 @@ func (a *api) loadPlaySources(ctx context.Context, b *itemBatch, it db.Item) err
 	return a.addStreamChoices(ctx, b, it, true, streamPrefs(media.DeviceProfile{}, 0))
 }
 
-// pickStreams collects and ranks a catalog item's streams for prefs,
-// remembers the best few (stremio.streams.top) ahead of earlier choices,
-// and returns them, best first. No streams is not an error: the item keeps
-// its placeholder source.
-func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) ([]StreamChoice, error) {
+// pickStreams collects and ranks a catalog item's streams for prefs, and
+// its subtitles, in parallel; remembers the best few streams
+// (stremio.streams.top) ahead of earlier choices; and returns this pick:
+// the streams best first, and the subtitles. No streams is not an error:
+// the item keeps its placeholder source.
+func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) (streamSet, error) {
 	typ, id, ok := stremioRef(it)
 	if !ok || a.Streams == nil {
-		return nil, nil
+		return streamSet{}, nil
 	}
+	var subs []stremio.SubtitleOffer
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		var err error
+		if subs, err = a.Streams.Subtitles(ctx, typ, id); err != nil {
+			a.Log.WarnContext(ctx, "subtitle collection failed", "item", it.ID, "err", err)
+		}
+	}()
 	offers, err := a.Streams.Collect(ctx, typ, id)
+	<-done
 	if err != nil {
-		return nil, err
+		return streamSet{}, err
 	}
 	cfg := a.Config.Stremio.Streams
 	prefs.Languages, prefs.Allow, prefs.Deny = cfg.Languages, cfg.AllowGroups, cfg.DenyGroups
@@ -150,8 +188,9 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	for _, r := range ranked[:min(top, len(ranked))] {
 		choices = append(choices, streamChoice(it.ID, r))
 	}
+	pick := streamSet{Choices: choices, Subtitles: pickSubtitles(subs, a.Config.Stremio.Subtitles.Languages, a.Config.Stremio.Subtitles.PerLanguage)}
 	if len(choices) == 0 || a.Cache == nil {
-		return choices, nil
+		return pick, nil
 	}
 	set, _ := a.loadStreamSet(ctx, it.ID)
 	merged := append([]StreamChoice{}, choices...)
@@ -163,10 +202,65 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 			merged = append(merged, c)
 		}
 	}
-	if err := a.Cache.SetJSON(ctx, cache.StreamSetKey(it.ID.String()), streamSet{Choices: merged}, cache.StreamSetTTL); err != nil {
-		return nil, err
+	if err := a.Cache.SetJSON(ctx, cache.StreamSetKey(it.ID.String()), streamSet{Choices: merged, Subtitles: pick.Subtitles}, cache.StreamSetTTL); err != nil {
+		return streamSet{}, err
 	}
-	return choices, nil
+	return pick, nil
+}
+
+// maxAddonSubtitles bounds the subtitles offered per title.
+const maxAddonSubtitles = 20
+
+// subtitleCodes are OpenSubtitles' own language codes.
+var subtitleCodes = map[string]string{"pob": "por", "pb": "por", "scc": "srp", "zht": "zho", "zhe": "zho", "ze": "zho", "chi": "zho"}
+
+// subtitleLanguage is an addon's language code ("eng", "ger", "en",
+// OpenSubtitles' "pob") as ISO 639-2; "" when it isn't one.
+func subtitleLanguage(code string) string {
+	code = strings.ToLower(strings.TrimSpace(code))
+	if c, ok := subtitleCodes[code]; ok {
+		code = c
+	}
+	if len(code) < 2 {
+		return ""
+	}
+	t, err := language.Parse(code)
+	if err != nil {
+		return ""
+	}
+	base, conf := t.Base()
+	if conf == language.No {
+		return ""
+	}
+	return base.ISO3()
+}
+
+// pickSubtitles keeps the subtitles in the wanted languages (ISO 639-1;
+// none means English), up to per language, wanted languages first and each
+// in the addons' order.
+func pickSubtitles(offers []stremio.SubtitleOffer, want []string, per int) []SubtitleChoice {
+	if len(want) == 0 {
+		want = []string{"en"}
+	}
+	per = max(per, 1)
+	var out []SubtitleChoice
+	seen := map[string]bool{}
+	for _, w := range want {
+		lang := subtitleLanguage(w)
+		n := 0
+		for _, o := range offers {
+			if n >= per || len(out) >= maxAddonSubtitles {
+				break
+			}
+			if subtitleLanguage(o.Subtitle.Lang) != lang || seen[o.Subtitle.URL] {
+				continue
+			}
+			seen[o.Subtitle.URL] = true
+			out = append(out, SubtitleChoice{Language: lang, URL: o.Subtitle.URL, Addon: o.Addon})
+			n++
+		}
+	}
+	return out
 }
 
 func hasChoice(list []StreamChoice, id uuid.UUID) bool {

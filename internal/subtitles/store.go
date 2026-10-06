@@ -2,7 +2,8 @@
 // §8.3): embedded tracks are extracted once into a disk cache (all text
 // tracks of a source in one ffmpeg pass, since every extraction reads the
 // whole file, possibly over the network) and converted on request to SRT,
-// WebVTT or ASS. Sidecar files are used as they are.
+// WebVTT or ASS. Sidecar files are used as they are; remote ones (addon
+// subtitles) are downloaded once.
 package subtitles
 
 import (
@@ -12,6 +13,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -43,7 +46,7 @@ func IsText(codec string) bool { return textCodecs[strings.ToLower(codec)] != ""
 type Track struct {
 	Index int
 	Codec string
-	Path  string // sidecar file; "" for a track inside the media file
+	Path  string // sidecar file or remote URL; "" for a track inside the media file
 }
 
 // Source is where a source's embedded tracks are read from.
@@ -90,6 +93,8 @@ func (s *Store) File(ctx context.Context, src Source, index int) (string, error)
 		return "", fmt.Errorf("subtitles: no track %d", index)
 	case !IsText(track.Codec):
 		return "", ErrNotText
+	case isURL(track.Path):
+		return s.download(ctx, *track)
 	case track.Path != "":
 		return track.Path, nil
 	}
@@ -105,6 +110,56 @@ func (s *Store) File(ctx context.Context, src Source, index int) (string, error)
 	}
 	if _, err := os.Stat(p); err != nil {
 		return "", fmt.Errorf("subtitles: track %d not extracted", index)
+	}
+	return p, nil
+}
+
+func isURL(p string) bool { return strings.HasPrefix(p, "https://") || strings.HasPrefix(p, "http://") }
+
+// MaxRemoteSize bounds a downloaded subtitle file.
+const MaxRemoteSize = 5 << 20
+
+// download fetches a remote track (an addon's subtitle) once into the
+// cache, so conversion and burn-in read a local file like a sidecar's.
+func (s *Store) download(ctx context.Context, t Track) (string, error) {
+	sum := sha256.Sum256([]byte(t.Path))
+	p := filepath.Join(s.Dir, "remote", hex.EncodeToString(sum[:12])+"."+textCodecs[strings.ToLower(t.Codec)])
+	if _, err := os.Stat(p); err == nil {
+		return p, nil
+	}
+	_, err, _ := s.sf.Do("remote\x00"+t.Path, func() (any, error) {
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+		defer cancel()
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, t.Path, nil)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("subtitles: download: %w", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("subtitles: download answered %s", resp.Status)
+		}
+		data, err := io.ReadAll(io.LimitReader(resp.Body, MaxRemoteSize+1))
+		if err != nil {
+			return nil, fmt.Errorf("subtitles: download: %w", err)
+		}
+		if len(data) > MaxRemoteSize {
+			return nil, errors.New("subtitles: remote file too large")
+		}
+		if err := os.MkdirAll(filepath.Dir(p), 0o750); err != nil {
+			return nil, err
+		}
+		tmp := p + ".tmp"
+		if err := os.WriteFile(tmp, data, 0o640); err != nil {
+			return nil, err
+		}
+		return nil, os.Rename(tmp, p)
+	})
+	if err != nil {
+		return "", err
 	}
 	return p, nil
 }

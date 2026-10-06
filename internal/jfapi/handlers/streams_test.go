@@ -18,6 +18,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/stremio"
+	"github.com/sysadmin/blockbustr/internal/subtitles"
 	"github.com/sysadmin/blockbustr/internal/testutil"
 )
 
@@ -58,8 +59,13 @@ func (f *fakeAccount) FileLink(_ context.Context, _, fileID string) (string, tim
 }
 
 type fakeStreams struct {
-	offers map[string][]stremio.Offer // by "type/id"
+	offers map[string][]stremio.Offer         // by "type/id"
+	subs   map[string][]stremio.SubtitleOffer // by "type/id"
 	calls  atomic.Int32
+}
+
+func (f *fakeStreams) Subtitles(_ context.Context, typ, id string) ([]stremio.SubtitleOffer, error) {
+	return f.subs[typ+"/"+id], nil
 }
 
 func (f *fakeStreams) Collect(_ context.Context, typ, id string) ([]stremio.Offer, error) {
@@ -74,6 +80,12 @@ type playbackSources struct {
 		Id, Name, Path, Protocol, Container string
 		IsRemote                            bool
 		Size                                int64
+		SupportsDirectPlay                  bool
+		MediaStreams                        []struct {
+			Index                                       int
+			Type, Language, DeliveryMethod, DeliveryUrl string
+			IsExternal                                  bool
+		}
 	}
 	PlaySessionId string
 }
@@ -84,7 +96,11 @@ const h264Profile = `{"DeviceProfile":{"MaxStreamingBitrate":120000000,
 	"TranscodingProfiles":[{"Type":"Video","Container":"ts","VideoCodec":"h264","AudioCodec":"aac","Protocol":"hls"}]}}`
 
 func TestCatalogStreamsAsMediaSources(t *testing.T) {
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/subs/") {
+			_, _ = w.Write([]byte("1\n00:00:01,000 --> 00:00:02,000\nWake up, " + strings.TrimPrefix(r.URL.Path, "/subs/") + "\n"))
+			return
+		}
 		w.Header().Set("Content-Type", "video/x-matroska")
 		_, _ = w.Write([]byte("matroska bytes"))
 	}))
@@ -96,6 +112,11 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		{Addon: "Torrentio", Stream: stremio.Stream{Name: "Torrentio\n1080p", Title: "The.Matrix.1999.1080p.BluRay.x264-BAD", InfoHash: "cccc"}},
 		{Addon: "Torrentio", Stream: stremio.Stream{Name: "Torrentio\n1080p", Title: "The.Matrix.1999.HDCAM.x264-CAMGRP", InfoHash: "dddd"}},
 		{Addon: "Direct", Stream: stremio.Stream{Name: "Direct 1080p", Title: "The Matrix 1080p x264 💾 1.5 GB", URL: cdn.URL + "/matrix.mkv"}},
+	}}, subs: map[string][]stremio.SubtitleOffer{"movie/tt0133093": {
+		{Addon: "OpenSubtitles v3", Subtitle: stremio.Subtitle{Lang: "ger", URL: cdn.URL + "/subs/de1"}},
+		{Addon: "OpenSubtitles v3", Subtitle: stremio.Subtitle{Lang: "eng", URL: cdn.URL + "/subs/en1"}},
+		{Addon: "OpenSubtitles v3", Subtitle: stremio.Subtitle{Lang: "pob", URL: cdn.URL + "/subs/pt1"}},
+		{Addon: "OpenSubtitles v3", Subtitle: stremio.Subtitle{Lang: "eng", URL: cdn.URL + "/subs/en2"}},
 	}}}
 	var rc *cache.Cache
 	rd := &fakeAccount{cdn: cdn.URL}
@@ -104,6 +125,8 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard(),
 			Providers: map[provider.Name]provider.Provider{provider.RealDebrid: rd}}
 		d.Config.Stremio.Streams.DenyGroups = []string{"bad"}
+		d.Config.Stremio.Subtitles.Languages = []string{"en", "pt"}
+		d.Subtitles = &subtitles.Store{Dir: t.TempDir()}
 		rc = d.Cache
 	})
 	sf.syncAll(t)
@@ -158,6 +181,25 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		t.Errorf("container/size: %q %q %d", srcs[0].Container, srcs[1].Container, srcs[1].Size)
 	}
 
+	// Subtitles in the configured languages (en first, then pt from
+	// OpenSubtitles' "pob"), as external tracks of every choice, delivered
+	// as files.
+	for _, src := range srcs {
+		var subs []string
+		for _, st := range src.MediaStreams {
+			if st.Type != "Subtitle" || !st.IsExternal || st.DeliveryMethod != "External" || !strings.Contains(st.DeliveryUrl, "/"+src.Id+"/Subtitles/") {
+				t.Errorf("%s: subtitle %+v", src.Name, st)
+			}
+			subs = append(subs, fmt.Sprintf("%d:%s", st.Index, st.Language))
+		}
+		if strings.Join(subs, " ") != "100:eng 101:eng 102:por" {
+			t.Errorf("%s: subtitles %v", src.Name, subs)
+		}
+		if !src.SupportsDirectPlay {
+			t.Errorf("%s: an undecided source lost direct play", src.Name)
+		}
+	}
+
 	// Asking again gives the same ids (they're derived from the streams).
 	again := playback(h264Profile)
 	if again.MediaSources[1].Id != srcs[1].Id {
@@ -189,6 +231,14 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	}
 	if rd.added.Load() != "aaaa" {
 		t.Errorf("added %v, want the stream's hash", rd.added.Load())
+	}
+	// Its subtitles don't wait for the torrent.
+	subURL := srcs[1].MediaStreams[1].DeliveryUrl
+	if rec := call(t, sf.h, "GET", subURL, "", ""); rec.Code != 200 || !strings.Contains(rec.Body.String(), "Wake up, en2") {
+		t.Errorf("subtitle while downloading: %d %q", rec.Code, rec.Body.String())
+	}
+	if rec := call(t, sf.h, "GET", strings.Replace(subURL, "Stream.srt", "Stream.vtt", 1), "", ""); rec.Code != 200 || !strings.HasPrefix(rec.Body.String(), "WEBVTT") {
+		t.Errorf("subtitle as WebVTT: %d %q", rec.Code, rec.Body.String())
 	}
 	rd.ready.Store(true)
 	if code := stream(srcs[1].Id); code != 200 && code != 302 {
@@ -321,5 +371,41 @@ func TestStremioRef(t *testing.T) {
 	}
 	if _, _, ok := stremioRef(item("file", "stremio:movie:tt1")); ok {
 		t.Error("a file item counted as a catalog title")
+	}
+}
+
+func TestPickSubtitles(t *testing.T) {
+	offer := func(lang, url string) stremio.SubtitleOffer {
+		return stremio.SubtitleOffer{Addon: "A", Subtitle: stremio.Subtitle{Lang: lang, URL: url}}
+	}
+	offers := []stremio.SubtitleOffer{
+		offer("ger", "de1"), offer("eng", "en1"), offer("en", "en2"), offer("eng", "en1"), // a duplicate URL
+		offer("eng", "en3"), offer("eng", "en4"), offer("pob", "pt1"), offer("xx-bogus", "x"), offer("", "y"),
+	}
+	cases := []struct {
+		want []string
+		per  int
+		got  string
+	}{
+		{nil, 3, "eng:en1 eng:en2 eng:en3"},
+		{[]string{"de", "en"}, 1, "deu:de1 eng:en1"},
+		{[]string{"pt"}, 3, "por:pt1"},
+		{[]string{"fr"}, 3, ""},
+	}
+	for _, c := range cases {
+		var got []string
+		for _, s := range pickSubtitles(offers, c.want, c.per) {
+			got = append(got, s.Language+":"+s.URL)
+		}
+		if strings.Join(got, " ") != c.got {
+			t.Errorf("pickSubtitles(%v, %d) = %q, want %q", c.want, c.per, strings.Join(got, " "), c.got)
+		}
+	}
+	var many []stremio.SubtitleOffer
+	for i := range 50 {
+		many = append(many, offer("eng", fmt.Sprint(i)))
+	}
+	if n := len(pickSubtitles(many, nil, 10)); n != 10 {
+		t.Errorf("per-language cap: %d", n)
 	}
 }

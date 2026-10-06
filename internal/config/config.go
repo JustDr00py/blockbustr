@@ -46,6 +46,14 @@ type Stremio struct {
 	SyncInterval time.Duration `yaml:"sync_interval"` // re-sync enabled catalogs; "0s" syncs only at start and on changes
 	CatalogPages int           `yaml:"catalog_pages"` // pages fetched per catalog (Cinemeta pages hold 50 titles)
 	Streams      Streams       `yaml:"streams"`
+	Subtitles    Subtitles     `yaml:"subtitles"`
+}
+
+// Subtitles configures which addon subtitles catalog titles offer (DESIGN
+// §7.3): addons like OpenSubtitles list dozens per title.
+type Subtitles struct {
+	Languages   []string `yaml:"languages"`    // ISO 639-1; empty = English
+	PerLanguage int      `yaml:"per_language"` // tracks offered per language
 }
 
 // Streams configures stream collection and ranking at playback (DESIGN §7.3).
@@ -205,7 +213,8 @@ func Defaults() Config {
 		Log:       Log{Level: "info", Format: "text"},
 		Stremio: Stremio{
 			SyncInterval: 6 * time.Hour, CatalogPages: 2,
-			Streams: Streams{Timeout: 6 * time.Second, Top: 3},
+			Streams:   Streams{Timeout: 6 * time.Second, Top: 3},
+			Subtitles: Subtitles{PerLanguage: 3},
 		},
 		Scan: Scan{
 			OnStart: true, Interval: 6 * time.Hour, ProbeTimeout: 2 * time.Minute, MissingGrace: 24 * time.Hour,
@@ -370,6 +379,14 @@ func (c *Config) Validate() error {
 		if len(l) != 2 {
 			add("stremio.streams.languages must be ISO 639-1 codes (\"en\"), got %q", l)
 		}
+	}
+	for _, l := range c.Stremio.Subtitles.Languages {
+		if len(l) != 2 {
+			add("stremio.subtitles.languages must be ISO 639-1 codes (\"en\"), got %q", l)
+		}
+	}
+	if c.Stremio.Subtitles.PerLanguage < 1 || c.Stremio.Subtitles.PerLanguage > 10 {
+		add("stremio.subtitles.per_language must be between 1 and 10")
 	}
 	if c.Debrid.RealDebridAPIKey != "" || c.Debrid.TorBoxAPIKey != "" {
 		if c.SecretKey == "" {
