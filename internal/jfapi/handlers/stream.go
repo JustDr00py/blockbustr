@@ -14,6 +14,7 @@ import (
 
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
+	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 )
 
@@ -135,7 +136,8 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, src db.MediaS
 		return
 	}
 	ctx := r.Context()
-	link, err := a.Resolver.Resolve(ctx, src.PathOrUrl)
+	target := resolve.FromURL(src.PathOrUrl)
+	link, err := a.Resolver.Resolve(ctx, target)
 	if err != nil {
 		a.Log.WarnContext(ctx, "remote source unavailable", "item", src.ItemID, "err", err)
 		w.WriteHeader(http.StatusBadGateway)
@@ -148,8 +150,8 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, src db.MediaS
 	resp, err := a.Resolver.Open(ctx, r.Method, link.URL, r.Header)
 	if err == nil && linkExpired(resp.StatusCode) {
 		_ = resp.Body.Close()
-		a.Resolver.Forget(ctx, src.PathOrUrl)
-		if link, err = a.Resolver.Resolve(ctx, src.PathOrUrl); err == nil {
+		a.Resolver.Forget(ctx, target)
+		if link, err = a.Resolver.Resolve(ctx, target); err == nil {
 			resp, err = a.Resolver.Open(ctx, r.Method, link.URL, r.Header)
 		}
 	}

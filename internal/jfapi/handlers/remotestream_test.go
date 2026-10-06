@@ -117,7 +117,7 @@ func TestRemoteStreamProxyAndRedirect(t *testing.T) {
 	f.cdnGone.Store(0)
 
 	// The origin itself failing.
-	f.resolver.Forget(t.Context(), f.origin.URL+"/stream/realdebrid/X/1?sig=s")
+	f.resolver.Forget(t.Context(), resolve.FromURL(f.origin.URL+"/stream/realdebrid/X/1?sig=s"))
 	f.originBroken.Store(true)
 	if rec := f.get(t, "GET", nil); rec.Code != 502 {
 		t.Errorf("unresolvable = %d", rec.Code)

@@ -29,6 +29,9 @@ import (
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/metadata"
 	"github.com/sysadmin/blockbustr/internal/metadata/tmdb"
+	"github.com/sysadmin/blockbustr/internal/provider"
+	"github.com/sysadmin/blockbustr/internal/provider/realdebrid"
+	"github.com/sysadmin/blockbustr/internal/provider/torbox"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/secret"
 	"github.com/sysadmin/blockbustr/internal/store/pg"
@@ -104,6 +107,10 @@ func run() error {
 	if err := bootstrapDebrid(ctx, queries, cfg, log); err != nil {
 		return err
 	}
+	debrid, err := loadProviders(ctx, queries, cfg, log)
+	if err != nil {
+		return err
+	}
 	scanner := library.NewScanner(pool, rc, media.Prober{}, cfg.Scan, log)
 	var tmdbClient *tmdb.Client
 	if cfg.Metadata.TMDBAPIKey != "" {
@@ -147,7 +154,7 @@ func run() error {
 	router := jfapi.NewRouter(log, jfapi.Options{LegacyAuth: cfg.Compat.LegacyAuth})
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
-		Resolver: &resolve.Resolver{Cache: rc}, Probe: scanner,
+		Resolver: &resolve.Resolver{Cache: rc, Providers: debrid, Log: log}, Probe: scanner,
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
 		Events:      bus, Hub: hub,
@@ -240,6 +247,49 @@ func bootstrapDebrid(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, 
 		log.Info("debrid account stored", "provider", provider)
 	}
 	return nil
+}
+
+// loadProviders opens the enabled debrid accounts (DESIGN §4) for the
+// resolver. Stored accounts that can't be opened (secret_key removed or
+// changed since they were sealed) are skipped with a warning, so playback
+// of everything else still works.
+func loadProviders(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, log *slog.Logger) (map[provider.Name]provider.Provider, error) {
+	rows, err := q.ListDebridAccounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := map[provider.Name]provider.Provider{}
+	if len(rows) == 0 {
+		return out, nil
+	}
+	key, kerr := secret.ParseKey(cfg.SecretKey)
+	for _, row := range rows {
+		if !row.Enabled {
+			continue
+		}
+		name, err := provider.ParseName(row.Provider)
+		if err != nil {
+			log.Warn("debrid account skipped", "provider", row.Provider, "err", err)
+			continue
+		}
+		if kerr != nil {
+			log.Warn("debrid account skipped: secret_key missing or invalid", "provider", name)
+			continue
+		}
+		apiKey, err := secret.Open(key, row.ApiKeyEnc)
+		if err != nil {
+			log.Warn("debrid account skipped: sealed under another secret_key", "provider", name)
+			continue
+		}
+		switch name {
+		case provider.RealDebrid:
+			out[name] = realdebrid.New(string(apiKey), 0)
+		case provider.TorBox:
+			out[name] = torbox.New(string(apiKey), 0)
+		}
+		log.Info("debrid account enabled", "provider", name)
+	}
+	return out, nil
 }
 
 // healthcheck GETs /healthz on the local listener so the container image

@@ -13,6 +13,7 @@ import (
 
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
+	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/subtitles"
 	"github.com/sysadmin/blockbustr/internal/transcode"
@@ -47,7 +48,7 @@ func (a *api) subtitleSource(r *http.Request, src db.MediaSource, streams []db.M
 		if a.Resolver == nil {
 			return out, errors.New("remote source without a resolver")
 		}
-		link, err := a.Resolver.Resolve(r.Context(), src.PathOrUrl)
+		link, err := a.Resolver.Resolve(r.Context(), resolve.FromURL(src.PathOrUrl))
 		if err != nil {
 			return out, err
 		}

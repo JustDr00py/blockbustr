@@ -17,6 +17,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/media"
+	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/transcode"
 )
@@ -231,7 +232,7 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 		if a.Resolver == nil {
 			return o, errors.New("remote source without a resolver")
 		}
-		link, err := a.Resolver.Resolve(r.Context(), j.src.PathOrUrl)
+		link, err := a.Resolver.Resolve(r.Context(), resolve.FromURL(j.src.PathOrUrl))
 		if err != nil {
 			return o, err
 		}
