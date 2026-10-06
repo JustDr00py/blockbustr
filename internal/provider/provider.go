@@ -99,6 +99,9 @@ type Provider interface {
 	AccountInfo(ctx context.Context) (Account, error)
 	// ListCloud returns the torrents currently in the cloud.
 	ListCloud(ctx context.Context) ([]Torrent, error)
+	// Torrent returns one torrent, fresh: its status and, once ready, its
+	// files in torrent order.
+	Torrent(ctx context.Context, id string) (Torrent, error)
 	// AddMagnet adds a magnet link. It returns the new torrent ID and whether
 	// the content was already cached (instantly available).
 	AddMagnet(ctx context.Context, magnet string) (id string, cached bool, err error)

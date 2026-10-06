@@ -37,6 +37,15 @@ type DebridAccount struct {
 	UpdatedAt time.Time
 }
 
+type DebridTorrent struct {
+	Provider  string
+	InfoHash  string
+	TorrentID string
+	Status    string
+	AddedAt   time.Time
+	CheckedAt time.Time
+}
+
 type Device struct {
 	ID           string
 	UserID       uuid.UUID

@@ -264,6 +264,12 @@ func (c *Client) AddMagnet(ctx context.Context, magnet string) (string, bool, er
 	return ar.ID, cached, nil
 }
 
+// Torrent implements provider.Provider. Files are the selected ones, in
+// torrent order (AddMagnet selects all).
+func (c *Client) Torrent(ctx context.Context, id string) (provider.Torrent, error) {
+	return c.info(ctx, id)
+}
+
 func (c *Client) info(ctx context.Context, id string) (provider.Torrent, error) {
 	var t torrent
 	if err := c.get(ctx, "/torrents/info/"+id, &t); err != nil {

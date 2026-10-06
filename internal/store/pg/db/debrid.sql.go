@@ -20,6 +20,20 @@ func (q *Queries) DeleteDebridAccountByProvider(ctx context.Context, provider st
 	return err
 }
 
+const deleteDebridTorrent = `-- name: DeleteDebridTorrent :exec
+DELETE FROM debrid_torrents WHERE provider = $1 AND info_hash = $2
+`
+
+type DeleteDebridTorrentParams struct {
+	Provider string
+	InfoHash string
+}
+
+func (q *Queries) DeleteDebridTorrent(ctx context.Context, arg DeleteDebridTorrentParams) error {
+	_, err := q.db.Exec(ctx, deleteDebridTorrent, arg.Provider, arg.InfoHash)
+	return err
+}
+
 const listDebridAccounts = `-- name: ListDebridAccounts :many
 SELECT id, provider, api_key_enc, enabled, priority
 FROM debrid_accounts
@@ -60,6 +74,72 @@ func (q *Queries) ListDebridAccounts(ctx context.Context) ([]ListDebridAccountsR
 	return items, nil
 }
 
+const listDebridTorrents = `-- name: ListDebridTorrents :many
+SELECT provider, info_hash, torrent_id, status
+FROM debrid_torrents
+WHERE info_hash = $1
+`
+
+type ListDebridTorrentsRow struct {
+	Provider  string
+	InfoHash  string
+	TorrentID string
+	Status    string
+}
+
+// The torrents known for a hash, on any account (P3.8).
+func (q *Queries) ListDebridTorrents(ctx context.Context, infoHash string) ([]ListDebridTorrentsRow, error) {
+	rows, err := q.db.Query(ctx, listDebridTorrents, infoHash)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDebridTorrentsRow{}
+	for rows.Next() {
+		var i ListDebridTorrentsRow
+		if err := rows.Scan(
+			&i.Provider,
+			&i.InfoHash,
+			&i.TorrentID,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const readyDebridHashes = `-- name: ReadyDebridHashes :many
+SELECT DISTINCT info_hash
+FROM debrid_torrents
+WHERE info_hash = ANY($1::text[]) AND status = 'ready'
+`
+
+// Which of the hashes are ready on some account, for the stream ranking.
+func (q *Queries) ReadyDebridHashes(ctx context.Context, hashes []string) ([]string, error) {
+	rows, err := q.db.Query(ctx, readyDebridHashes, hashes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var info_hash string
+		if err := rows.Scan(&info_hash); err != nil {
+			return nil, err
+		}
+		items = append(items, info_hash)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const upsertDebridAccount = `-- name: UpsertDebridAccount :exec
 INSERT INTO debrid_accounts (provider, api_key_enc)
 VALUES ($1, $2)
@@ -79,5 +159,31 @@ type UpsertDebridAccountParams struct {
 // start, and enabling again is implicit.
 func (q *Queries) UpsertDebridAccount(ctx context.Context, arg UpsertDebridAccountParams) error {
 	_, err := q.db.Exec(ctx, upsertDebridAccount, arg.Provider, arg.ApiKeyEnc)
+	return err
+}
+
+const upsertDebridTorrent = `-- name: UpsertDebridTorrent :exec
+INSERT INTO debrid_torrents (provider, info_hash, torrent_id, status)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (provider, info_hash) DO UPDATE
+SET torrent_id = EXCLUDED.torrent_id,
+    status     = EXCLUDED.status,
+    checked_at = now()
+`
+
+type UpsertDebridTorrentParams struct {
+	Provider  string
+	InfoHash  string
+	TorrentID string
+	Status    string
+}
+
+func (q *Queries) UpsertDebridTorrent(ctx context.Context, arg UpsertDebridTorrentParams) error {
+	_, err := q.db.Exec(ctx, upsertDebridTorrent,
+		arg.Provider,
+		arg.InfoHash,
+		arg.TorrentID,
+		arg.Status,
+	)
 	return err
 }

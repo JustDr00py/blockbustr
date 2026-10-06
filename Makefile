@@ -48,7 +48,7 @@ TEST_DATABASE_URL ?= postgres://blockbustr:blockbustr@localhost:5432/postgres?ss
 TEST_REDIS_URL    ?= redis://localhost:6379/15
 test-integration:
 	BLOCKBUSTR_TEST_DATABASE_URL=$(TEST_DATABASE_URL) BLOCKBUSTR_TEST_REDIS_URL=$(TEST_REDIS_URL) \
-		go test -count=1 ./internal/store/... ./internal/cache/... ./internal/auth/... ./internal/jfapi/handlers/... ./internal/library/... ./internal/metadata/...
+		go test -count=1 ./internal/store/... ./internal/cache/... ./internal/auth/... ./internal/resolve/... ./internal/jfapi/handlers/... ./internal/library/... ./internal/metadata/...
 
 # Definition of done (AGENTS.md): vet + generated code current + unit + integration tests + lint.
 check: vet sqlc-check dto-check test test-integration lint

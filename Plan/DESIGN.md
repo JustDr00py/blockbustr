@@ -299,6 +299,7 @@ stremio_catalogs(addon_id fk, catalog_type, catalog_id, library_id fk null, enab
                  pk(addon_id, catalog_type, catalog_id))
 
 debrid_accounts(id uuid pk, provider text, api_key_enc bytea, enabled bool, priority int)
+debrid_torrents(provider text fk→debrid_accounts.provider on delete cascade, info_hash text lowercase, torrent_id text, status text, added_at, checked_at, pk(provider, info_hash))
 library_events(id bigserial pk, item_id, kind text, at timestamptz)  -- powers Kodi sync + LibraryChanged
 ```
 
@@ -307,6 +308,7 @@ library_events(id bigserial pk, item_id, kind text, at timestamptz)  -- powers K
 - Full-text search is an **expression index** on the IMMUTABLE `item_search_vector(name, original_title)` (which uses `f_unaccent()`, because `unaccent()` itself is only STABLE), not a stored `search` column. That keeps `SELECT *` mapped onto sqlc's `db.Item`. Queries must filter with `item_search_vector(name, original_title) @@ …` to use the index. The trigram index is on `f_unaccent(name)`.
 - Added `items.index_number_end` (multi-episode files) and CHECKs (`strm` needs `strm_url`, `stremio` needs `stremio_ref`). `images.tag` is NOT NULL. `access_tokens.token_sha` must be 32 bytes.
 - `genres`, `studios`, `people`, `chapters`, `stremio_*`, `debrid_accounts` and `library_events` come with the tasks that use them (P1.16, P3.x, P4.2). `items.original_language` (TMDB ISO 639-1) was added by migration 00010, which also re-opens matched movies/series for one metadata refresh so the language is filled in.
+- **`debrid_torrents` (P3.8, migration 00014):** the torrents blockbustr added to an account for infoHash streams, with their last seen status (`ready`, `downloading`…). A hash played again is found instead of added again (Real-Debrid keeps duplicates). A torrent missing from the cloud, or failed, is forgotten; removing an account drops its rows.
 - **`debrid_accounts` (P3.1):** one account per provider (`provider` is UNIQUE). Keys configured in `debrid.realdebrid_api_key`/`debrid.torbox_api_key` (env `BLOCKBUSTR_REALDEBRID_API_KEY`/`BLOCKBUSTR_TORBOX_API_KEY`) are sealed with **AES-256-GCM** (`internal/secret`) under `secret_key` (top-level config, env `BLOCKBUSTR_SECRET_KEY`; exactly 32 bytes, hex or base64) and upserted on every start; `api_key_enc` = 12-byte nonce ‖ ciphertext+tag, so blobs are unique per write. Config validation rejects a debrid key without a parsable `secret_key`. Removing a key from config leaves the row in place until an admin API can manage it (P4.3); a changed key re-seals on the next start.
 - **`stremio_addons` / `stremio_catalogs` (P3.4, migration 00013):** unlike the sketch, there is no plain `manifest_url`. An addon URL often embeds a debrid key, so it's stored like a debrid key: `url_enc` (AES-256-GCM under `secret_key`), `url_sha` (sha256 of the normalised base URL, UNIQUE, so one row per addon configuration) and `host` (display only). There's no `config` column, since the configuration lives in the URL. The manifest is stored as re-encoded by blockbustr (fields it doesn't read are dropped). Catalogs have a `name`, start **disabled**, and are deleted with their addon. `library_id` is set by the sync (P3.5) and nulled if that library goes.
 
@@ -484,7 +486,16 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
   - **Remembered choices:** the Redis key `streamset:{item}` (12 h, refreshed by each PlaybackInfo) holds the latest choices first, then earlier ones (up to 12), so a client still playing an older pick finds it.
     - Stream, HLS and subtitle requests look sources up through it (`loadPlaySources`). If it has expired, they collect again with permissive prefs.
     - The details of a single item list the remembered choices as versions. Lists and details never ask the addons themselves.
-  - **Targets:** a `url` stream keeps its URL. An infoHash stream is stored as `magnet:?xt=urn:btih:{hash}&bb.file={fileIdx}`, which `resolve.FromURL` reads back as a Torrent source (unresolvable until P3.8, which gives a 502).
+  - **Targets:** a `url` stream keeps its URL. An infoHash stream is stored as `magnet:?xt=urn:btih:{hash}&bb.file={fileIdx}&bb.name={filename}`, which `resolve.FromURL` reads back as a Torrent source.
+- **Implemented (P3.8, `resolve/torrent.go`):** a Torrent source resolves through a debrid account.
+  1. **Find:** a torrent already on an account (`debrid_torrents`, accounts in priority order) is used if the account still has it.
+  2. **Add:** otherwise the magnet goes to the first account (by `debrid_accounts.priority`) that reports the hash cached, or else to the first account. One add per hash at a time (singleflight). The account and torrent id are remembered.
+  3. **Status:** a ready torrent picks its file, then `FileLink` gives the CDN link, cached in `link:*` for the provider's lifetime. The file is matched by the addon's `filename` (base name, case-insensitive), else by `fileIdx` (counting every file in torrent order, which the accounts list once all files are selected), else it's the largest video.
+     - A torrent still downloading answers `resolve.ErrDownloading`. The stream endpoint and HLS master then return **503 with `Retry-After: 60`**, and the account keeps downloading.
+     - A failed torrent is deleted from the account and forgotten.
+  4. **Uncached at PlaybackInfo:** nothing is added when sources are offered, so browsing never fills an account. The download starts on the first stream request of an uncached choice; that's how step 5's "start it in the background" is done.
+  5. **Feedback into ranking:** torrents `ready` in `debrid_torrents` count as cached when ranking (`Collector.Known`). Real-Debrid can't be asked about its cache any more, so a title played once ranks as cached afterwards.
+  - Providers gained `Torrent(ctx, id)`: RD `/torrents/info/{id}`, TorBox `/torrents/mylist?id=` (bypassing TorBox's list cache).
 
 ### 7.4 In-client search and discovery (core feature)
 Every captured client searches through `GET /Items?searchTerm=…&recursive=true` (Jellyfin Android sends three in parallel, split by `includeItemTypes`/`excludeItemTypes`/`mediaTypes`; §3.5). blockbustr answers those with **library matches first, then remote matches**, so the app's normal search becomes "search everything".

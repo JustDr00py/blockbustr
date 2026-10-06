@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P3.8 Resolve on stream request: infoHash → AddMagnet → file select → unrestrict; uncached handling + background download [§7.3]
+- [ ] P3.9 Stremio subtitles → external subtitle streams
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -137,7 +137,10 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
   - Done 2026-10-06 (DESIGN §7.3): PlaybackInfo on a catalog title collects and ranks streams for the client's DeviceProfile and offers the top 3 as remote MediaSources with labels ("2160p HDR HEVC • 35.1 GB • Torrentio"); choices remembered in Redis (`streamset:*`) so stream/HLS/subtitle requests and item details find them; stable ids, the first also answering to the item id; torrent choices stored as magnet targets (`resolve.Magnet`). Collector wired in `main.go` with the debrid accounts.
   - Not yet live: the dev server has no addons configured; P3.11 is the manual check
   - Follow-ups: choices aren't probed, so they get no MediaStreams or play decision (probe on first resolve, P3.8); details only show versions after a PlaybackInfo (no prefetch when a title is opened)
-- [ ] P3.8 Resolve on stream request: infoHash → AddMagnet → file select → unrestrict; uncached handling + background download [§7.3]
+- [x] P3.8 Resolve on stream request: infoHash → AddMagnet → file select → unrestrict; uncached handling + background download [§7.3]
+  - Done 2026-10-06 (DESIGN §4, §7.3): Torrent sources resolve through debrid (`resolve/torrent.go`): known torrent (migration 00014 `debrid_torrents`) or added to the account that has it cached / the first by priority, file by name → index → largest video, link cached. Still downloading → 503 + `Retry-After` while the account keeps downloading; failed torrents deleted and forgotten. Played-once torrents rank as cached (RD has no cache check). Providers gained `Torrent(id)`.
+  - Not yet live: no debrid key and no addons configured on the dev server; P3.11 is the manual check
+  - Follow-ups: offered streams aren't probed, so they have no MediaStreams or play decision (clients direct-play whatever they get); probe a choice on its first resolve and store the result. Downloads started by a client that gave up are never cleaned from the account.
 - [ ] P3.9 Stremio subtitles → external subtitle streams
 - [ ] P3.10 Signed, expiring blockbustr stream URLs (no raw debrid links to clients) [AGENTS Safety]
 - [ ] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources

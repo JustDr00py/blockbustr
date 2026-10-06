@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"io"
 	"mime"
 	"net/http"
@@ -141,7 +142,7 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, src db.MediaS
 	link, err := a.Resolver.Resolve(ctx, target)
 	if err != nil {
 		a.Log.WarnContext(ctx, "remote source unavailable", "item", src.ItemID, "err", err)
-		w.WriteHeader(http.StatusBadGateway)
+		sourceUnavailable(w, err, http.StatusBadGateway)
 		return
 	}
 	if a.mayRedirect(r, link.URL) {
@@ -185,6 +186,18 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, src db.MediaS
 	if r.Method != http.MethodHead {
 		_, _ = io.Copy(w, resp.Body) // ends when either side hangs up
 	}
+}
+
+// sourceUnavailable answers a source that can't be opened: a torrent still
+// downloading on debrid is 503 with Retry-After (the account goes on
+// downloading it, DESIGN §7.3 step 5); anything else is status.
+func sourceUnavailable(w http.ResponseWriter, err error, status int) {
+	if errors.Is(err, resolve.ErrDownloading) {
+		w.Header().Set("Retry-After", "60")
+		errorText(w, http.StatusServiceUnavailable)
+		return
+	}
+	w.WriteHeader(status)
 }
 
 // linkExpired: statuses a CDN answers for an expired or revoked link.

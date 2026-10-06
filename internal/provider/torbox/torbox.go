@@ -228,30 +228,47 @@ func (c *Client) listCloud(ctx context.Context, bypassCache bool) ([]provider.To
 	}
 	out := make([]provider.Torrent, 0, len(list))
 	for _, t := range list {
-		pt := provider.Torrent{
-			ID:        fileID(t.ID),
-			Name:      t.Name,
-			Hash:      strings.ToLower(t.Hash),
-			Status:    mapStatus(t.Status),
-			SizeBytes: t.Size,
-		}
-		if pt.Status == provider.StatusReady {
-			for _, f := range t.Files {
-				pt.Files = append(pt.Files, provider.File{
-					ID:        fileID(f.ID),
-					Path:      f.Name,
-					SizeBytes: f.Size,
-				})
-			}
-		}
-		if t.CreatedAt != "" {
-			if ts, err := time.Parse(time.RFC3339, t.CreatedAt); err == nil {
-				pt.AddedAt = ts.UTC()
-			}
-		}
-		out = append(out, pt)
+		out = append(out, t.torrent())
 	}
 	return out, nil
+}
+
+// Torrent implements provider.Provider, skipping TorBox's listing cache.
+func (c *Client) Torrent(ctx context.Context, id string) (provider.Torrent, error) {
+	q := url.Values{"id": {id}, "bypass_cache": {"true"}}
+	var t tbTorrent
+	if err := c.do(ctx, http.MethodGet, "/torrents/mylist", q, nil, &t); err != nil {
+		return provider.Torrent{}, err
+	}
+	if fileID(t.ID) != id {
+		return provider.Torrent{}, fmt.Errorf("torbox: torrent %s not found", id)
+	}
+	return t.torrent(), nil
+}
+
+func (t tbTorrent) torrent() provider.Torrent {
+	pt := provider.Torrent{
+		ID:        fileID(t.ID),
+		Name:      t.Name,
+		Hash:      strings.ToLower(t.Hash),
+		Status:    mapStatus(t.Status),
+		SizeBytes: t.Size,
+	}
+	if pt.Status == provider.StatusReady {
+		for _, f := range t.Files {
+			pt.Files = append(pt.Files, provider.File{
+				ID:        fileID(f.ID),
+				Path:      f.Name,
+				SizeBytes: f.Size,
+			})
+		}
+	}
+	if t.CreatedAt != "" {
+		if ts, err := time.Parse(time.RFC3339, t.CreatedAt); err == nil {
+			pt.AddedAt = ts.UTC()
+		}
+	}
+	return pt
 }
 
 // AddMagnet implements provider.Provider. TorBox queues instantly when the

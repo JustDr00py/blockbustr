@@ -175,3 +175,20 @@ func TestCollectNoTorrentsSkipsDebrid(t *testing.T) {
 		t.Error("debrid asked about direct URLs")
 	}
 }
+
+func TestCollectKnownTorrents(t *testing.T) {
+	srv := streamAddon(t, []Stream{{Name: "x", InfoHash: "aaa"}, {Name: "y", InfoHash: "bbb"}}, 0, nil)
+	c := testCollector(testAddon("A", srv.URL, 0, streamManifest))
+	var asked []string
+	c.Known = func(_ context.Context, hashes []string) map[string]bool {
+		asked = hashes
+		return map[string]bool{"bbb": true}
+	}
+	got, err := c.Collect(context.Background(), "movie", "tt1")
+	if err != nil || len(got) != 2 {
+		t.Fatalf("Collect = %v, %v", got, err)
+	}
+	if got[0].Cached || !got[1].Cached || len(asked) != 2 {
+		t.Errorf("cached = %v %v, asked %v", got[0].Cached, got[1].Cached, asked)
+	}
+}

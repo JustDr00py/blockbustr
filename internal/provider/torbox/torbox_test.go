@@ -174,3 +174,29 @@ func TestListCloudFreshBypassesCache(t *testing.T) {
 		t.Errorf("bypass_cache = %v, want [false true]", got)
 	}
 }
+
+func TestTorrent(t *testing.T) {
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/torrents/mylist" || r.URL.Query().Get("id") != "42" || r.URL.Query().Get("bypass_cache") != "true" {
+			t.Errorf("request = %s", r.URL)
+		}
+		writeEnvelope(w, map[string]any{
+			"id": 42, "name": "Show S01", "hash": "ABCD", "download_state": "completed",
+			"files": []map[string]any{{"id": 0, "short_name": "S01E01.mkv", "size": 10}, {"id": 1, "short_name": "S01E02.mkv", "size": 20}},
+		})
+	})
+	got, err := c.Torrent(context.Background(), "42")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != "42" || got.Hash != "abcd" || got.Status != "ready" || len(got.Files) != 2 || got.Files[1].ID != "1" || got.Files[1].Path != "S01E02.mkv" {
+		t.Errorf("Torrent = %+v", got)
+	}
+}
+
+func TestTorrentNotFound(t *testing.T) {
+	c := testClient(t, func(w http.ResponseWriter, _ *http.Request) { writeEnvelope(w, nil) })
+	if _, err := c.Torrent(context.Background(), "42"); err == nil {
+		t.Error("missing torrent returned no error")
+	}
+}

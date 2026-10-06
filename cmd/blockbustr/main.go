@@ -108,7 +108,7 @@ func run() error {
 	if err := bootstrapDebrid(ctx, queries, cfg, log); err != nil {
 		return err
 	}
-	debrid, err := loadProviders(ctx, queries, cfg, log)
+	debrid, debridOrder, err := loadProviders(ctx, queries, cfg, log)
 	if err != nil {
 		return err
 	}
@@ -164,13 +164,17 @@ func run() error {
 		Registry: addons, Cache: rc, Log: log, Pages: cfg.Stremio.CatalogPages,
 		MissingGrace: cfg.Scan.MissingGrace, Refresh: refresher.Refresh, Events: bus,
 	}
+	torrents := resolve.PGTorrents{Q: queries}
 	streams := &stremio.Collector{Registry: addons, Timeout: cfg.Stremio.Streams.Timeout, Log: log}
-	for _, p := range debrid {
-		streams.Debrid = append(streams.Debrid, p)
+	for _, name := range debridOrder {
+		streams.Debrid = append(streams.Debrid, debrid[name])
+	}
+	if len(debrid) > 0 {
+		streams.Known = torrents.Ready
 	}
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
-		Resolver: &resolve.Resolver{Cache: rc, Providers: debrid, Log: log}, Probe: scanner,
+		Resolver: &resolve.Resolver{Cache: rc, Providers: debrid, Order: debridOrder, Torrents: torrents, Log: log}, Probe: scanner,
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
 		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams,
@@ -270,14 +274,15 @@ func bootstrapDebrid(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, 
 // resolver. Stored accounts that can't be opened (secret_key removed or
 // changed since they were sealed) are skipped with a warning, so playback
 // of everything else still works.
-func loadProviders(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, log *slog.Logger) (map[provider.Name]provider.Provider, error) {
+func loadProviders(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, log *slog.Logger) (map[provider.Name]provider.Provider, []provider.Name, error) {
 	rows, err := q.ListDebridAccounts(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	out := map[provider.Name]provider.Provider{}
+	var order []provider.Name // by priority, as listed
 	if len(rows) == 0 {
-		return out, nil
+		return out, order, nil
 	}
 	key, kerr := secret.ParseKey(cfg.SecretKey)
 	for _, row := range rows {
@@ -304,9 +309,10 @@ func loadProviders(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, lo
 		case provider.TorBox:
 			out[name] = torbox.New(string(apiKey), 0)
 		}
+		order = append(order, name)
 		log.Info("debrid account enabled", "provider", name)
 	}
-	return out, nil
+	return out, order, nil
 }
 
 // healthcheck GETs /healthz on the local listener so the container image

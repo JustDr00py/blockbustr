@@ -186,7 +186,7 @@ func streamChoice(item uuid.UUID, r stremio.Ranked) StreamChoice {
 		if s.FileIdx != nil {
 			idx = *s.FileIdx
 		}
-		target = resolve.Magnet(s.InfoHash, idx)
+		target = resolve.Magnet(s.InfoHash, idx, s.Hints.Filename)
 		key = "bt:" + target
 	}
 	return StreamChoice{

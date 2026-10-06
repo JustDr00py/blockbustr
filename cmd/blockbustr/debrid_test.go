@@ -69,9 +69,15 @@ func TestLoadProviders(t *testing.T) {
 	if err := bootstrapDebrid(t.Context(), q, cfg, log); err != nil {
 		t.Fatal(err)
 	}
-	got, err := loadProviders(t.Context(), q, cfg, log)
+	if _, err := pool.Exec(t.Context(), `UPDATE debrid_accounts SET priority = 5 WHERE provider = 'torbox'`); err != nil {
+		t.Fatal(err)
+	}
+	got, order, err := loadProviders(t.Context(), q, cfg, log)
 	if err != nil || len(got) != 2 || got[provider.RealDebrid] == nil || got[provider.TorBox] == nil {
 		t.Fatalf("%v %v", got, err)
+	}
+	if len(order) != 2 || order[0] != provider.TorBox || order[1] != provider.RealDebrid {
+		t.Errorf("order = %v, want by priority", order)
 	}
 	if got[provider.RealDebrid].Name() != provider.RealDebrid || got[provider.TorBox].Name() != provider.TorBox {
 		t.Error("provider mixed up")
@@ -80,14 +86,14 @@ func TestLoadProviders(t *testing.T) {
 	if _, err := pool.Exec(t.Context(), `UPDATE debrid_accounts SET enabled = false WHERE provider = 'torbox'`); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := loadProviders(t.Context(), q, cfg, log); len(got) != 1 || got[provider.TorBox] != nil {
+	if got, _, _ := loadProviders(t.Context(), q, cfg, log); len(got) != 1 || got[provider.TorBox] != nil {
 		t.Errorf("disabled account loaded: %v", got)
 	}
 	other := config.Config{SecretKey: strings.Repeat("cd", secret.KeyLen)}
-	if got, err := loadProviders(t.Context(), q, other, log); err != nil || len(got) != 0 {
+	if got, _, err := loadProviders(t.Context(), q, other, log); err != nil || len(got) != 0 {
 		t.Errorf("another secret_key: %v %v", got, err)
 	}
-	if got, err := loadProviders(t.Context(), q, config.Config{}, log); err != nil || len(got) != 0 {
+	if got, _, err := loadProviders(t.Context(), q, config.Config{}, log); err != nil || len(got) != 0 {
 		t.Errorf("no secret_key: %v %v", got, err)
 	}
 }

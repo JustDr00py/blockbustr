@@ -3,20 +3,59 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/media"
+	"github.com/sysadmin/blockbustr/internal/provider"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/stremio"
 	"github.com/sysadmin/blockbustr/internal/testutil"
 )
+
+// fakeAccount is a debrid account holding one torrent, downloading until
+// ready is set; its file links point at cdn.
+type fakeAccount struct {
+	provider.Provider
+	cdn   string
+	added atomic.Value
+	ready atomic.Bool
+}
+
+func (f *fakeAccount) Name() provider.Name { return provider.RealDebrid }
+
+func (f *fakeAccount) AddMagnet(_ context.Context, magnet string) (string, bool, error) {
+	f.added.Store(strings.TrimPrefix(magnet, "magnet:?xt=urn:btih:"))
+	return "T1", false, nil
+}
+
+func (f *fakeAccount) InstantCheck(context.Context, []string) ([]provider.InstantResult, error) {
+	return nil, nil
+}
+
+func (f *fakeAccount) Torrent(context.Context, string) (provider.Torrent, error) {
+	if !f.ready.Load() {
+		return provider.Torrent{ID: "T1", Status: provider.StatusDownloading}, nil
+	}
+	return provider.Torrent{ID: "T1", Status: provider.StatusReady, Files: []provider.File{
+		{ID: "1", Path: "info.txt"}, {ID: "2", Path: "sample.mkv", SizeBytes: 1}, {ID: "3", Path: "The.Matrix.1999.2160p.UHD.BluRay.x265.HDR-GRP.mkv", SizeBytes: 9},
+	}}, nil
+}
+
+func (f *fakeAccount) FileLink(_ context.Context, _, fileID string) (string, time.Time, error) {
+	if fileID != "3" {
+		return "", time.Time{}, fmt.Errorf("wrong file %s", fileID)
+	}
+	return f.cdn + "/matrix.mkv", time.Now().Add(time.Hour), nil
+}
 
 type fakeStreams struct {
 	offers map[string][]stremio.Offer // by "type/id"
@@ -59,9 +98,11 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		{Addon: "Direct", Stream: stremio.Stream{Name: "Direct 1080p", Title: "The Matrix 1080p x264 💾 1.5 GB", URL: cdn.URL + "/matrix.mkv"}},
 	}}}
 	var rc *cache.Cache
+	rd := &fakeAccount{cdn: cdn.URL}
 	sf := newSyncFixture(t, func(d *Deps) {
 		d.Streams = fs
-		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard(),
+			Providers: map[provider.Name]provider.Provider{provider.RealDebrid: rd}}
 		d.Config.Stremio.Streams.DenyGroups = []string{"bad"}
 		rc = d.Cache
 	})
@@ -140,8 +181,18 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	if code := stream(matrix.Id); code != 200 && code != 302 {
 		t.Errorf("stream by item id: %d", code)
 	}
-	if code := stream(srcs[1].Id); code != http.StatusBadGateway {
-		t.Errorf("torrent stream: %d, want 502 until P3.8", code)
+	// The torrent goes to the debrid account; while it downloads the
+	// stream is 503 with Retry-After, then it plays.
+	rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+srcs[1].Id, "", "")
+	if rec.Code != http.StatusServiceUnavailable || rec.Header().Get("Retry-After") == "" {
+		t.Errorf("downloading torrent: %d, Retry-After %q", rec.Code, rec.Header().Get("Retry-After"))
+	}
+	if rd.added.Load() != "aaaa" {
+		t.Errorf("added %v, want the stream's hash", rd.added.Load())
+	}
+	rd.ready.Store(true)
+	if code := stream(srcs[1].Id); code != 200 && code != 302 {
+		t.Errorf("ready torrent: %d", code)
 	}
 	if code := stream(strings.Repeat("0", 31) + "1"); code != 404 {
 		t.Errorf("unknown source: %d", code)

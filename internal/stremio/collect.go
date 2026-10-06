@@ -32,7 +32,10 @@ type Collector struct {
 	// DebridTimeout (default 2s). Addon markers ("[RD+]") count too.
 	Debrid        []provider.Provider
 	DebridTimeout time.Duration
-	Log           *slog.Logger
+	// Known reports torrents already ready on an account (played before),
+	// which count as cached too; nil skips it.
+	Known func(ctx context.Context, hashes []string) map[string]bool
+	Log   *slog.Logger
 
 	addons func(ctx context.Context) ([]addonInfo, error) // tests
 }
@@ -87,10 +90,11 @@ func (c *Collector) Collect(ctx context.Context, typ, id string) ([]Offer, error
 	return out, nil
 }
 
-// markCached asks the debrid accounts about the torrents among offers.
-// Unanswered checks just leave offers unmarked.
+// markCached marks the torrents among offers that are cached: ready on an
+// account already (Known), or reported cached by an account. Unanswered
+// checks just leave offers unmarked.
 func (c *Collector) markCached(ctx context.Context, offers []Offer) {
-	if len(c.Debrid) == 0 {
+	if len(c.Debrid) == 0 && c.Known == nil {
 		return
 	}
 	var hashes []string
@@ -113,6 +117,11 @@ func (c *Collector) markCached(ctx context.Context, offers []Offer) {
 
 	var mu sync.Mutex
 	cached := map[string]bool{}
+	if c.Known != nil {
+		for h, ok := range c.Known(ctx, hashes) {
+			cached[h] = ok
+		}
+	}
 	var wg sync.WaitGroup
 	for _, p := range c.Debrid {
 		wg.Add(1)

@@ -6,7 +6,8 @@
 //     resolved straight through the same debrid account when blockbustr has
 //     it, skipping jellybird; otherwise (or if that fails) it is followed.
 //   - Debrid: a file of a torrent on a debrid account, via FileLink.
-//   - Torrent: a Stremio infoHash stream; added to debrid in P3.8.
+//   - Torrent: a Stremio infoHash stream, found on or added to a debrid
+//     account (torrent.go).
 //
 // Resolved links are cached in Redis (link:*) for the provider's link
 // lifetime (cache.LinkTTL when it doesn't say), and concurrent resolves of
@@ -55,7 +56,8 @@ type Source struct {
 	TorrentID, FileID string
 
 	InfoHash string // Torrent
-	FileIdx  int    // -1: the largest video file
+	FileIdx  int    // -1: unknown
+	FileName string // the file's name, when the addon gave it
 }
 
 // FromURL is a .strm target or a Stremio stream url.
@@ -68,11 +70,14 @@ func FromURL(u string) Source {
 
 // Magnet is the target string a Torrent source is stored as (a Stremio
 // infoHash stream chosen at PlaybackInfo): a magnet link, plus the file
-// index when the addon named one. FromURL reads it back.
-func Magnet(infoHash string, fileIdx int) string {
+// index and name when the addon gave them. FromURL reads it back.
+func Magnet(infoHash string, fileIdx int, fileName string) string {
 	m := "magnet:?xt=urn:btih:" + strings.ToLower(infoHash)
 	if fileIdx >= 0 {
 		m += "&bb.file=" + strconv.Itoa(fileIdx)
+	}
+	if fileName != "" {
+		m += "&bb.name=" + url.QueryEscape(fileName)
 	}
 	return m
 }
@@ -94,6 +99,7 @@ func fromMagnet(u string) (Source, bool) {
 	if n, err := strconv.Atoi(q.Get("bb.file")); err == nil && n >= 0 {
 		src.FileIdx = n
 	}
+	src.FileName = q.Get("bb.name")
 	return src, true
 }
 
@@ -109,6 +115,8 @@ func (s Source) key() string {
 		id = s.URL // unchanged from P2.4b, so cached .strm links survive the upgrade
 	case Debrid:
 		id = "debrid\x00" + string(s.Provider) + "\x00" + s.TorrentID + "\x00" + s.FileID
+	case Torrent:
+		id = "torrent\x00" + s.InfoHash + "\x00" + strconv.Itoa(s.FileIdx) + "\x00" + s.FileName
 	default:
 		return ""
 	}
@@ -150,8 +158,13 @@ type Resolver struct {
 	// Stream fetches link bytes for proxying; nil means a client that waits
 	// at most 20s for response headers and never times out a body.
 	Stream *http.Client
-	// Providers are the configured debrid accounts.
+	// Providers are the configured debrid accounts; Order lists them by
+	// priority, for adding torrents.
 	Providers map[provider.Name]provider.Provider
+	Order     []provider.Name
+	// Torrents remembers the torrents added to the accounts; nil adds a
+	// torrent on every resolve that misses the link cache.
+	Torrents TorrentStore
 	// Log reports a jellybird target that had to be followed after all.
 	Log *slog.Logger
 
@@ -197,9 +210,7 @@ func (r *Resolver) Resolve(ctx context.Context, src Source) (Link, error) {
 			return Link{}, fmt.Errorf("resolve: %w", err)
 		}
 		return Link{URL: src.Path, Size: fi.Size()}, nil
-	case Torrent:
-		return Link{}, fmt.Errorf("%w: infoHash streams arrive with P3.8", ErrNotResolvable)
-	case URL, Debrid:
+	case URL, Debrid, Torrent:
 	default:
 		return Link{}, fmt.Errorf("%w: kind %d", ErrNotResolvable, src.Kind)
 	}
@@ -224,8 +235,11 @@ func (r *Resolver) Resolve(ctx context.Context, src Source) (Link, error) {
 }
 
 func (r *Resolver) resolve(ctx context.Context, src Source) (Link, time.Duration, error) {
-	if src.Kind == Debrid {
+	switch src.Kind {
+	case Debrid:
 		return r.debrid(ctx, src)
+	case Torrent:
+		return r.torrent(ctx, src)
 	}
 	if d, ok := jellybird(src.URL); ok && r.Providers[d.Provider] != nil {
 		l, ttl, err := r.debrid(ctx, d)

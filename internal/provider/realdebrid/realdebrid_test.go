@@ -253,3 +253,20 @@ func TestErrorEnvelope(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+func TestTorrent(t *testing.T) {
+	c := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/torrents/info/ABC" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"id":"ABC","filename":"Show S01","hash":"FFEE","status":"downloading","bytes":30,
+			"files":[{"id":1,"path":"/S01E01.mkv","bytes":10,"selected":1},{"id":2,"path":"/info.nfo","bytes":1,"selected":0},{"id":3,"path":"/S01E02.mkv","bytes":20,"selected":1}]}`))
+	})
+	got, err := c.Torrent(context.Background(), "ABC")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Hash != "ffee" || got.Status != "downloading" || len(got.Files) != 2 || got.Files[1].ID != "3" || got.Files[1].Path != "S01E02.mkv" {
+		t.Errorf("Torrent = %+v", got)
+	}
+}

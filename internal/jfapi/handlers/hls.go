@@ -300,7 +300,7 @@ func (a *api) hlsMaster(w http.ResponseWriter, r *http.Request, s auth.Session) 
 	o, err := a.startOptions(r, j, s.DeviceID)
 	if err != nil {
 		a.Log.WarnContext(r.Context(), "hls source unavailable", "item", j.item.ID, "err", err)
-		errorText(w, http.StatusInternalServerError)
+		sourceUnavailable(w, err, http.StatusInternalServerError)
 		return
 	}
 	// Video plus audio, copied or not (6,000,000 = 5,839,539 + 160,461).
