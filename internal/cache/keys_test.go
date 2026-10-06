@@ -15,6 +15,7 @@ func TestKeyNames(t *testing.T) {
 		SessionKey("dev-1"):                                  "sess:dev-1",
 		LatestKey(u, p):                                      "q:latest:bbbb0000-0000-0000-0000-000000000001:cccc0000-0000-0000-0000-000000000002",
 		StremioStreamsKey("torrentio", "movie", "tt0133093"): "stremio:streams:torrentio:movie:tt0133093",
+		StreamSetKey("0f8fad5b-d9cb-469f-a165-70867728950e"): "streamset:0f8fad5b-d9cb-469f-a165-70867728950e",
 		ScanLockKey(u):                                       "lock:scan:bbbb0000-0000-0000-0000-000000000001",
 		SearchKey("cinemeta", "movie", "  The   MATRIX "):    "search:cinemeta:movie:the matrix",
 	}

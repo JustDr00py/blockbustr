@@ -15,6 +15,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
+	"github.com/sysadmin/blockbustr/internal/stremio"
 )
 
 // PlaybackInfo (TASKS P2.2, DESIGN §8.1): the item's media sources with the
@@ -167,7 +168,18 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		a.internalError(w, r, err)
 		return
 	}
+	var maxBitrate int64
+	if req.MaxStreamingBitrate != nil {
+		maxBitrate = int64(*req.MaxStreamingBitrate)
+	}
 	rows := b.sources[it.ID]
+	allSources := false
+	if _, _, ok := stremioRef(it); ok && len(rows) == 0 {
+		rows = a.offerStreams(r, it, streamPrefs(profile, maxBitrate), req.MediaSourceId)
+		// The item id stands for the best choice: a client asking for it
+		// (from the details' placeholder) gets every choice.
+		allSources = req.MediaSourceId != nil && sameID(*req.MediaSourceId, dto.IDFromUUID(it.ID).String())
+	}
 	dtos := mediaSourceDtos(it, rows, b.streams, baseURL(r.Context()))
 
 	session := PlaySession{
@@ -184,16 +196,15 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		DisableDirectStream: req.EnableDirectStream != nil && !*req.EnableDirectStream,
 		DisableTranscoding:  req.EnableTranscoding != nil && !*req.EnableTranscoding,
 	}
-	if req.MaxStreamingBitrate != nil {
-		opts.MaxBitrate = int64(*req.MaxStreamingBitrate)
-	}
+	opts.MaxBitrate = maxBitrate
 	u := urlParams{playSession: playSessionID, device: s.DeviceID, token: jfapi.AuthFrom(r.Context()).Token,
 		audio: session.AudioStreamIndex, subtitle: session.SubtitleStreamIndex}
 
 	out := make([]dto.MediaSourceInfo, 0, len(dtos))
 	for i := range dtos {
 		msID := *dtos[i].Id
-		if req.MediaSourceId != nil && *req.MediaSourceId != "" && !sameID(*req.MediaSourceId, msID) {
+		if !allSources && req.MediaSourceId != nil && *req.MediaSourceId != "" && !sameID(*req.MediaSourceId, msID) &&
+			(i >= len(rows) || !sameID(*req.MediaSourceId, dto.IDFromUUID(rows[i].ID).String())) {
 			continue
 		}
 		// An unprobed source (a .strm before first play) can't be decided
@@ -214,6 +225,27 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	jfapi.WriteJSON(w, r, http.StatusOK, dto.PlaybackInfoResponse{MediaSources: &out, PlaySessionId: &playSessionID})
 }
 
+// offerStreams picks a catalog item's streams for this client (DESIGN
+// §7.3) and returns them as sources, best first. An earlier choice the
+// client asks for by id is added after them. When collection fails or finds
+// nothing, the item keeps its placeholder.
+func (a *api) offerStreams(r *http.Request, it db.Item, prefs stremio.Prefs, want *string) []db.MediaSource {
+	choices, err := a.pickStreams(r.Context(), it, prefs)
+	if err != nil {
+		a.Log.WarnContext(r.Context(), "stream collection failed", "item", it.ID, "err", err)
+	}
+	if want != nil && *want != "" && !sameID(*want, dto.IDFromUUID(it.ID).String()) {
+		if set, ok := a.loadStreamSet(r.Context(), it.ID); ok {
+			for _, c := range set.Choices {
+				if sameID(*want, dto.IDFromUUID(c.ID).String()) && !hasChoice(choices, c.ID) {
+					choices = append(choices, c)
+				}
+			}
+		}
+	}
+	return choiceSources(it, choices)
+}
+
 // playbackSources loads the item's sources, first probing a .strm that was
 // never probed (TASKS P2.4b): its decision needs the streams and bitrate.
 func (a *api) playbackSources(r *http.Request, it db.Item) (*itemBatch, error) {
@@ -222,7 +254,7 @@ func (a *api) playbackSources(r *http.Request, it db.Item) (*itemBatch, error) {
 		return b, a.loadSources(r.Context(), b, []uuid.UUID{it.ID})
 	}
 	b, err := load()
-	if err != nil || a.Probe == nil {
+	if _, _, catalog := stremioRef(it); err != nil || a.Probe == nil || catalog {
 		return b, err
 	}
 	for _, src := range b.sources[it.ID] {

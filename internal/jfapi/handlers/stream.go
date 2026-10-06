@@ -68,7 +68,8 @@ func streamSource(it db.Item, sources []db.MediaSource, want string) (db.MediaSo
 		return sources[0], true
 	}
 	for i, src := range sources {
-		if sameID(want, mediaSourceID(it, i, src)) {
+		// The first source answers to the item id and to its own.
+		if sameID(want, mediaSourceID(it, i, src)) || sameID(want, dto.IDFromUUID(src.ID).String()) {
 			return src, true
 		}
 	}
@@ -92,7 +93,7 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
-	if err := a.loadSources(r.Context(), b, []uuid.UUID{it.ID}); err != nil {
+	if err := a.loadPlaySources(r.Context(), b, it); err != nil {
 		a.internalError(w, r, err)
 		return
 	}

@@ -97,7 +97,9 @@ type syncFixture struct {
 	f    *fakeCinemeta
 }
 
-func newSyncFixture(t *testing.T) *syncFixture {
+// newSyncFixture builds the server with a fake Cinemeta added and both its
+// catalogs enabled; opts adjust the dependencies first.
+func newSyncFixture(t *testing.T, opts ...func(*Deps)) *syncFixture {
 	t.Helper()
 	_, d := newIntegrationServer(t)
 	seedCaptureToken(t, d)
@@ -105,6 +107,9 @@ func newSyncFixture(t *testing.T) *syncFixture {
 	reg := &stremio.Registry{Pool: testPool, Client: &stremio.Client{}, Key: bytes.Repeat([]byte{7}, secret.KeyLen)}
 	s := &stremio.Syncer{Registry: reg, Log: testutil.Discard(), Pages: 2, MissingGrace: time.Hour}
 	d.Addons, d.CatalogSync = reg, s
+	for _, o := range opts {
+		o(&d)
+	}
 	rt := jfapi.NewRouter(testutil.Discard(), jfapi.Options{LegacyAuth: true})
 	Register(rt, d)
 	sf := &syncFixture{h: rt, sync: s, f: f}

@@ -122,7 +122,7 @@ func (a *api) hlsRequest(w http.ResponseWriter, r *http.Request, s auth.Session)
 		return j, false
 	}
 	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
-	if err := a.loadSources(r.Context(), b, []uuid.UUID{it.ID}); err != nil {
+	if err := a.loadPlaySources(r.Context(), b, it); err != nil {
 		a.internalError(w, r, err)
 		return j, false
 	}

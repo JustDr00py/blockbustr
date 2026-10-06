@@ -84,7 +84,7 @@ func (a *api) subtitleFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
-	if err := a.loadSources(r.Context(), b, []uuid.UUID{it.ID}); err != nil {
+	if err := a.loadPlaySources(r.Context(), b, it); err != nil {
 		a.internalError(w, r, err)
 		return
 	}

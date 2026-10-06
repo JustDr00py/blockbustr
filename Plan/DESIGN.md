@@ -465,6 +465,26 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
     - A denied group is never offered.
   - **Rank:** only playable streams (`url` or `infoHash`). Duplicates by infoHash+fileIdx or URL keep the first copy, from the higher-priority addon. The sort is stable, so equal scores keep addon order.
   - **Config:** `stremio.streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] }`. The client side (`Prefs`: height and bitrate caps, HEVC/AV1/HDR support, runtime) comes from the DeviceProfile in P3.7.
+- **Implemented (P3.7, `handlers/streams.go`):**
+  - **When:** PlaybackInfo on a catalog title (`source_kind='stremio'`, `path` = `stremio:{type}:{id}`) that has no stored sources collects and ranks its streams, and returns the top `stremio.streams.top` as MediaSources, best first. If collection fails or finds nothing, the placeholder stays.
+  - **Client preferences** (`streamPrefs`), read from the DeviceProfile:
+    - HEVC/AV1: a Video DirectPlayProfile lists the codec, or lists no codecs at all.
+    - HDR: a Video CodecProfile `VideoRangeType` condition names HDR or DOVI (no such condition means HDR is fine).
+    - Height cap: `LessThanEqual` on Height, or on Width mapped to a height (3840→2160, 1920→1080, 1280→720).
+    - Bitrate cap: the request's `MaxStreamingBitrate`, else the profile's.
+    - Runtime: the item's.
+    - With no profile at all (GET PlaybackInfo), anything plays, so nothing is penalised on a guess.
+  - **Sources:**
+    - `Protocol: Http`, `IsRemote`; `Path` is the server's own stream URL, so the target never reaches clients.
+    - `Container` comes from the file name or URL extension, `Size` from the labels, and `Bitrate` is estimated from size ÷ runtime. No MediaStreams and no play decision until the source is probed (P3.8), like an unprobed `.strm`.
+    - `Name` is a label: `2160p DV HEVC Remux • 29.2 GB • Torrentio • cached`. `cached` appears only for torrents known to be cached; `not cached` only when the addon says so.
+  - **IDs:** each choice's id is UUIDv5(item id, `url:{url}` or `bt:{magnet}`), so it is stable across calls. The first source in a response also answers to the item id, so the details placeholder's id keeps working.
+    - A PlaybackInfo asking for the item id gets every choice.
+    - Asking for a choice's id gets that one, even if it has dropped out of the latest top N.
+  - **Remembered choices:** the Redis key `streamset:{item}` (12 h, refreshed by each PlaybackInfo) holds the latest choices first, then earlier ones (up to 12), so a client still playing an older pick finds it.
+    - Stream, HLS and subtitle requests look sources up through it (`loadPlaySources`). If it has expired, they collect again with permissive prefs.
+    - The details of a single item list the remembered choices as versions. Lists and details never ask the addons themselves.
+  - **Targets:** a `url` stream keeps its URL. An infoHash stream is stored as `magnet:?xt=urn:btih:{hash}&bb.file={fileIdx}`, which `resolve.FromURL` reads back as a Torrent source (unresolvable until P3.8, which gives a 502).
 
 ### 7.4 In-client search and discovery (core feature)
 Every captured client searches through `GET /Items?searchTerm=…&recursive=true` (Jellyfin Android sends three in parallel, split by `includeItemTypes`/`excludeItemTypes`/`mediaTypes`; §3.5). blockbustr answers those with **library matches first, then remote matches**, so the app's normal search becomes "search everything".

@@ -25,6 +25,7 @@ const (
 	QuickConnectTTL   = 10 * time.Minute
 	SearchTTL         = time.Hour
 	PlaySessionTTL    = 24 * time.Hour // a PlaybackInfo decision, read by stream/HLS requests
+	StreamSetTTL      = 12 * time.Hour // addon streams offered for a title, refreshed on PlaybackInfo
 )
 
 // SessionsKey is the set of active device IDs.
@@ -53,6 +54,10 @@ func ProbeKey(sourceHash string) Key { return Key("probe:" + sourceHash) }
 func StremioStreamsKey(addon, typ, id string) Key {
 	return Key("stremio:streams:" + addon + ":" + typ + ":" + id)
 }
+
+// StreamSetKey holds the addon streams offered as an item's media sources
+// (DESIGN §7.3), so stream requests find the one a client picked.
+func StreamSetKey(item string) Key { return Key("streamset:" + item) }
 
 // StremioMetaKey caches an addon's meta for one title.
 func StremioMetaKey(addon, typ, id string) Key {

@@ -164,12 +164,16 @@ func run() error {
 		Registry: addons, Cache: rc, Log: log, Pages: cfg.Stremio.CatalogPages,
 		MissingGrace: cfg.Scan.MissingGrace, Refresh: refresher.Refresh, Events: bus,
 	}
+	streams := &stremio.Collector{Registry: addons, Timeout: cfg.Stremio.Streams.Timeout, Log: log}
+	for _, p := range debrid {
+		streams.Debrid = append(streams.Debrid, p)
+	}
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
 		Resolver: &resolve.Resolver{Cache: rc, Providers: debrid, Log: log}, Probe: scanner,
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
-		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs,
+		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams,
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

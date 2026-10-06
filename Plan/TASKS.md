@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P3.7 Multiple MediaSources per item for the top-N streams, with readable `Name` labels
+- [ ] P3.8 Resolve on stream request: infoHash → AddMagnet → file select → unrestrict; uncached handling + background download [§7.3]
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -133,7 +133,10 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
   - Done 2026-10-06 (DESIGN §7.3): `stremio.Collector` (parallel, 6 s per addon, debrid `InstantCheck` within 2 s) and `Parse`/`Score`/`Rank`, with unit tests on the real Torrentio fixtures; `stremio.streams` config (timeout, top, languages, allow/deny groups). `openAddons` moved onto the Registry so sync and collection share it. Live: 1080p-capped H.264 client ranks Torrentio's Matrix streams with 1080p first.
   - Not wired yet: P3.7 builds `Prefs` from the DeviceProfile and calls it from PlaybackInfo
   - Follow-ups: languages written as words ("ITA ENG", "Eng.Fre.Ger") aren't read, only flags; a title that is literally a CAM word (the film "Cam") would be marked CAM
-- [ ] P3.7 Multiple MediaSources per item for the top-N streams, with readable `Name` labels
+- [x] P3.7 Multiple MediaSources per item for the top-N streams, with readable `Name` labels
+  - Done 2026-10-06 (DESIGN §7.3): PlaybackInfo on a catalog title collects and ranks streams for the client's DeviceProfile and offers the top 3 as remote MediaSources with labels ("2160p HDR HEVC • 35.1 GB • Torrentio"); choices remembered in Redis (`streamset:*`) so stream/HLS/subtitle requests and item details find them; stable ids, the first also answering to the item id; torrent choices stored as magnet targets (`resolve.Magnet`). Collector wired in `main.go` with the debrid accounts.
+  - Not yet live: the dev server has no addons configured; P3.11 is the manual check
+  - Follow-ups: choices aren't probed, so they get no MediaStreams or play decision (probe on first resolve, P3.8); details only show versions after a PlaybackInfo (no prefetch when a title is opened)
 - [ ] P3.8 Resolve on stream request: infoHash → AddMagnet → file select → unrestrict; uncached handling + background download [§7.3]
 - [ ] P3.9 Stremio subtitles → external subtitle streams
 - [ ] P3.10 Signed, expiring blockbustr stream URLs (no raw debrid links to clients) [AGENTS Safety]

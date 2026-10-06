@@ -12,6 +12,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
+	"github.com/sysadmin/blockbustr/internal/stremio"
 )
 
 // BaseItemDto for library items (Movie, Series, Season, Episode). The field
@@ -166,6 +167,13 @@ func (a *api) loadItemBatch(ctx context.Context, user *uuid.UUID, items []db.Ite
 		if o.has("mediasources") || o.has("mediastreams") {
 			if err := a.loadSources(ctx, b, playable); err != nil {
 				return nil, err
+			}
+			// One title's details list its remembered stream choices as
+			// versions; lists never ask the addons.
+			if len(items) == 1 {
+				if err := a.addStreamChoices(ctx, b, items[0], false, stremio.Prefs{}); err != nil {
+					return nil, err
+				}
 			}
 		}
 		if o.has("chapters") {

@@ -64,6 +64,9 @@ type Deps struct {
 	// CatalogSync re-syncs catalog libraries after an addon or catalog
 	// changes (stremio.Syncer); nil waits for the next scheduled sync.
 	CatalogSync interface{ Trigger() }
+	// Streams collects addon streams for catalog titles at PlaybackInfo
+	// (stremio.Collector); nil leaves them with a placeholder source.
+	Streams StreamCollector
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.

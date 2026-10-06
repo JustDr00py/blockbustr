@@ -177,3 +177,18 @@ func TestLinkTTL(t *testing.T) {
 		}
 	}
 }
+
+func TestMagnetTargets(t *testing.T) {
+	cases := map[string]Source{
+		Magnet("ABCDEF", 2):                    {Kind: Torrent, InfoHash: "abcdef", FileIdx: 2},
+		Magnet("abcdef", -1):                   {Kind: Torrent, InfoHash: "abcdef", FileIdx: -1},
+		"magnet:?xt=urn:btih:abc&dn=Some+Name": {Kind: Torrent, InfoHash: "abc", FileIdx: -1},
+		"magnet:?dn=no-hash":                   {Kind: URL, URL: "magnet:?dn=no-hash"},
+		"https://cdn.example/magnet:?xt=urn:x": {Kind: URL, URL: "https://cdn.example/magnet:?xt=urn:x"},
+	}
+	for in, want := range cases {
+		if got := FromURL(in); got != want {
+			t.Errorf("FromURL(%q) = %+v, want %+v", in, got, want)
+		}
+	}
+}

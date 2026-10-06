@@ -59,7 +59,43 @@ type Source struct {
 }
 
 // FromURL is a .strm target or a Stremio stream url.
-func FromURL(u string) Source { return Source{Kind: URL, URL: u} }
+func FromURL(u string) Source {
+	if src, ok := fromMagnet(u); ok {
+		return src
+	}
+	return Source{Kind: URL, URL: u}
+}
+
+// Magnet is the target string a Torrent source is stored as (a Stremio
+// infoHash stream chosen at PlaybackInfo): a magnet link, plus the file
+// index when the addon named one. FromURL reads it back.
+func Magnet(infoHash string, fileIdx int) string {
+	m := "magnet:?xt=urn:btih:" + strings.ToLower(infoHash)
+	if fileIdx >= 0 {
+		m += "&bb.file=" + strconv.Itoa(fileIdx)
+	}
+	return m
+}
+
+func fromMagnet(u string) (Source, bool) {
+	rest, ok := strings.CutPrefix(u, "magnet:?")
+	if !ok {
+		return Source{}, false
+	}
+	q, err := url.ParseQuery(rest)
+	if err != nil {
+		return Source{}, false
+	}
+	hash, ok := strings.CutPrefix(q.Get("xt"), "urn:btih:")
+	if !ok || hash == "" {
+		return Source{}, false
+	}
+	src := Source{Kind: Torrent, InfoHash: strings.ToLower(hash), FileIdx: -1}
+	if n, err := strconv.Atoi(q.Get("bb.file")); err == nil && n >= 0 {
+		src.FileIdx = n
+	}
+	return src, true
+}
 
 // ErrNotResolvable is returned for sources this build can't play yet (an
 // infoHash before P3.8) or whose provider isn't configured.
