@@ -28,6 +28,7 @@ func (a *api) requireUser(h sessionHandler) http.HandlerFunc {
 		}
 		// Media sources point remote items at this server's own stream URL.
 		r = r.WithContext(context.WithValue(r.Context(), baseURLKey{}, localAddress(a.Config.Server.ExternalURL, r)))
+		a.touchSession(r, s) // GET /Sessions lists recently active devices
 		h(w, r, s)
 	}
 }

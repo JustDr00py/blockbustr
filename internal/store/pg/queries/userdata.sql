@@ -45,3 +45,21 @@ ON CONFLICT (user_id, item_id) DO UPDATE SET
     rating                  = coalesce(sqlc.narg('rating')::real, user_data.rating),
     last_played_at          = coalesce(sqlc.narg('last_played_at')::timestamptz, user_data.last_played_at),
     updated_at              = now();
+
+-- name: RecordPlayback :exec
+-- One playback report (TASKS P2.9, DESIGN §8.4): the resume position,
+-- whether this play finished the item (played, one more play, position
+-- reset by the caller), the chosen tracks, and, when touch is set, the
+-- last played date.
+INSERT INTO user_data (user_id, item_id, playback_position_ticks, played, play_count, last_played_at,
+                       audio_stream_idx, subtitle_stream_idx)
+VALUES (@user_id, @item_id, @position_ticks, @finished, CASE WHEN @finished::boolean THEN 1 ELSE 0 END,
+        CASE WHEN @touch::boolean THEN now() END, sqlc.narg('audio_stream_idx'), sqlc.narg('subtitle_stream_idx'))
+ON CONFLICT (user_id, item_id) DO UPDATE SET
+    playback_position_ticks = EXCLUDED.playback_position_ticks,
+    played                  = user_data.played OR @finished::boolean,
+    play_count              = user_data.play_count + CASE WHEN @finished::boolean THEN 1 ELSE 0 END,
+    last_played_at          = CASE WHEN @touch::boolean THEN now() ELSE user_data.last_played_at END,
+    audio_stream_idx        = coalesce(sqlc.narg('audio_stream_idx'), user_data.audio_stream_idx),
+    subtitle_stream_idx     = coalesce(sqlc.narg('subtitle_stream_idx'), user_data.subtitle_stream_idx),
+    updated_at              = now();

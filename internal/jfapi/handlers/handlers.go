@@ -6,17 +6,20 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"sync"
 
 	"github.com/google/uuid"
 
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/config"
+	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/images"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
+	"github.com/sysadmin/blockbustr/internal/subtitles"
 )
 
 // Deps is what the handlers need from the rest of the server.
@@ -46,6 +49,14 @@ type Deps struct {
 	Probe RemoteProber
 	// Transcoding runs HLS sessions; nil answers HLS requests with 404.
 	Transcoding *Transcoding
+	// Subtitles extracts and converts text subtitles; nil answers subtitle
+	// requests with 404 and can't burn in text subtitles.
+	Subtitles *subtitles.Store
+	// Events announces user data changes (and feeds the WebSocket hub); nil
+	// drops them.
+	Events *events.Bus
+	// Hub serves /socket; nil leaves the route out.
+	Hub *Hub
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.
@@ -53,18 +64,21 @@ type RemoteProber interface {
 	ProbeRemote(ctx context.Context, item uuid.UUID) (bool, error)
 }
 
-type api struct{ Deps }
+type api struct {
+	Deps
+	lastTouch sync.Map // device id → last session write (touchSession)
+}
 
 // Register mounts every implemented endpoint on rt.
 func Register(rt *jfapi.Router, d Deps) {
 	if d.Log == nil {
 		d.Log = slog.Default()
 	}
-	a := &api{d}
+	a := &api{Deps: d}
 	a.registerSystem(rt)
 	registerBranding(rt)
 	a.registerUsers(rt)
-	registerQuickConnect(rt)
+	a.registerQuickConnect(rt)
 	a.registerLibrary(rt)
 	a.registerImages(rt)
 	a.registerViews(rt)
@@ -77,6 +91,9 @@ func Register(rt *jfapi.Router, d Deps) {
 	a.registerPlayback(rt)
 	a.registerStream(rt)
 	a.registerHLS(rt)
+	a.registerSubtitles(rt)
+	a.registerSessions(rt)
+	a.registerSocket(rt)
 }
 
 func ptr[T any](v T) *T { return &v }

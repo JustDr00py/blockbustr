@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 )
@@ -67,5 +68,10 @@ func (s *Scanner) probeRemote(ctx context.Context, item uuid.UUID) (bool, error)
 		src.RuntimeTicks = ptr(int64(info.Duration / 100))
 	}
 	s.log.Info("probed remote source", "item", item, "container", info.Container, "streams", len(info.Streams), "took", time.Since(start).Round(time.Millisecond))
-	return true, s.storeSource(ctx, r, src, info)
+	if err := s.storeSource(ctx, r, src, info); err != nil {
+		return false, err
+	}
+	// As Jellyfin does after probing a .strm (captured: ItemsUpdated).
+	s.events.Publish(ctx, events.Event{Kind: events.LibraryChanged, Updated: []uuid.UUID{item}})
+	return true, nil
 }

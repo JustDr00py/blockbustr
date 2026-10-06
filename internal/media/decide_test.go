@@ -122,6 +122,19 @@ func TestDecideOptions(t *testing.T) {
 	if d := Decide(p, src, PlayOptions{SubtitleStreamIndex: idx(-1)}); d.Mode != ModeDirect {
 		t.Errorf("no subtitles: %s", d.Mode)
 	}
+	// A sidecar file can't be embedded, and Hls isn't served: burn it in
+	// unless the client takes it as a file.
+	ext := src
+	ext.Streams = append(append([]Stream(nil), src.Streams...), Stream{Index: 5, Type: StreamSubtitle, Codec: "ass", IsExternal: true})
+	pe := p
+	pe.SubtitleProfiles = []SubtitleProfile{{Format: "ass", Method: "Embed"}, {Format: "vtt", Method: "Hls"}}
+	if d := Decide(pe, ext, PlayOptions{SubtitleStreamIndex: idx(5)}); d.Subtitles[5] != "Encode" || d.Subtitles[4] != "Encode" || d.Mode != ModeTranscode {
+		t.Errorf("external ASS with Embed only: %s %v", d.Mode, d.Subtitles)
+	}
+	pe.SubtitleProfiles = append(pe.SubtitleProfiles, SubtitleProfile{Format: "ass", Method: "External"})
+	if d := Decide(pe, ext, PlayOptions{SubtitleStreamIndex: idx(5)}); d.Subtitles[5] != "External" || d.Mode != ModeDirect {
+		t.Errorf("external ASS as a file: %s %v", d.Mode, d.Subtitles)
+	}
 	// Over the limit: transcode at limit minus the copied audio.
 	d = Decide(p, src, PlayOptions{MaxBitrate: 3_000_000})
 	if d.Mode != ModeTranscode || strings.Join(d.Reasons, ",") != "ContainerBitrateExceedsLimit" ||

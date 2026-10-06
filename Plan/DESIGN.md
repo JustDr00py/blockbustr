@@ -100,7 +100,13 @@ Rule: `jfapi` depends on the domain packages, never the other way round. Domain 
   - Endpoints: `/Users/Me`, `/Users/{id}` (self or admin, otherwise 403), `/Users` (admin), `/Users/Public`, `POST /Sessions/Logout` (204), `/System/Info`, `/System/Endpoint` (IsLocal = loopback/private/link-local/CGNAT), `/QuickConnect/Enabled` → `false` until P2.12.
   - SessionInfo has a stable per-device `Id` (UUIDv5 of the DeviceId); live session state is P2.9.
 - A token is 32 random hex chars. It is stored hashed (sha256) in PG and cached in Redis `tok:{sha}` → `{userId, deviceId}` for 24h (sliding).
-- QuickConnect: `/QuickConnect/Enabled|Initiate|Connect|Authorize`, with state in Redis (`qc:{secret}`, 10 min TTL).
+- QuickConnect: `/QuickConnect/Enabled|Initiate|Connect|Authorize`, with state in Redis (`qc:{secret}`, 10 min TTL). **Implemented (P2.12: `auth/quickconnect.go`, `handlers/quickconnect.go`).**
+  - **Enabled:** answers `true`, as captured.
+  - **Initiate:** needs no token but needs client/device info (400 otherwise, like a password login). It returns a 64-hex secret (upper case) and a unique 6-digit code; `qc:code:{code}` maps the code back to the secret.
+  - **Connect** polls by secret, case-insensitively; an unknown secret is 404.
+  - **Authorize** (signed in) approves a code for the caller, or for `userId` when an admin asks (403 otherwise). An unknown code is 404 and success answers `true`.
+  - **AuthenticateWithQuickConnect** `{Secret}` logs the *requesting* device in as the approving user. It's single use, records the login like a password login, and returns the same AuthenticationResult through the shared `writeLogin` path; 12.1.0 leaves `SessionInfo.RemoteEndPoint` out here. Not yet approved, unknown or used → 401.
+  - **Contract:** the captured Enabled/Initiate replay directly, and Connect and AuthenticateWithQuickConnect replay with a secret we issued; all match Jellyfin's shapes. `TestFixturesRoundTrip` now covers 916 responses across 34 endpoints.
 
 ### 3.1a HTTP layer (implemented, P1.7: `internal/jfapi`)
 - **Case-insensitive routing.** `Router` wraps chi. A canonicalizer built from the registered patterns rewrites only the *literal* parts of the request path to their registered casing before chi routes it (`/items/x/images/Primary` → `/Items/x/Images/Primary`). Parameter values, including in-segment ones such as `stream.{container}` and `{segmentId}.{ext}`, keep their original text. Literal segments beat parameters (`/Items/Latest` before `/Items/{itemId}`), and `*` wildcards are supported. Unregistered paths fall through to 404.
@@ -376,7 +382,11 @@ Redis is a **cache and coordination layer only**. Everything has to be rebuildab
 - **Missing files:** unseen items get `missing_since` (hidden) and are deleted after `scan.missing_grace` (24h); empty Seasons/Series are removed afterwards.
 - Seen-ness is compared on the **database clock** (`DBNow`), not the app's.
 - **Watching (P1.14b, `library/watch.go`):** with `scan.watch` (default on), every folder under each library path is watched with fsnotify (inotify isn't recursive, so new folders are added as they appear). A change rescans **that library only** (`TriggerLibrary`), once nothing under it has changed for `scan.watch_delay` (30s), so a long copy is one scan. Ignored: hidden files and folders, and partial downloads (`.part`, `.tmp`, `.crdownload`, `.!qB`…). A lost-events overflow rescans every library. A missing root, or hitting `fs.inotify.max_user_watches`, is logged; those folders rely on `scan.interval`, as do network shares, which send no events. Changes on the host reach the container through the bind mount (verified live).
-- **Not yet:** multi-file movie versions grouped into one item, sidecar subtitles (P2.8).
+- **Sidecar subtitles (P2.8, `library/sidecar.go`):** `<stem>.srt|.ass|.ssa|.vtt` and `<stem>.<tags>.<ext>` next to a video or `.strm`.
+  - Tags: a language (`en`, `eng`, `pt-BR` → ISO 639-2 via x/text), `forced`/`foreign`, `default`, and `sdh`/`hi`/`cc` (hearing impaired).
+  - They're stored as external Subtitle streams numbered after the probed ones, with `media_streams.external_path` (migration 00011). `delivery_url` is client-facing, so it can't hold the path.
+  - Their names, sizes and mtimes are folded into the source etag, so adding or editing a sidecar re-reads the source at the next scan (or watcher event), and unchanged ones don't.
+- **Not yet:** multi-file movie versions grouped into one item.
 
 ### `.strm`
 - **Observed in Jellyfin 12.1.0 (recon, Findroid 1.1.0):** for a `.strm`, `PlaybackInfo` returns a MediaSource with `Protocol: "Http"`, `IsRemote: true`, `Path` = **the raw `.strm` URL**, and `SupportsDirectPlay/DirectStream/Transcoding` all `false`, even though the streams were probed. The client then opens `Path` itself and never calls `/Videos/{id}/stream`. So playback only works if the *client device* can reach the `.strm` host, and the URL (including any `sig=`/token) is exposed to every client.
@@ -525,12 +535,31 @@ The response carries a `PlaySessionId` (uuid). Remember the chosen decision in R
   - **Verified:** real ffmpeg tests (remux, transcode with the chosen track and downmix, exact segment lengths, restart at segment 6 ≈ 12s, missing input) and a real-QSV test on this machine. Live in the container: Mortal Kombat II (AV1 1080p) → h264_qsv at 5.84 Mbps gives 6.0s segments at about 3.9× real time, and VAAPI is the same.
   - **Not yet:** hardware decode (Jellyfin reached 24.5× with VAAPI decode, so AV1/HEVC software decode is the bottleneck), hardware tonemapping, scaling to the client's max resolution, image-subtitle burn-in (P2.8), and the Redis `lock:transcode:*` (single instance for now).
 - Subtitles: text subs are delivered as external `.vtt` via the Subtitles endpoint, and image subs (PGS) are burned in only when the client requires it.
+- **Subtitles (implemented, P2.8).**
+  - **Files:** `GET /Videos/{id}/{msId}/Subtitles/{idx}[/{startTicks}]/Stream.{srt|vtt|ass|ssa}` (`handlers/subtitles.go`, `internal/subtitles`) serves the External `DeliveryUrl`s PlaybackInfo hands out. It's public like `/stream`.
+    - All embedded text tracks of a source are extracted in **one ffmpeg pass** (copied as they are; `mov_text` becomes SRT) into `paths.cache/subtitles/{hash(source id, etag)}/{idx}.{srt|ass|vtt}`. Each extraction reads the whole file, possibly over the network. Concurrent requests share the pass.
+    - Sidecar files are served as they are. Other formats are converted with ffmpeg.
+    - `startTicks` drops cues that end before it and shifts the rest **in Go** (SRT, WebVTT and ASS timing parsed). ffmpeg's `-ss` on subtitle inputs snaps to an earlier cue.
+    - Image tracks (PGS, VobSub), unknown tracks and other formats are 404.
+  - **Burn-in:** a TranscodingUrl with `SubtitleStreamIndex` and `SubtitleMethod=Encode` makes the HLS session render the subtitle and stops copying the video.
+    - The URL's `SubtitleMethod` now carries the chosen subtitle's delivery, `Encode` when none is chosen, as Jellyfin does.
+    - **Image subtitles** are overlaid from the input with `-filter_complex [0:v:0](tonemap)[base];[base][0:N]overlay=eof_action=pass,(upload)[vout]`, so `-ss` keeps video and subtitle in step.
+    - **Text subtitles** go through libass `subtitles=` on the cached extract (a sidecar is copied into the cache under a safe name first). After a seek restart they're wrapped in `setpts=PTS+start/TB … setpts=PTS-start/TB`, because libass needs source times.
+    - Filter option values are escaped for both filtergraph levels; a file named `it's, a: [test].srt` works.
+    - Verified: real text burn-in (at the cue, and after a seek); end to end PlaybackInfo → HLS on a black video (bright text exactly in the cue's segment); live PGS burn-in from Little Fockers via jellybird after a seek with QSV (peak luma difference 198 against the plain encode).
+  - **`Decide`:** a sidecar is never *Embed*, since it isn't in the file. *Hls* delivery (subtitle renditions in the playlist) isn't served yet, so such streams are burned in; no captured client asks for Hls. All 85 captured subtitle methods still match.
+  - **Not yet:** HLS subtitle renditions, external image subtitles (`.sub/.idx`), embedded fonts for ASS burn-in (system fonts are used), and pruning the subtitle cache.
 - **Endpoints (implemented, P2.6: `handlers/hls.go`):** `GET`/`HEAD /Videos/{id}/master.m3u8`, `GET /Videos/{id}/main.m3u8`, `GET /Videos/{id}/hls1/{playlist}/{n}.ts` and `DELETE /Videos/ActiveEncodings`. All need a token; players use the URL's `ApiKey`.
   - **Stateless:** the transcoding URL carries everything (codecs, bitrates, `AudioStreamIndex`, `AllowVideoStreamCopy`, channel limit), so the ffmpeg options are derived from the query plus the item's stored streams, as in Jellyfin. A Redis flush or a server restart mid-play only costs a new ffmpeg start.
   - **master.m3u8:** one variant with `BANDWIDTH` = `AVERAGE-BANDWIDTH` = VideoBitrate + AudioBitrate, `VIDEO-RANGE`, `CODECS` (`avc1.640029` for our H.264 output, source codec when copied), `RESOLUTION` and `FRAME-RATE` of the source. It links to `main.m3u8?{same query}`, with `AudioCodec=copy` when the audio is copied, as Jellyfin does. Matches every captured master apart from CODECS and the scaled RESOLUTION (no scaling yet).
   - **main.m3u8:** the whole VOD playlist from the runtime, in Jellyfin's exact format: `#EXT-X-PLAYLIST-TYPE:VOD`, `VERSION:3`, `TARGETDURATION`, `#EXTINF:3.000000, nodesc`, `hls1/main/{n}.ts?{query}&runtimeTicks=…&actualSegmentLengthTicks=…`, `#EXT-X-ENDLIST`. **Streamyfin's captured request reproduces Jellyfin's 1,747,624-byte playlist byte for byte in size.** Segments are 3s, as in Jellyfin 12.1.0 (`transcode.segment_seconds`, default changed from 6).
   - **Segments:** ffmpeg starts on the first segment request, at that segment. An existing segment is served at once (`ServeContent`: 206 for `bytes=0-`, `video/mp2t`). One at most 4 segments ahead of ffmpeg is waited for (30s). Anything else, a seek forward or behind this run's start, restarts ffmpeg at that segment. A per-play-session lock serialises starts and restarts, and segments past the runtime are 404.
   - **ActiveEncodings:** stops the `playSessionId`'s session, else every session of `deviceId` (or of the caller's device). Answers 204.
+  - **Remux (P2.7):** when the decision is a direct stream (only the container is wrong, e.g. MKV H.264 to a client that takes TS but not Matroska), the URL carries `AllowVideoStreamCopy=true`. ffmpeg then copies the video, and the audio too when the profile takes its codec and channel count.
+    - Only codecs MPEG-TS can carry are copied (h264, hevc, mpeg2video; aac, mp3, mp2, ac3, eac3, dts, truehd, opus). FLAC, PCM, Vorbis, ALAC and VP9 are re-encoded even when the profile lists them.
+    - `CODECS` for copied H.264 comes from the source's profile and level (RFC 6381, e.g. Main@4.0 → `avc1.4d0028`).
+    - **Timeline:** copied video can only be cut at source keyframes. Segment n starts at the first keyframe at or after n×3s (no drift; within ±0.5s on the MF Ghost Blu-ray), and a restart starts at the keyframe before n×3s with `-output_ts_offset`. **`-copyts` was tried and rejected:** with `-ss` its first segment came out invalid in MPEG-TS.
+    - Verified: a remuxed segment keeps the source's H.264 profile (no re-encode), and segment 7 after a restart starts at ≈21s. Live in the container, MF Ghost (H.264 + FLAC) was remuxed with AAC audio.
   - **Not yet:** scaling down for low bitrates (Jellyfin gave Streamyfin 1280x536 at 4 Mbps), fMP4 segments, and `-re`-style throttling (ffmpeg runs ahead at full speed).
 
 ### 8.3a Observed client behaviour (recon)
@@ -541,6 +570,18 @@ The response carries a `PlaySessionId` (uuid). Remember the chosen decision in R
 - **Jellyfin bug to avoid:** for `.strm`, `MediaSource.Size` is **80**, the size of the `.strm` file itself. blockbustr reports the remote `Content-Length` (from the resolver's HEAD/Range probe), or leaves `Size` out.
 - Streamyfin **polls `GET /Sessions` about every 2s** while open (74 calls in the session). That endpoint must be cheap, so serve it from Redis `sessions`/`sess:*` (§5).
 - Streamyfin uses `/socket`: the server sends `ForceKeepAlive`, then both sides exchange `KeepAlive`; the server pushes `UserDataChanged` and `LibraryChanged`. Clients send `POST /Sessions/Capabilities/Full` once after login.
+- **WebSocket implemented (P2.10: `handlers/socket.go`, `internal/events`).**
+  - **Connecting:** `GET /socket` (and `/embywebsocket`) needs a token: header or the `ApiKey` query parameter that Jellyfin Android and Streamyfin send. Without one it's refused with **403** "Error processing request.", as captured (7×). Origins aren't checked, since auth is by token.
+  - **Keep-alive:** the server opens with `ForceKeepAlive` (Data 60) and echoes every client `KeepAlive`, which also refreshes the device's session. A socket silent for 120s is closed.
+  - **Message format:** messages are `{MessageId (32 hex), Data, MessageType}` in PascalCase for every client, as captured.
+  - **Events:** `internal/events` publishes typed events on Redis pub/sub (`bb:events`), so every instance's hub sees changes made anywhere and domain code never imports jfapi.
+  - **`UserDataChanged`** comes from every user-data write (P1.24) and every saved play state (P2.9), and goes only to that user's sockets. Data is `{UserId, UserDataList}` for the item plus its season and series, whose counts change with it. Jellyfin also lists the library folder; ours doesn't yet.
+  - **`LibraryChanged`** goes to every socket:
+    - after a scan that found, re-read or lost files, sent after metadata and artwork are done, with that library's folder in `CollectionFolders`;
+    - after a first-play probe, with the item in `ItemsUpdated`, as Jellyfin did for Luca.
+  - **Shutdown:** `ServerShuttingDown` is sent, then the sockets are closed; `http.Server.Shutdown` leaves hijacked connections open.
+  - **Verified:** handshake, keep-alive, per-user delivery, episode/season/series lists, LibraryChanged and shutdown, with real sockets; every message shape matches a captured one. The scanner publishes only when a scan changed something.
+  - **Not yet:** `Sessions`/`SessionsStart` subscriptions (jellyfin-web), the library folder in UserDataList, `ItemsAdded`/`ItemsRemoved` ids from scans.
 
 ### 8.4 Progress
 `/Sessions/Playing*` → update the `sess:*` session in Redis on every call, and write `user_data` on Start, every 30s, and on Stop:
@@ -548,6 +589,23 @@ The response carries a `PlaySessionId` (uuid). Remember the chosen decision in R
 - under 5% → position not saved
 
 Publish `UserDataChanged`.
+
+**Implemented (P2.9: `handlers/sessions.go`; `UserDataChanged` waits for P2.10).**
+- **Sessions:** one per device in Redis `sess:{deviceId}` (10 min sliding) plus the `sessions` set.
+  - The id is UUIDv5(server, user|device).
+  - **Any authenticated request** refreshes it (`requireUser` → `touchSession`, at most one write per device per 30s, per server instance), so `GET /Sessions?activeWithinSeconds=360` lists the devices in use.
+  - It records the client, device, version, remote address and capabilities. `Capabilities[/Full]` stores media types, commands, media control, persistent id and the client's `AppStoreUrl`/`IconUrl` (Streamyfin sends them and Jellyfin echoes them).
+- **Reporting:** `POST /Sessions/Playing`, `/Playing/Progress`, `/Playing/Stopped`, `/Playing/Ping`, and the legacy `POST|DELETE [/Users/{u}]/PlayingItems/{id}[/Progress]` with query parameters. All answer **204** whatever happens, since clients ignore the answer.
+  - They keep the session's now-playing state: position, paused, muted, volume, tracks, media source, play session, method/repeat/order. `LastPausedDate` is set when playback pauses.
+  - **user_data is written on Stop (unless `Failed`), on pause/resume or a track change, and at most every 30s of progress.** Start writes nothing, so it can't clobber a resume point.
+  - Rules (`resumePoint`, Jellyfin's defaults): ≥ 90% → played, play count +1, position 0; under 5% → position 0 and not a play; items under 5 min keep no resume point; unknown runtime → keep the position.
+  - The chosen audio/subtitle stream is remembered per item (`user_data.audio_stream_idx`/`subtitle_stream_idx`).
+  - Stopped also closes the play session's transcode.
+- **`GET /Sessions`:** sessions active within `activeWithinSeconds`, an admin sees all and a user their own, `deviceId` narrows it, most recent first, and stale set members are pruned.
+  - Shape as captured: `PlayState` with idle defaults, `Capabilities`, empty `AdditionalUsers`/`NowPlayingQueue`, `LastPlaybackCheckIn` = .NET zero until a play.
+  - `NowPlayingItem` uses Jellyfin's field set (chapters, streams, overview, provider ids…, no user data or sources).
+  - Cheap enough for Streamyfin's 2s polling: Redis reads plus the playing items only.
+- **Contract:** every captured Capabilities/Playing/Progress/Stopped request answers 204, and every captured idle `GET /Sessions` and the playing one match Jellyfin's shape (ignored: `LastPausedDate`, which depends on each capture's history).
 
 ## 9. Testing strategy
 1. **Fixtures (Phase 0):** a stock Jellyfin (same version as the reported `Version`) behind mitmproxy, driven by each client app. `scripts/capture` dumps request/response JSON into `testdata/jellyfin/{client}/{scenario}/NNN.json`, and `scripts/scrub-fixtures` strips tokens and IDs.
@@ -575,7 +633,13 @@ Port 8096 matches Jellyfin, so clients find it with the default port. Secrets be
 ## 11. Open questions and risks
 - **Q1 Reported version. Resolved 2026-10-05:** we claim **Jellyfin 12.1.0** (latest stable, released 2026-09-15; image `jellyfin/jellyfin:12.1.20260915-010956`). Fixtures and `openapi.json` come from that version.
 - **Q2 ProductName.** Do any clients reject a server whose `ProductName` isn't "Jellyfin Server"? Test in Phase 0. If none do, use "blockbustr".
-- **Q3 Server discovery.** Should we answer UDP 7359 "who is JellyfinServer?" discovery? Probably yes in Phase 2; it's cheap.
+- **Q3 Server discovery.** Should we answer UDP 7359 "who is JellyfinServer?" discovery? **Answered: yes (P2.11, `internal/discovery`).**
+  - **Protocol:** the server replies to datagrams containing `who is JellyfinServer?` or `who is EmbyServer?` (any case) with `{"Address","Id","Name","EndpointAddress":null}`. Anything else gets no reply.
+  - **Address:** `server.external_url` when set, else `http://<local IP on the route back to the asker>:<listen port>`.
+  - **Config:** `server.discovery` (default on, env `BLOCKBUSTR_DISCOVERY`); compose publishes `7359/udp`.
+  - **In a container the derived address is the container's own** (seen live: `http://10.89.2.4:8096`), so **set `BLOCKBUSTR_EXTERNAL_URL`** for discovery to be useful.
+  - **Broadcast reach:** through rootless podman a limited broadcast (`255.255.255.255`) reaches the container, while a subnet-directed one sent from the same host didn't. Untested from another LAN device.
+  - **Tailscale:** discovery doesn't cross it (no broadcast), so clients there enter the address by hand.
 - **Q4 Kodi.** The add-on's "native/add-on paths" mode wants file paths. `.strm` / remote may only work in add-on mode, so verify.
 - **R1 Uncached debrid streams** make first play slow. Mitigate by ranking cached streams first and pre-warming on "Add to favourites".
 - **R6 Remote search items in clients.** Apps may hide items without MediaSources or with `LocationType: Virtual`, and may cache search results. Mitigate with a placeholder MediaSource, `FileSystem` location type, and deterministic IDs persisted in Postgres (§7.4). Verify per client.

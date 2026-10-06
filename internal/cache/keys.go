@@ -82,6 +82,9 @@ func RateLimitKey(provider string) Key { return Key("rl:" + provider) }
 // QuickConnectKey holds a QuickConnect request's state.
 func QuickConnectKey(secret string) Key { return Key("qc:" + secret) }
 
+// QuickConnectCodeKey maps a QuickConnect code to its request's secret.
+func QuickConnectCodeKey(code string) Key { return Key("qc:code:" + code) }
+
 // SearchKey caches one remote search source's results (DESIGN §7.4). The term
 // is normalised (case, whitespace) so equivalent searches share an entry.
 func SearchKey(source, kind, term string) Key {

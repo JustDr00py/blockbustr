@@ -53,6 +53,11 @@ type Stream struct {
 
 	IsDefault, IsForced, IsHearingImpaired, IsOriginal bool
 
+	// IsExternal marks a sidecar subtitle file (Path) rather than a stream
+	// inside the media file.
+	IsExternal bool
+	Path       string
+
 	Bitrate int64 // bits/s: stream bit_rate, else the MKV "BPS" tag
 
 	// Video

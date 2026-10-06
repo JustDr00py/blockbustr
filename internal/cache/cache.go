@@ -108,6 +108,52 @@ func (c *Cache) AddToSet(ctx context.Context, k Key, ttl time.Duration, members 
 	return err
 }
 
+// Publish sends payload on pub/sub channel ch (prefixed like keys).
+func (c *Cache) Publish(ctx context.Context, ch string, payload []byte) error {
+	return c.rdb.Publish(ctx, c.prefix+ch, payload).Err()
+}
+
+// Subscribe delivers the payloads published on channel ch until ctx ends.
+// The subscription is confirmed before it returns, so nothing published
+// afterwards is missed.
+func (c *Cache) Subscribe(ctx context.Context, ch string) (<-chan []byte, error) {
+	sub := c.rdb.Subscribe(ctx, c.prefix+ch)
+	if _, err := sub.Receive(ctx); err != nil {
+		_ = sub.Close()
+		return nil, err
+	}
+	out := make(chan []byte, 64)
+	go func() {
+		defer close(out)
+		defer func() { _ = sub.Close() }()
+		msgs := sub.Channel()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case m, ok := <-msgs:
+				if !ok {
+					return
+				}
+				select {
+				case out <- []byte(m.Payload):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	return out, nil
+}
+
+// RemoveFromSet removes members from the set at k.
+func (c *Cache) RemoveFromSet(ctx context.Context, k Key, members ...string) error {
+	if len(members) == 0 {
+		return nil
+	}
+	return c.rdb.SRem(ctx, c.key(k), toAny(members)...).Err()
+}
+
 // SetMembers returns the members of the set at k (empty on a miss).
 func (c *Cache) SetMembers(ctx context.Context, k Key) ([]string, error) {
 	return c.rdb.SMembers(ctx, c.key(k)).Result()

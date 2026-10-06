@@ -62,7 +62,13 @@ func (a *api) authenticateByName(w http.ResponseWriter, r *http.Request) {
 		a.internalError(w, r, err)
 		return
 	}
-	dev := auth.Device{ID: info.DeviceID, Name: info.Device, AppName: info.Client, AppVersion: info.Version}
+	a.writeLogin(w, r, u, auth.Device{ID: info.DeviceID, Name: info.Device, AppName: info.Client, AppVersion: info.Version}, false)
+}
+
+// writeLogin issues a token for u on dev and answers with Jellyfin's
+// AuthenticationResult (password and QuickConnect logins alike; 12.1.0
+// leaves the remote address out of a QuickConnect login's SessionInfo).
+func (a *api) writeLogin(w http.ResponseWriter, r *http.Request, u db.User, dev auth.Device, quickConnect bool) {
 	token, err := a.Auth.IssueToken(r.Context(), u, dev)
 	if err != nil {
 		a.internalError(w, r, err)
@@ -75,9 +81,13 @@ func (a *api) authenticateByName(w http.ResponseWriter, r *http.Request) {
 		a.internalError(w, r, err)
 		return
 	}
+	info := a.sessionInfo(sess, r)
+	if quickConnect {
+		info.RemoteEndPoint = nil
+	}
 	jfapi.WriteJSON(w, r, http.StatusOK, dto.AuthenticationResult{
 		User:        &ud,
-		SessionInfo: ptr(a.sessionInfo(sess, r)),
+		SessionInfo: &info,
 		AccessToken: &token,
 		ServerId:    ptr(a.ServerID.String()),
 	})

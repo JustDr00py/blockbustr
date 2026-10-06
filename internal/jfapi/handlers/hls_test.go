@@ -11,10 +11,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/sysadmin/blockbustr/internal/jfapi"
+	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/testutil"
 	"github.com/sysadmin/blockbustr/internal/transcode"
 )
@@ -283,5 +285,125 @@ func TestHLSTranscodeRealFFmpeg(t *testing.T) {
 	}
 	if rec := get(strings.Replace(tu, "ApiKey=", "X=", 1)); rec.Code != 401 {
 		t.Errorf("no token = %d", rec.Code)
+	}
+}
+
+func TestHLSCopyRules(t *testing.T) {
+	str := func(s string) *string { return &s }
+	ch := func(n int32) *int32 { return &n }
+	job := func(video, audio, query string, channels int32) hlsJob {
+		return hlsJob{video: &db.MediaStream{Codec: str(video)}, audio: &db.MediaStream{Codec: str(audio), Channels: ch(channels)},
+			q: jfapi.QueryOf(httptest.NewRequestWithContext(context.Background(), "GET", "/?"+query, nil))}
+	}
+	for _, c := range []struct {
+		j            hlsJob
+		video, audio bool
+	}{
+		{job("h264", "aac", "VideoCodec=h264&AudioCodec=aac,mp3&AllowVideoStreamCopy=true", 2), true, true},
+		{job("h264", "aac", "VideoCodec=h264&AudioCodec=aac", 2), false, true}, // no AllowVideoStreamCopy: encode
+		{job("hevc", "eac3", "VideoCodec=h264&AudioCodec=aac&AllowVideoStreamCopy=true", 6), false, false},
+		{job("h264", "flac", "VideoCodec=h264&AudioCodec=flac,aac&AllowVideoStreamCopy=true", 2), true, false}, // FLAC can't go in TS
+		{job("vp9", "opus", "VideoCodec=vp9,h264&AudioCodec=opus&AllowVideoStreamCopy=true", 2), false, true},  // VP9 can't either
+		{job("h264", "ac3", "AudioCodec=ac3&TranscodingMaxAudioChannels=2", 6), false, false},                  // over the channel limit
+		{job("h264", "dts", "AudioCodec=copy", 6), false, true},                                                // main.m3u8's "copy"
+	} {
+		if v, a := c.j.copiesVideo(), c.j.copiesAudio(); v != c.video || a != c.audio {
+			t.Errorf("%s/%s %v: copy video %v audio %v", deref(c.j.video.Codec), deref(c.j.audio.Codec), c.j.q, v, a)
+		}
+	}
+	for profile, want := range map[string]string{"High": "avc1.640029", "Main": "avc1.4d0028", "Constrained Baseline": "avc1.42e01e", "?": "avc1.640029"} {
+		level := map[string]float32{"High": 41, "Main": 40, "Constrained Baseline": 30, "?": 30}[profile]
+		if got := avcCodec(profile, level); got != want {
+			t.Errorf("%s@%v: %s, want %s", profile, level, got, want)
+		}
+	}
+}
+
+// A client that can't play Matroska gets the H.264 copied into HLS.
+func TestHLSRemuxRealFFmpeg(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not installed")
+	}
+	h, d := hlsServer(t)
+	src := filepath.Join(t.TempDir(), "episode.mkv")
+	if out, err := exec.CommandContext(t.Context(), "ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc=duration=30:size=320x240:rate=24",
+		"-f", "lavfi", "-i", "sine=frequency=440:duration=30", "-map", "0", "-map", "1",
+		"-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", "-g", "24", "-c:a", "aac", "-ac", "2", src).CombinedOutput(); err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	execSQL(t, `UPDATE media_sources SET path_or_url = $1, runtime_ticks = 300000000, container = 'mkv' WHERE item_id = $2`, src, mkii)
+	execSQL(t, `UPDATE media_streams SET codec = 'h264', profile = 'Constrained Baseline', level = 13, width = 320, height = 240
+		WHERE type = 'Video' AND media_source_id IN (SELECT id FROM media_sources WHERE item_id = $1)`, mkii)
+
+	rec := call(t, h, "POST", "/Items/"+mkii+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{"DeviceProfile":{
+		"DirectPlayProfiles":[{"Type":"Video","Container":"mp4","VideoCodec":"h264","AudioCodec":"aac"}],
+		"TranscodingProfiles":[{"Type":"Video","Container":"ts","Protocol":"hls","VideoCodec":"h264","AudioCodec":"aac"}]}}`)
+	var pi playbackResp
+	_ = json.Unmarshal(rec.Body.Bytes(), &pi)
+	if len(pi.MediaSources) != 1 {
+		t.Fatalf("PlaybackInfo: %s", rec.Body)
+	}
+	ms := pi.MediaSources[0]
+	tu := ms.TranscodingUrl
+	if ms.SupportsDirectPlay || !ms.SupportsDirectStream || !strings.Contains(tu, "AllowVideoStreamCopy=true") ||
+		!strings.Contains(tu, "TranscodeReasons=ContainerNotSupported") {
+		t.Fatalf("remux decision: %+v", ms)
+	}
+
+	get := func(path string) *httptest.ResponseRecorder {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), "GET", path, nil))
+		return rec
+	}
+	master := get(tu)
+	lines := strings.Split(strings.TrimSpace(master.Body.String()), "\n")
+	if master.Code != 200 || !strings.Contains(lines[1], `CODECS="avc1.42e00d,mp4a.40.2"`) || !strings.Contains(lines[2], "AudioCodec=copy") {
+		t.Fatalf("master: %d %s", master.Code, master.Body)
+	}
+	base := strings.TrimSuffix(strings.SplitN(tu, "?", 2)[0], "master.m3u8")
+	main := get(base + lines[2])
+	var segs []string
+	for _, l := range strings.Split(main.Body.String(), "\n") {
+		if strings.HasPrefix(l, "hls1/") {
+			segs = append(segs, base+l)
+		}
+	}
+	if len(segs) != 10 {
+		t.Fatalf("main: %d segments", len(segs))
+	}
+	probeSegment := func(i int) (profile, start string) {
+		t.Helper()
+		rec := get(segs[i])
+		if rec.Code != 200 {
+			t.Fatalf("segment %d: %d %s", i, rec.Code, rec.Body)
+		}
+		p := filepath.Join(t.TempDir(), "s.ts")
+		_ = os.WriteFile(p, rec.Body.Bytes(), 0o644)
+		ffprobe := func(entries string) string {
+			out, err := exec.CommandContext(t.Context(), "ffprobe", "-v", "error", "-select_streams", "v:0",
+				"-show_entries", entries, "-of", "csv=p=0", p).Output()
+			if err != nil {
+				t.Fatalf("probe segment %d: %v", i, err)
+			}
+			first, _, _ := strings.Cut(strings.TrimSpace(string(out)), "\n") // TS lists streams per program too
+			return first
+		}
+		return ffprobe("stream=profile"), ffprobe("format=start_time")
+	}
+	if profile, _ := probeSegment(0); profile != "Constrained Baseline" {
+		t.Errorf("segment 0 was re-encoded (profile %q)", profile)
+	}
+	q, _ := url.ParseQuery(strings.SplitN(tu, "?", 2)[1])
+	sess, ok := d.Transcoding.Sessions.Get(q.Get("PlaySessionId"))
+	if !ok || !sess.Opts.CopyVideo || !sess.Opts.CopyAudio {
+		t.Errorf("session copies: %+v", sess)
+	}
+	// A seek after a stop restarts at segment 7: copied video starts at the
+	// keyframe nearest 21s (1s GOP), plus the MPEG-TS muxer's 1.4s delay.
+	d.Transcoding.Sessions.Close(q.Get("PlaySessionId"))
+	_, start := probeSegment(7)
+	if s, _ := strconv.ParseFloat(start, 64); s < 20 || s > 23.5 {
+		t.Errorf("segment 7 starts at %s, want ≈ 21s", start)
 	}
 }

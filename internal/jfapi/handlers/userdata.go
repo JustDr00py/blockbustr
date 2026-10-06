@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sysadmin/blockbustr/internal/auth"
+	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
@@ -54,9 +55,13 @@ func (a *api) userDataTarget(w http.ResponseWriter, r *http.Request, s auth.Sess
 	return user, it, true
 }
 
-// writeUserData answers with the item's user data as listings show it
-// (folders include their played/unplayed episode counts).
+// writeUserData announces the change and answers with the item's user
+// data as listings show it (folders include their episode counts). Every
+// user data write ends here.
 func (a *api) writeUserData(w http.ResponseWriter, r *http.Request, user uuid.UUID, it db.Item) {
+	if r.Method != http.MethodGet {
+		a.Events.Publish(r.Context(), events.Event{Kind: events.UserDataChanged, UserID: user, ItemIDs: []uuid.UUID{it.ID}})
+	}
 	ds, err := a.itemDtos(r.Context(), &user, []db.Item{it}, dtoOptions{fields: map[string]bool{}, imageTypeLimit: -1, enableUserData: true})
 	if err != nil {
 		a.internalError(w, r, err)

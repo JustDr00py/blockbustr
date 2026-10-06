@@ -238,7 +238,7 @@ func (q *Queries) ListMediaSourcesForItems(ctx context.Context, ids []uuid.UUID)
 }
 
 const listMediaStreamsForSources = `-- name: ListMediaStreamsForSources :many
-SELECT media_source_id, idx, type, codec, language, title, is_default, is_forced, is_external, width, height, bitrate, channels, channel_layout, video_range, profile, level, pixel_format, delivery_url, bit_depth, aspect_ratio, average_frame_rate, real_frame_rate, is_interlaced, color_transfer, color_primaries, color_space, color_range, video_range_type, dv_profile, dv_level, dv_bl_compat_id, sample_rate, is_hearing_impaired, is_original, time_base, dv_version_major, dv_version_minor, dv_rpu_present, dv_el_present, dv_bl_present FROM media_streams WHERE media_source_id = ANY($1::uuid[]) ORDER BY media_source_id, idx
+SELECT media_source_id, idx, type, codec, language, title, is_default, is_forced, is_external, width, height, bitrate, channels, channel_layout, video_range, profile, level, pixel_format, delivery_url, bit_depth, aspect_ratio, average_frame_rate, real_frame_rate, is_interlaced, color_transfer, color_primaries, color_space, color_range, video_range_type, dv_profile, dv_level, dv_bl_compat_id, sample_rate, is_hearing_impaired, is_original, time_base, dv_version_major, dv_version_minor, dv_rpu_present, dv_el_present, dv_bl_present, external_path FROM media_streams WHERE media_source_id = ANY($1::uuid[]) ORDER BY media_source_id, idx
 `
 
 func (q *Queries) ListMediaStreamsForSources(ctx context.Context, ids []uuid.UUID) ([]MediaStream, error) {
@@ -292,6 +292,7 @@ func (q *Queries) ListMediaStreamsForSources(ctx context.Context, ids []uuid.UUI
 			&i.DvRpuPresent,
 			&i.DvElPresent,
 			&i.DvBlPresent,
+			&i.ExternalPath,
 		); err != nil {
 			return nil, err
 		}

@@ -72,6 +72,7 @@ func (a *api) registerHLS(rt *jfapi.Router) {
 type hlsJob struct {
 	item        db.Item
 	src         db.MediaSource
+	streams     []db.MediaStream
 	video       *db.MediaStream
 	audio       *db.MediaStream
 	q           jfapi.Query
@@ -135,6 +136,7 @@ func (a *api) hlsRequest(w http.ResponseWriter, r *http.Request, s auth.Session)
 		want = n
 	}
 	streams := b.streams[src.ID]
+	j.streams = streams
 	for i := range streams {
 		st := &streams[i]
 		switch {
@@ -154,10 +156,18 @@ func (a *api) hlsRequest(w http.ResponseWriter, r *http.Request, s auth.Session)
 	return j, true
 }
 
+// tsCopyable are the codecs ffmpeg can copy into MPEG-TS segments; anything
+// else (FLAC, PCM, Vorbis, ALAC, VP9…) is re-encoded even if the client's
+// profile would take it.
+var tsCopyable = map[string]bool{
+	"h264": true, "hevc": true, "mpeg2video": true,
+	"aac": true, "mp3": true, "mp2": true, "ac3": true, "eac3": true, "dts": true, "truehd": true, "opus": true,
+}
+
 // copiesAudio: the URL's AudioCodec list (or "copy") takes the source track
-// as it is, within the channel limit.
+// as it is, within the channel limit, and TS can carry it.
 func (j hlsJob) copiesAudio() bool {
-	if j.audio == nil {
+	if j.audio == nil || !tsCopyable[deref(j.audio.Codec)] {
 		return false
 	}
 	list := j.q.Get("AudioCodec")
@@ -170,7 +180,7 @@ func (j hlsJob) copiesAudio() bool {
 
 func (j hlsJob) copiesVideo() bool {
 	allow, _ := j.q.Bool("AllowVideoStreamCopy")
-	return allow && j.video != nil && media.CodecIn(j.q.Get("VideoCodec"), deref(j.video.Codec))
+	return allow && j.video != nil && tsCopyable[deref(j.video.Codec)] && media.CodecIn(j.q.Get("VideoCodec"), deref(j.video.Codec))
 }
 
 // firstOf is the first codec of a URL list that's in allowed (def if none).
@@ -198,9 +208,6 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 	if n, err := strconv.ParseInt(j.q.Get("VideoBitrate"), 10, 64); err == nil {
 		o.VideoBitrate = n
 	}
-	if j.video != nil && !o.CopyVideo {
-		o.Tonemap = isHDR(deref(j.video.VideoRangeType))
-	}
 	if j.audio != nil {
 		o.AudioStream = int(j.audio.Idx)
 		if !o.CopyAudio {
@@ -212,6 +219,12 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 				o.AudioChannels = maxCh
 			}
 		}
+	}
+	if err := a.burnOptions(r, j, &o, j.streams); err != nil {
+		return o, err
+	}
+	if !o.CopyVideo && j.video != nil {
+		o.Tonemap = isHDR(deref(j.video.VideoRangeType))
 	}
 	o.Input = j.src.PathOrUrl
 	if j.src.IsRemote || !strings.EqualFold(j.src.Protocol, "File") {
@@ -227,10 +240,28 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 	return o, nil
 }
 
+// avcProfiles are H.264 profile_idc/constraint bytes by ffprobe profile name.
+var avcProfiles = map[string]string{
+	"constrained baseline": "42E0", "baseline": "4200", "main": "4D00", "extended": "5800",
+	"high": "6400", "high 10": "6E00", "high 4:2:2": "7A00", "high 4:4:4 predictive": "F400",
+}
+
+// avcCodec is the RFC 6381 name of a copied H.264 stream (ffprobe level 40 =
+// 4.0 → 0x28); High@4.1 when the profile isn't known.
+func avcCodec(profile string, level float32) string {
+	p, ok := avcProfiles[strings.ToLower(profile)]
+	if !ok || level <= 0 {
+		return "avc1.640029"
+	}
+	return fmt.Sprintf("avc1.%s%02x", strings.ToLower(p), int(level))
+}
+
 // hlsCodecs is the variant's CODECS attribute (RFC 8216 §4.3.4.2).
 func hlsCodecs(j hlsJob, o transcode.StartOptions) string {
 	video := "avc1.640029" // H.264 High@4.1, what the hardware encoders produce
 	switch {
+	case o.CopyVideo && j.video != nil && deref(j.video.Codec) == "h264":
+		video = avcCodec(deref(j.video.Profile), deref(j.video.Level))
 	case o.CopyVideo && j.video != nil && deref(j.video.Codec) == "hevc":
 		video = "hvc1.2.4.L150.B0"
 	case !o.CopyVideo && o.VideoCodec == "hevc":

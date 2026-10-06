@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 )
 
@@ -79,7 +80,8 @@ func (s *Scanner) takePending(libs []db.Library) []db.Library {
 // ScanAll scans libraries one after another, logging failures.
 func (s *Scanner) ScanAll(ctx context.Context, libs []db.Library) {
 	for _, lib := range libs {
-		if _, err := s.Scan(ctx, lib); err != nil {
+		res, err := s.Scan(ctx, lib)
+		if err != nil {
 			if errors.Is(err, ErrScanInProgress) {
 				s.log.Info("scan skipped: already running elsewhere", "library", lib.Name)
 				continue
@@ -94,6 +96,10 @@ func (s *Scanner) ScanAll(ctx context.Context, libs []db.Library) {
 			if err := p.fn(ctx, lib); err != nil && ctx.Err() == nil {
 				s.log.Error("post-scan step failed", "step", p.name, "library", lib.Name, "err", err)
 			}
+		}
+		// Announced after metadata and artwork, so clients refetch whole items.
+		if res.changed() {
+			s.events.Publish(ctx, events.Event{Kind: events.LibraryChanged, Libraries: []uuid.UUID{lib.ID}})
 		}
 	}
 }

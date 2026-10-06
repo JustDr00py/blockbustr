@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -34,6 +35,12 @@ func TestBuildArgs(t *testing.T) {
 			[]string{"-reconnect 1 -reconnect_streamed 1 -reconnect_on_network_error 1 -reconnect_delay_max 5 -i https://cdn/x.mkv"}, nil},
 		{"software HEVC→H.264 with tonemap, quality mode", StartOptions{Input: "/m/luca.mkv", Tonemap: true, AudioStream: 1, SegmentSeconds: 4},
 			[]string{"-vf " + tonemapChain + ",format=yuv420p -c:v libx264 -crf 21 -preset veryfast", "-force_key_frames expr:gte(t,n_forced*4)", "-hls_time 4 "}, nil},
+		{"PGS overlay before the QSV upload, after the tonemap", StartOptions{Input: "/m/x.mkv", Encoder: CapQSV, Device: "/dev/dri/renderD128",
+			Tonemap: true, BurnImage: ptrInt(4), AudioStream: 1},
+			[]string{"-filter_complex [0:v:0]" + tonemapChain + "[base];[base][0:4]overlay=eof_action=pass,format=nv12,hwupload=extra_hw_frames=64[vout] -map [vout] -map 0:1"},
+			[]string{"-vf", "-map 0:v:0"}},
+		{"text burn after a seek keeps source times", StartOptions{Input: "/m/x.mkv", BurnText: "/c/subs/3.ass", AudioStream: 1, StartSegment: 4},
+			[]string{"-vf setpts=PTS+12.000/TB,subtitles=filename=/c/subs/3.ass,setpts=PTS-12.000/TB,format=yuv420p"}, nil},
 		{"vaapi hevc", StartOptions{Input: "/m/a.mkv", Encoder: CapVAAPI, Device: "/dev/dri/renderD128", VideoCodec: "hevc", AudioStream: 1, CopyAudio: true},
 			[]string{"-init_hw_device vaapi=va:/dev/dri/renderD128", "-vf format=nv12,hwupload -c:v hevc_vaapi -qp 23"}, []string{"forced_idr", "forced-idr"}},
 	} {
@@ -306,3 +313,71 @@ func TestSessionQSVRealHardware(t *testing.T) {
 		}
 	}
 }
+
+// burnSource makes a 12s black video and a subtitle file showing a white
+// line from 6.5s to 8s. (ffmpeg can't render text into image subtitles, so
+// PGS overlay is covered by TestBuildArgs and a live check, DESIGN §8.3.)
+func burnSource(t *testing.T) (video, srtFile string) {
+	t.Helper()
+	dir := t.TempDir()
+	srtFile = filepath.Join(dir, "it's, a: [test].srt") // quotes, commas, colons, brackets
+	if err := os.WriteFile(srtFile, []byte("1\n00:00:06,500 --> 00:00:08,000\nBURNED IN\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	video = filepath.Join(dir, "black.mkv")
+	if out, err := exec.CommandContext(t.Context(), "ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=black:size=320x240:rate=10:duration=12",
+		"-c:v", "libx264", "-preset", "ultrafast", video).CombinedOutput(); err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	return video, srtFile
+}
+
+// brightest is the highest luma in a segment: ~16 for black, far more where
+// white subtitles were burned in.
+func brightest(t *testing.T, segment string) int {
+	t.Helper()
+	out, err := exec.CommandContext(t.Context(), "ffprobe", "-v", "error", "-f", "lavfi", "-i", "movie="+filterQuote(segment)+",signalstats",
+		"-show_entries", "frame_tags=lavfi.signalstats.YMAX", "-of", "csv=p=0").Output()
+	if err != nil {
+		t.Fatalf("signalstats %s: %v", segment, err)
+	}
+	peak := 0
+	for _, l := range strings.Fields(string(out)) {
+		var v int
+		_, _ = fmt.Sscan(l, &v)
+		peak = max(peak, v)
+	}
+	return peak
+}
+
+func TestSessionBurnInRealFFmpeg(t *testing.T) {
+	needFFmpeg(t)
+	video, srtFile := burnSource(t)
+	for _, c := range []struct {
+		name  string
+		opts  StartOptions
+		start int
+	}{
+		{"none", StartOptions{}, 0},
+		{"text", StartOptions{BurnText: srtFile}, 0},
+		{"text after a seek", StartOptions{BurnText: srtFile}, 3}, // libass still sees source times
+	} {
+		o := c.opts
+		o.Input, o.Encoder, o.AudioStream, o.SegmentSeconds, o.StartSegment = video, CapSoftware, -1, 2, c.start
+		m := NewManager(t.TempDir(), 0)
+		s, err := m.Start(t.Context(), "burn", o, 30*time.Second)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		waitDone(t, s)
+		// Segment 3 covers 6–8s, where the line shows.
+		lit, dark := brightest(t, s.SegmentPath(3)), brightest(t, s.SegmentPath(4))
+		burned := c.name != "none"
+		if (lit > 100) != burned || dark > 100 {
+			t.Errorf("%s: segment 3 peak luma %d, segment 4 %d", c.name, lit, dark)
+		}
+		m.Close("burn")
+	}
+}
+
+func ptrInt(n int) *int { return &n }

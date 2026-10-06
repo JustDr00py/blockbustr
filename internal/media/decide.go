@@ -478,9 +478,12 @@ func directPlayReasons(p DeviceProfile, src Source, video, audio *Stream) ([]str
 }
 
 // subtitleMethod is how one subtitle stream reaches the client: embedded
-// when the file is played or remuxed, else as a separate file (text only),
-// else in the HLS playlist (text, when transcoding to HLS), else burned in.
-func subtitleMethod(p DeviceProfile, s Stream, direct, hls bool) string {
+// when the file is played or remuxed (and the stream is in the file), else
+// as a separate file (text only), else burned in. Jellyfin also offers Hls
+// (subtitle renditions in the HLS playlist) where a profile asks for it;
+// blockbustr doesn't serve those yet, so such streams are burned in, and no
+// captured client asks for Hls.
+func subtitleMethod(p DeviceProfile, s Stream, direct bool) string {
 	has := func(method string) bool {
 		for _, sp := range p.SubtitleProfiles {
 			if strings.EqualFold(sp.Method, method) && canonicalCodec(sp.Format) == canonicalCodec(s.Codec) {
@@ -491,12 +494,10 @@ func subtitleMethod(p DeviceProfile, s Stream, direct, hls bool) string {
 	}
 	text := s.IsTextSubtitle() || canonicalCodec(s.Codec) == "subrip" || canonicalCodec(s.Codec) == "webvtt"
 	switch {
-	case direct && has("Embed"):
+	case direct && !s.IsExternal && has("Embed"):
 		return "Embed"
 	case text && has("External"):
 		return "External"
-	case text && hls && has("Hls"):
-		return "Hls"
 	}
 	return "Encode"
 }
@@ -540,7 +541,7 @@ func Decide(p DeviceProfile, src Source, o PlayOptions) Decision {
 	if overLimit {
 		dpReasons = append(dpReasons, "ContainerBitrateExceedsLimit")
 	}
-	if sub != nil && subtitleMethod(p, *sub, true, false) == "Encode" {
+	if sub != nil && subtitleMethod(p, *sub, true) == "Encode" {
 		dpReasons = append(dpReasons, "SubtitleCodecNotSupported")
 	}
 	d.SupportsDirectPlay = len(dpReasons) == 0 && !o.DisableDirectPlay
@@ -586,10 +587,9 @@ func Decide(p DeviceProfile, src Source, o PlayOptions) Decision {
 	}
 
 	direct := d.Mode == ModeDirect || d.Mode == ModeRemux
-	hls := d.Transcode != nil && strings.EqualFold(d.Transcode.Protocol, "hls")
 	for _, s := range src.Streams {
 		if s.Type == StreamSubtitle {
-			d.Subtitles[s.Index] = subtitleMethod(p, s, direct, hls)
+			d.Subtitles[s.Index] = subtitleMethod(p, s, direct)
 		}
 	}
 	return d

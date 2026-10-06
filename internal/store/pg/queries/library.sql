@@ -83,9 +83,10 @@ INSERT INTO media_streams (media_source_id, idx, type, codec, language, title, i
                            profile, level, pixel_format, bit_depth, aspect_ratio, average_frame_rate,
                            real_frame_rate, is_interlaced, color_transfer, color_primaries, color_space,
                            color_range, dv_profile, dv_level, dv_bl_compat_id, time_base,
-                           dv_version_major, dv_version_minor, dv_rpu_present, dv_el_present, dv_bl_present)
+                           dv_version_major, dv_version_minor, dv_rpu_present, dv_el_present, dv_bl_present,
+                           external_path)
 VALUES (@media_source_id, @idx, @type, sqlc.narg('codec'), sqlc.narg('language'), sqlc.narg('title'),
-        @is_default, @is_forced, @is_hearing_impaired, @is_original, false,
+        @is_default, @is_forced, @is_hearing_impaired, @is_original, sqlc.narg('external_path')::text IS NOT NULL,
         sqlc.narg('width'), sqlc.narg('height'), sqlc.narg('bitrate'), sqlc.narg('channels'),
         sqlc.narg('channel_layout'), sqlc.narg('sample_rate'), sqlc.narg('video_range'),
         sqlc.narg('video_range_type'), sqlc.narg('profile'), sqlc.narg('level'), sqlc.narg('pixel_format'),
@@ -94,7 +95,8 @@ VALUES (@media_source_id, @idx, @type, sqlc.narg('codec'), sqlc.narg('language')
         sqlc.narg('color_primaries'), sqlc.narg('color_space'), sqlc.narg('color_range'),
         sqlc.narg('dv_profile'), sqlc.narg('dv_level'), sqlc.narg('dv_bl_compat_id'), sqlc.narg('time_base'),
         sqlc.narg('dv_version_major'), sqlc.narg('dv_version_minor'), sqlc.narg('dv_rpu_present'),
-        sqlc.narg('dv_el_present'), sqlc.narg('dv_bl_present'));
+        sqlc.narg('dv_el_present'), sqlc.narg('dv_bl_present'),
+        sqlc.narg('external_path'));
 
 -- name: DeleteChapters :exec
 DELETE FROM chapters WHERE item_id = $1;

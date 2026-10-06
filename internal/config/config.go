@@ -68,6 +68,10 @@ type Server struct {
 	ServerName string `yaml:"server_name"`
 	// ShutdownTimeout bounds graceful shutdown.
 	ShutdownTimeout time.Duration `yaml:"shutdown_timeout"`
+	// Discovery answers clients' LAN discovery broadcasts on UDP 7359
+	// (env BLOCKBUSTR_DISCOVERY). In a container, publish 7359/udp and set
+	// ExternalURL: the container's own address is no use to clients.
+	Discovery bool `yaml:"discovery"`
 	// AdminUsername/AdminPassword seed the administrator at startup. If the
 	// user exists its password is reset, which doubles as lost-password
 	// recovery (as in jellybird). Prefer the env vars
@@ -162,6 +166,7 @@ func Defaults() Config {
 			Listen:          ":8096",
 			ServerName:      "blockbustr",
 			ShutdownTimeout: 10 * time.Second,
+			Discovery:       true,
 		},
 		Database: Database{URL: "postgres://blockbustr:blockbustr@localhost:5432/blockbustr?sslmode=disable"},
 		Redis:    Redis{URL: "redis://localhost:6379/0"},
@@ -222,6 +227,7 @@ var envOverrides = []struct {
 	{"BLOCKBUSTR_REPORTED_VERSION", func(c *Config, v string) { c.Compat.ReportedVersion = v }},
 	{"BLOCKBUSTR_HWACCEL", func(c *Config, v string) { c.Transcode.HWAccel = v }},
 	{"BLOCKBUSTR_LEGACY_AUTH", func(c *Config, v string) { c.Compat.LegacyAuth = parseBool(v, c.Compat.LegacyAuth) }},
+	{"BLOCKBUSTR_DISCOVERY", func(c *Config, v string) { c.Server.Discovery = parseBool(v, c.Server.Discovery) }},
 	{"BLOCKBUSTR_TMDB_API_KEY", func(c *Config, v string) { c.Metadata.TMDBAPIKey = v }},
 	{"BLOCKBUSTR_REALDEBRID_API_KEY", func(c *Config, v string) { c.Debrid.RealDebridAPIKey = v }},
 	{"BLOCKBUSTR_TORBOX_API_KEY", func(c *Config, v string) { c.Debrid.TorBoxAPIKey = v }},

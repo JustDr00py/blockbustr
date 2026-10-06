@@ -64,6 +64,48 @@ func (q *Queries) MarkUnplayed(ctx context.Context, arg MarkUnplayedParams) erro
 	return err
 }
 
+const recordPlayback = `-- name: RecordPlayback :exec
+INSERT INTO user_data (user_id, item_id, playback_position_ticks, played, play_count, last_played_at,
+                       audio_stream_idx, subtitle_stream_idx)
+VALUES ($1, $2, $3, $4, CASE WHEN $4::boolean THEN 1 ELSE 0 END,
+        CASE WHEN $5::boolean THEN now() END, $6, $7)
+ON CONFLICT (user_id, item_id) DO UPDATE SET
+    playback_position_ticks = EXCLUDED.playback_position_ticks,
+    played                  = user_data.played OR $4::boolean,
+    play_count              = user_data.play_count + CASE WHEN $4::boolean THEN 1 ELSE 0 END,
+    last_played_at          = CASE WHEN $5::boolean THEN now() ELSE user_data.last_played_at END,
+    audio_stream_idx        = coalesce($6, user_data.audio_stream_idx),
+    subtitle_stream_idx     = coalesce($7, user_data.subtitle_stream_idx),
+    updated_at              = now()
+`
+
+type RecordPlaybackParams struct {
+	UserID            uuid.UUID
+	ItemID            uuid.UUID
+	PositionTicks     int64
+	Finished          bool
+	Touch             bool
+	AudioStreamIdx    *int32
+	SubtitleStreamIdx *int32
+}
+
+// One playback report (TASKS P2.9, DESIGN §8.4): the resume position,
+// whether this play finished the item (played, one more play, position
+// reset by the caller), the chosen tracks, and, when touch is set, the
+// last played date.
+func (q *Queries) RecordPlayback(ctx context.Context, arg RecordPlaybackParams) error {
+	_, err := q.db.Exec(ctx, recordPlayback,
+		arg.UserID,
+		arg.ItemID,
+		arg.PositionTicks,
+		arg.Finished,
+		arg.Touch,
+		arg.AudioStreamIdx,
+		arg.SubtitleStreamIdx,
+	)
+	return err
+}
+
 const setFavorite = `-- name: SetFavorite :exec
 INSERT INTO user_data (user_id, item_id, is_favorite) VALUES ($1, $2, $3)
 ON CONFLICT (user_id, item_id) DO UPDATE SET is_favorite = EXCLUDED.is_favorite, updated_at = now()

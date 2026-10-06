@@ -25,6 +25,7 @@ import (
 
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/config"
+	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/strm"
@@ -53,7 +54,11 @@ type Scanner struct {
 	wantAll bool               // Trigger: scan every library
 	want    map[uuid.UUID]bool // TriggerLibrary: scan these
 	remote  singleflight.Group // ProbeRemote, one probe per item at a time
+	events  *events.Bus        // LibraryChanged after scans and probes; nil = none
 }
+
+// SetEvents makes scans and first-play probes announce library changes.
+func (s *Scanner) SetEvents(b *events.Bus) { s.events = b }
 
 // NewScanner returns a Scanner.
 func NewScanner(pool *pgxpool.Pool, c *cache.Cache, p Prober, cfg config.Scan, log *slog.Logger) *Scanner {
@@ -71,6 +76,11 @@ type Result struct {
 	Missing      int64
 	Deleted      int64
 	Took         time.Duration
+}
+
+// changed reports whether the scan added, re-read or lost anything.
+func (r Result) changed() bool {
+	return r.Probed+r.ProbeFailed+r.RemoteSource > 0 || r.Missing > 0 || r.Deleted > 0
 }
 
 var videoExts = map[string]bool{
@@ -357,9 +367,9 @@ func (w *walker) identify(path string, d fs.DirEntry) (kind string, strmURL *str
 			return "", nil, "", err
 		}
 		sum := sha256.Sum256([]byte(target))
-		return "strm", &target, "strm-" + hex.EncodeToString(sum[:8]), nil
+		return "strm", &target, "strm-" + hex.EncodeToString(sum[:8]) + sidecarSignature(path), nil
 	}
-	return "file", nil, fmt.Sprintf("%x-%x", info.Size(), info.ModTime().UnixNano()), nil
+	return "file", nil, fmt.Sprintf("%x-%x", info.Size(), info.ModTime().UnixNano()) + sidecarSignature(path), nil
 }
 
 // refreshSources builds media sources for items that lack an up-to-date
@@ -472,6 +482,9 @@ func (s *Scanner) storeSource(ctx context.Context, row db.ItemsNeedingSourceRow,
 		if info == nil {
 			return nil
 		}
+		if row.Path != nil {
+			info = withSidecars(info, *row.Path)
+		}
 		for _, st := range info.Streams {
 			if err := q.InsertMediaStream(ctx, streamParams(id, st)); err != nil {
 				return err
@@ -496,7 +509,7 @@ func streamParams(source uuid.UUID, st media.Stream) db.InsertMediaStreamParams 
 		VideoRange: optStr(st.VideoRange), VideoRangeType: optStr(st.VideoRangeType), PixelFormat: optStr(st.PixelFormat),
 		BitDepth: optInt32(st.BitDepth), AspectRatio: optStr(st.AspectRatio), IsInterlaced: st.IsInterlaced,
 		ColorTransfer: optStr(st.ColorTransfer), ColorPrimaries: optStr(st.ColorPrimaries), ColorSpace: optStr(st.ColorSpace),
-		ColorRange: optStr(st.ColorRange), TimeBase: optStr(st.TimeBase),
+		ColorRange: optStr(st.ColorRange), TimeBase: optStr(st.TimeBase), ExternalPath: optStr(st.Path),
 	}
 	if st.Level != 0 {
 		p.Level = ptr(float32(st.Level))

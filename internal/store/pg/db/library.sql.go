@@ -277,18 +277,20 @@ INSERT INTO media_streams (media_source_id, idx, type, codec, language, title, i
                            profile, level, pixel_format, bit_depth, aspect_ratio, average_frame_rate,
                            real_frame_rate, is_interlaced, color_transfer, color_primaries, color_space,
                            color_range, dv_profile, dv_level, dv_bl_compat_id, time_base,
-                           dv_version_major, dv_version_minor, dv_rpu_present, dv_el_present, dv_bl_present)
+                           dv_version_major, dv_version_minor, dv_rpu_present, dv_el_present, dv_bl_present,
+                           external_path)
 VALUES ($1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10, false,
-        $11, $12, $13, $14,
-        $15, $16, $17,
-        $18, $19, $20, $21,
-        $22, $23, $24,
-        $25, $26, $27,
-        $28, $29, $30,
-        $31, $32, $33, $34,
-        $35, $36, $37,
-        $38, $39)
+        $7, $8, $9, $10, $11::text IS NOT NULL,
+        $12, $13, $14, $15,
+        $16, $17, $18,
+        $19, $20, $21, $22,
+        $23, $24, $25,
+        $26, $27, $28,
+        $29, $30, $31,
+        $32, $33, $34, $35,
+        $36, $37, $38,
+        $39, $40,
+        $11)
 `
 
 type InsertMediaStreamParams struct {
@@ -302,6 +304,7 @@ type InsertMediaStreamParams struct {
 	IsForced          bool
 	IsHearingImpaired bool
 	IsOriginal        bool
+	ExternalPath      *string
 	Width             *int32
 	Height            *int32
 	Bitrate           *int32
@@ -345,6 +348,7 @@ func (q *Queries) InsertMediaStream(ctx context.Context, arg InsertMediaStreamPa
 		arg.IsForced,
 		arg.IsHearingImpaired,
 		arg.IsOriginal,
+		arg.ExternalPath,
 		arg.Width,
 		arg.Height,
 		arg.Bitrate,
@@ -516,7 +520,7 @@ func (q *Queries) ListLibraryItems(ctx context.Context, libraryID uuid.UUID) ([]
 }
 
 const listMediaStreams = `-- name: ListMediaStreams :many
-SELECT media_source_id, idx, type, codec, language, title, is_default, is_forced, is_external, width, height, bitrate, channels, channel_layout, video_range, profile, level, pixel_format, delivery_url, bit_depth, aspect_ratio, average_frame_rate, real_frame_rate, is_interlaced, color_transfer, color_primaries, color_space, color_range, video_range_type, dv_profile, dv_level, dv_bl_compat_id, sample_rate, is_hearing_impaired, is_original, time_base, dv_version_major, dv_version_minor, dv_rpu_present, dv_el_present, dv_bl_present FROM media_streams WHERE media_source_id = $1 ORDER BY idx
+SELECT media_source_id, idx, type, codec, language, title, is_default, is_forced, is_external, width, height, bitrate, channels, channel_layout, video_range, profile, level, pixel_format, delivery_url, bit_depth, aspect_ratio, average_frame_rate, real_frame_rate, is_interlaced, color_transfer, color_primaries, color_space, color_range, video_range_type, dv_profile, dv_level, dv_bl_compat_id, sample_rate, is_hearing_impaired, is_original, time_base, dv_version_major, dv_version_minor, dv_rpu_present, dv_el_present, dv_bl_present, external_path FROM media_streams WHERE media_source_id = $1 ORDER BY idx
 `
 
 func (q *Queries) ListMediaStreams(ctx context.Context, mediaSourceID uuid.UUID) ([]MediaStream, error) {
@@ -570,6 +574,7 @@ func (q *Queries) ListMediaStreams(ctx context.Context, mediaSourceID uuid.UUID)
 			&i.DvRpuPresent,
 			&i.DvElPresent,
 			&i.DvBlPresent,
+			&i.ExternalPath,
 		); err != nil {
 			return nil, err
 		}

@@ -113,7 +113,7 @@ func decisionSource(src db.MediaSource, streams []db.MediaStream) media.Source {
 			Level: int(deref(s.Level)), BitDepth: int(deref(s.BitDepth)), Width: int(deref(s.Width)), Height: int(deref(s.Height)),
 			Bitrate: int64(deref(s.Bitrate)), Channels: int(deref(s.Channels)), SampleRate: int(deref(s.SampleRate)),
 			VideoRangeType: deref(s.VideoRangeType), RealFrameRate: float64(deref(s.RealFrameRate)),
-			IsInterlaced: s.IsInterlaced, IsDefault: s.IsDefault,
+			IsInterlaced: s.IsInterlaced, IsDefault: s.IsDefault, IsExternal: s.IsExternal,
 		})
 	}
 	return out
@@ -336,7 +336,13 @@ func transcodingURL(dashedItem, msID, etag string, d media.Decision, u urlParams
 	add("RequireAvc", "false")
 	add("EnableAudioVbrEncoding", "true")
 	add("Tag", etag)
-	add("SubtitleMethod", "Encode")
+	// The chosen subtitle's delivery (Encode = burn in, read by the HLS
+	// endpoint); Jellyfin sends Encode when none is chosen.
+	method := "Encode"
+	if u.subtitle != nil && *u.subtitle >= 0 && d.Subtitles[*u.subtitle] != "" {
+		method = d.Subtitles[*u.subtitle]
+	}
+	add("SubtitleMethod", method)
 	if t.CopyVideo {
 		add("AllowVideoStreamCopy", "true")
 	}

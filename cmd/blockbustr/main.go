@@ -12,12 +12,15 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/config"
+	"github.com/sysadmin/blockbustr/internal/discovery"
+	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/images"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
@@ -29,6 +32,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg"
 	sqlcdb "github.com/sysadmin/blockbustr/internal/store/pg/db"
+	"github.com/sysadmin/blockbustr/internal/subtitles"
 	"github.com/sysadmin/blockbustr/internal/transcode"
 )
 
@@ -125,11 +129,24 @@ func run() error {
 	}
 	go transcoder.Run(ctx)
 
+	// Live updates (TASKS P2.10): events over Redis pub/sub, delivered to
+	// WebSocket clients by the hub.
+	bus := &events.Bus{Cache: rc, Log: log}
+	scanner.SetEvents(bus)
+	hub := handlers.NewHub()
+	go func() {
+		if err := hub.Run(ctx, bus); err != nil {
+			log.Error("websocket events unavailable", "err", err)
+		}
+	}()
+
 	router := jfapi.NewRouter(log, jfapi.Options{LegacyAuth: cfg.Compat.LegacyAuth})
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
 		Resolver: &resolve.Resolver{Cache: rc}, Probe: scanner,
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
+		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
+		Events:      bus, Hub: hub,
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -142,6 +159,19 @@ func run() error {
 		ReadHeaderTimeout: 10 * time.Second,
 		// No WriteTimeout: video streams and HLS sessions are long-lived.
 		ErrorLog: slog.NewLogLogger(log.Handler(), slog.LevelWarn),
+	}
+
+	// LAN discovery (TASKS P2.11): answer "who is JellyfinServer?".
+	if cfg.Server.Discovery {
+		_, port, _ := net.SplitHostPort(cfg.Server.Listen)
+		ds, err := discovery.Listen(fmt.Sprintf(":%d", discovery.Port), discovery.Info{
+			ExternalURL: cfg.Server.ExternalURL, HTTPPort: port, ID: dto.IDFromUUID(serverID).String(), Name: cfg.Server.ServerName,
+		}, log)
+		if err != nil {
+			log.Warn("LAN discovery unavailable", "port", discovery.Port, "err", err)
+		} else {
+			go func() { _ = ds.Serve(ctx) }()
+		}
 	}
 
 	errc := make(chan error, 1)
@@ -164,6 +194,7 @@ func run() error {
 	}
 
 	log.Info("shutting down", "timeout", cfg.Server.ShutdownTimeout)
+	hub.Shutdown() // tells clients, and closes the sockets srv.Shutdown wouldn't
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {

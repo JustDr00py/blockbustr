@@ -211,8 +211,8 @@ func TestPublicUsersAndQuickConnect(t *testing.T) {
 		}
 	}
 	for _, b := range checkContractOn(t, h, capturesFor(t, "GET /QuickConnect/Enabled")) {
-		if b != false {
-			t.Errorf("QuickConnect/Enabled = %v until P2.12", b)
+		if b != true { // as Jellyfin answered (P2.12)
+			t.Errorf("QuickConnect/Enabled = %v", b)
 		}
 	}
 }

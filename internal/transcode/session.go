@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -79,6 +80,12 @@ type StartOptions struct {
 	AudioCodec    string // "aac" (default), "mp3", "ac3", …
 	AudioBitrate  int64  // bits/s; 0 = the encoder's default
 	AudioChannels int    // downmix to this many; 0 = keep
+
+	// Burn renders a subtitle into the video (Encode delivery; needs an
+	// encode): BurnImage is the input stream index of an image subtitle
+	// (PGS, VobSub), BurnText a text subtitle file rendered with libass.
+	BurnImage *int
+	BurnText  string
 
 	SegmentSeconds int // <= 0: DefaultSegmentSeconds
 	StartSegment   int // first segment number; ffmpeg starts reading at StartSegment×SegmentSeconds
@@ -135,39 +142,60 @@ func buildArgs(o StartOptions, dir string) []string {
 			args = append(args, "-init_hw_device", "qsv=qs:"+o.Device, "-filter_hw_device", "qs")
 		}
 	}
-	args = append(args, "-i", o.Input, "-map", "0:v:0")
+	args = append(args, "-i", o.Input)
+	audioMap := "0:a:0?"
 	if o.AudioStream >= 0 {
-		args = append(args, "-map", "0:"+strconv.Itoa(o.AudioStream))
-	} else {
-		args = append(args, "-map", "0:a:0?")
+		audioMap = "0:" + strconv.Itoa(o.AudioStream)
 	}
 
 	if o.CopyVideo {
-		args = append(args, "-c:v", "copy")
+		args = append(args, "-map", "0:v:0", "-map", audioMap, "-c:v", "copy")
 	} else {
-		// vf joins the optional tonemap with the encoder's upload filter.
-		vf := func(suffix string) string {
-			switch {
-			case !o.Tonemap:
-				return suffix
-			case suffix == "":
-				return tonemapChain
-			}
-			return tonemapChain + "," + suffix
+		// The video chain: tonemap, text subtitles, then the encoder's
+		// upload/format filter; an image subtitle is overlaid in between.
+		var pre []string
+		if o.Tonemap {
+			pre = append(pre, tonemapChain)
 		}
-		filter := ""
+		if o.BurnText != "" {
+			sub := "subtitles=filename=" + filterQuote(o.BurnText)
+			if start > 0 { // after -ss frames start at 0; libass needs source times
+				off := strconv.FormatFloat(start, 'f', 3, 64)
+				sub = "setpts=PTS+" + off + "/TB," + sub + ",setpts=PTS-" + off + "/TB"
+			}
+			pre = append(pre, sub)
+		}
+		suffix := ""
 		switch o.Encoder {
 		case CapVAAPI:
-			filter = vf("format=nv12,hwupload")
+			suffix = "format=nv12,hwupload"
 		case CapQSV:
-			filter = vf("format=nv12,hwupload=extra_hw_frames=64")
+			suffix = "format=nv12,hwupload=extra_hw_frames=64"
 		case CapNVENC:
-			filter = vf("")
 		default:
-			filter = vf("format=yuv420p") // 8-bit output from 10-bit sources
+			suffix = "format=yuv420p" // 8-bit output from 10-bit sources
 		}
-		if filter != "" {
-			args = append(args, "-vf", filter)
+		join := func(parts ...string) string {
+			var out []string
+			for _, p := range parts {
+				if p != "" {
+					out = append(out, p)
+				}
+			}
+			return strings.Join(out, ",")
+		}
+		if o.BurnImage != nil {
+			graph := "[0:v:0]"
+			if len(pre) > 0 {
+				graph += join(pre...) + "[base];[base]"
+			}
+			graph += "[0:" + strconv.Itoa(*o.BurnImage) + "]" + join("overlay=eof_action=pass", suffix) + "[vout]"
+			args = append(args, "-filter_complex", graph, "-map", "[vout]", "-map", audioMap)
+		} else {
+			args = append(args, "-map", "0:v:0", "-map", audioMap)
+			if f := join(append(pre, suffix)...); f != "" {
+				args = append(args, "-vf", f)
+			}
 		}
 		args = append(args, "-c:v", encoderName(o.Encoder, o.VideoCodec))
 		if o.VideoBitrate > 0 {
@@ -232,6 +260,14 @@ func buildArgs(o StartOptions, dir string) []string {
 		"-hls_segment_filename", filepath.Join(dir, "%d.ts"),
 		filepath.Join(dir, PlaylistName),
 	)
+}
+
+// filterQuote escapes a value for a filter option inside a filtergraph,
+// which ffmpeg unescapes twice: first the graph (\ ' [ ] , ;), then the
+// option value (\ ' :). So it's escaped for the option, then for the graph.
+func filterQuote(v string) string {
+	opt := strings.NewReplacer(`\`, `\\`, `'`, `\'`, `:`, `\:`).Replace(v)
+	return strings.NewReplacer(`\`, `\\`, `'`, `\'`, `[`, `\[`, `]`, `\]`, `,`, `\,`, `;`, `\;`).Replace(opt)
 }
 
 // runFFmpegSession is a var so tests can stub out the real ffmpeg process.

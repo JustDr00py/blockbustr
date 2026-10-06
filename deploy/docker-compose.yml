@@ -29,6 +29,7 @@ services:
       BLOCKBUSTR_LOG_LEVEL: ${BLOCKBUSTR_LOG_LEVEL:-info}
     ports:
       - "${BLOCKBUSTR_PORT:-8096}:8096"
+      - "${BLOCKBUSTR_DISCOVERY_PORT:-7359}:7359/udp"   # LAN server discovery (needs BLOCKBUSTR_EXTERNAL_URL)
     volumes:
       - ./data/config:/config        # optional config.yaml
       - ./data/cache:/cache          # transcode segments + image cache

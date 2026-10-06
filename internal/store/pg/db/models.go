@@ -188,6 +188,7 @@ type MediaStream struct {
 	DvRpuPresent      *bool
 	DvElPresent       *bool
 	DvBlPresent       *bool
+	ExternalPath      *string
 }
 
 type Person struct {
