@@ -16,11 +16,17 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/sysadmin/blockbustr/internal/secret"
 )
 
 // Config is the root configuration for the blockbustr server.
 type Config struct {
-	Server    Server    `yaml:"server"`
+	Server Server `yaml:"server"`
+	// SecretKey seals debrid API keys at rest (DESIGN §4 debrid_accounts):
+	// exactly 32 bytes, hex or base64. Env: BLOCKBUSTR_SECRET_KEY. Required
+	// only when a debrid key is configured.
+	SecretKey string    `yaml:"secret_key"`
 	Database  Database  `yaml:"database"`
 	Redis     Redis     `yaml:"redis"`
 	Paths     Paths     `yaml:"paths"`
@@ -231,6 +237,7 @@ var envOverrides = []struct {
 	{"BLOCKBUSTR_TMDB_API_KEY", func(c *Config, v string) { c.Metadata.TMDBAPIKey = v }},
 	{"BLOCKBUSTR_REALDEBRID_API_KEY", func(c *Config, v string) { c.Debrid.RealDebridAPIKey = v }},
 	{"BLOCKBUSTR_TORBOX_API_KEY", func(c *Config, v string) { c.Debrid.TorBoxAPIKey = v }},
+	{"BLOCKBUSTR_SECRET_KEY", func(c *Config, v string) { c.SecretKey = v }},
 	{"BLOCKBUSTR_LOG_LEVEL", func(c *Config, v string) { c.Log.Level = v }},
 	{"BLOCKBUSTR_LOG_FORMAT", func(c *Config, v string) { c.Log.Format = v }},
 }
@@ -324,6 +331,13 @@ func (c *Config) Validate() error {
 	}
 	if c.Scan.ProbeWorkers < 0 || c.Scan.ProbeTimeout <= 0 || c.Scan.MissingGrace < 0 {
 		add("scan.probe_workers, scan.probe_timeout and scan.missing_grace must not be negative (probe_timeout > 0)")
+	}
+	if c.Debrid.RealDebridAPIKey != "" || c.Debrid.TorBoxAPIKey != "" {
+		if c.SecretKey == "" {
+			add("secret_key is required when a debrid API key is configured (32 bytes, hex or base64)")
+		} else if _, err := secret.ParseKey(c.SecretKey); err != nil {
+			add("secret_key must be 32 bytes, hex or base64 encoded")
+		}
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("invalid configuration: %s", strings.Join(errs, "; "))

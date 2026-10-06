@@ -3,9 +3,10 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P2.13 Manual matrix (needs you and the devices)
+- [ ] P3.2 `resolve/`: Source types (file, strm-url, debrid torrent+file, stremio stream) → URL; Redis `link:*` cache; jellybird URL mapping [§6 .strm]
 
 ## Next
+- P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
 - P0.3 leftovers (mark played/unplayed; TV/iOS/Kodi when available)
 
 ## Blocked / questions
@@ -101,18 +102,22 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 - [x] P2.11 UDP 7359 server discovery (Q3). `internal/discovery` answers "who is JellyfinServer?"/"who is EmbyServer?" with Jellyfin's ServerDiscoveryInfo; `server.discovery` (default on), compose publishes 7359/udp. Real UDP tests (queries, non-queries, external URL). Live: answered a 255.255.255.255 broadcast through rootless podman, but announces the container address until `BLOCKBUSTR_EXTERNAL_URL` is set (DESIGN §11 Q3)
   - Dev stack: `BLOCKBUSTR_EXTERNAL_URL` set to the Tailscale address (2026-10-06); discovery now announces it. Open: verify from a phone on the LAN
 - [x] P2.12 QuickConnect. `auth.QuickConnectInitiate/State/Authorize/Redeem` (Redis `qc:{secret}` + `qc:code:{code}`, 10 min, single use), handlers for Enabled (now true) / Initiate / Connect / Authorize / AuthenticateWithQuickConnect sharing the password login's result (`writeLogin`). Tests: captured exchanges replayed (shapes match Jellyfin, incl. no RemoteEndPoint in a QuickConnect login), full flow, single use, admin-only approval for others, error codes; round-trip 916 responses / 34 endpoints. Live: Enabled true, Initiate issues a code (DESIGN §3.2)
-- [ ] P2.13 Manual matrix: every MVP client does direct play, remux, transcode, seek, subtitle switching, audio track switching, resume across devices, `.strm` playback
+- [ ] P2.13 Manual matrix: every MVP client does direct play, remux, transcode, seek, subtitle switching, audio track switching, resume across devices, `.strm` playback *(mostly done 2026-10-06 — see ticks below and the deferred leftovers in Next)*
   - [x] Streamyfin (2026-10-06, user): subtitle burn-in (Little Fockers PGS, probed on first play), Continue Watching resume on the same video, Mortal Kombat II transcode, MF Ghost audio language switching
-  - [ ] Streamyfin: seek during a transcode, resume on another device, `.strm` direct play (Luca played earlier, P2.4b)
+  - [x] Streamyfin: seek during a transcode (MKII @2 Mbps cap → 1.84 Mbps h264 session, user-scrubbed), resume on another device (MKII position written by the Android picked up by Moonfin on iOS at 1116s), `.strm` direct play (Luca played earlier, P2.4b)
   - [x] Findroid home (2026-10-06, user): nothing loaded while `/Items/Suggestions` answered 404; loads after it was implemented, with no failed requests since
+  - [x] Moonfin for iOS 2.5.1 (not an MVP client — volunteered 2026-10-06): login, browse, MKII AV1→h264 QSV transcode at 4 and 2 Mbps (`/Moonfin/Ping` etc. 404s are harmless), backward scrub restarted the encode at the new `-ss`, forward scrub served instantly from the racing-ahead segments, clean stop with session cleanup
   - [ ] Findroid (playback list), Jellyfin Android, Infuse: the full list
+    - Findroid done server-side 2026-10-06: MF Ghost E01 direct play to 307s, audio switch 1→2 (eng), resume point saved, Little Fockers `.strm` played with PGS track 2 selected (paused 646s). PlaybackInfo answers `none` with all-false flags — identical to real Jellyfin's captured answers to Findroid; it builds `/Videos/{id}/stream` URLs itself. MKII transcode on Findroid is n.a.: ExoPlayer can't decode AV1 and its minimal profile gets no TranscodingUrl (from Jellyfin either); mpv external player would direct play. Pending: user confirms subs were visible and which player was used
   - [ ] QuickConnect from a second device
   - Seen in the logs meanwhile: Streamyfin's home called `/Items/Suggestions` (404 ×20; now implemented) and library tile images (library folders have no artwork; Jellyfin generates collages)
 
 **Exit:** all six MVP clients play, seek and resume local files and `.strm`.
 
 ## Phase 3 — Debrid and Stremio addons
-- [ ] P3.1 Port `provider/` (interface, realdebrid, torbox) + tests from jellybird; keys stored encrypted in `debrid_accounts`
+- [x] P3.1 Port `provider/` (interface, realdebrid, torbox) + tests from jellybird; keys stored encrypted in `debrid_accounts`
+  - Done 2026-10-06: jellybird's providers copied with only import paths and User-Agent changed (its tests pass unchanged); lint fixes only (switch, checked closes). `internal/secret` (AES-256-GCM), migration 00012, `bootstrapDebrid` seals configured keys on start (DESIGN §4). `BLOCKBUSTR_SECRET_KEY` passed through compose and in `.env.example`.
+  - Not yet live: no debrid key configured, so nothing calls a provider until P3.2/P3.4 use them
 - [ ] P3.2 `resolve/`: Source types (file, strm-url, debrid torrent+file, stremio stream) → URL; Redis `link:*` cache; jellybird URL mapping [§6 .strm]
 - [ ] P3.3 `stremio/` client: manifest, catalog (with extras), meta, stream, subtitles; timeouts; URL-as-secret handling [§7.1]
 - [ ] P3.4 Migrations + admin API for `stremio_addons` / `stremio_catalogs`

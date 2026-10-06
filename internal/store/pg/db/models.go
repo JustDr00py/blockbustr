@@ -27,6 +27,16 @@ type Chapter struct {
 	Name       string
 }
 
+type DebridAccount struct {
+	ID        uuid.UUID
+	Provider  string
+	ApiKeyEnc []byte
+	Enabled   bool
+	Priority  int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type Device struct {
 	ID           string
 	UserID       uuid.UUID

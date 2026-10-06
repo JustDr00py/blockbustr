@@ -30,6 +30,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/metadata"
 	"github.com/sysadmin/blockbustr/internal/metadata/tmdb"
 	"github.com/sysadmin/blockbustr/internal/resolve"
+	"github.com/sysadmin/blockbustr/internal/secret"
 	"github.com/sysadmin/blockbustr/internal/store/pg"
 	sqlcdb "github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/subtitles"
@@ -98,6 +99,9 @@ func run() error {
 	}
 	authSvc := auth.New(queries, rc, log)
 	if err := authSvc.Bootstrap(ctx, cfg.Server.AdminUsername, cfg.Server.AdminPassword); err != nil {
+		return err
+	}
+	if err := bootstrapDebrid(ctx, queries, cfg, log); err != nil {
 		return err
 	}
 	scanner := library.NewScanner(pool, rc, media.Prober{}, cfg.Scan, log)
@@ -202,6 +206,38 @@ func run() error {
 	}
 	if err := <-errc; err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("http server: %w", err)
+	}
+	return nil
+}
+
+// bootstrapDebrid upserts the configured debrid API keys, sealed with
+// AES-256-GCM under secret_key, into debrid_accounts (DESIGN §4). With no
+// key configured nothing is written; removing a key leaves the row in place.
+func bootstrapDebrid(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, log *slog.Logger) error {
+	accounts := map[string]string{
+		"realdebrid": cfg.Debrid.RealDebridAPIKey,
+		"torbox":     cfg.Debrid.TorBoxAPIKey,
+	}
+	var key []byte
+	for provider, apiKey := range accounts {
+		if apiKey == "" {
+			continue
+		}
+		if key == nil {
+			parsed, err := secret.ParseKey(cfg.SecretKey)
+			if err != nil {
+				return err
+			}
+			key = parsed
+		}
+		enc, err := secret.Seal(key, []byte(apiKey))
+		if err != nil {
+			return err
+		}
+		if err := q.UpsertDebridAccount(ctx, sqlcdb.UpsertDebridAccountParams{Provider: provider, ApiKeyEnc: enc}); err != nil {
+			return err
+		}
+		log.Info("debrid account stored", "provider", provider)
 	}
 	return nil
 }

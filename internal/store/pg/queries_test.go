@@ -251,3 +251,46 @@ func TestEnsureServerIDIsStable(t *testing.T) {
 		}
 	}
 }
+
+func TestDebridAccounts(t *testing.T) {
+	q, _ := newTestQueries(t)
+	ctx := t.Context()
+
+	enc1 := []byte("sealed-one")
+	enc2 := []byte("sealed-two")
+	if err := q.UpsertDebridAccount(ctx, db.UpsertDebridAccountParams{Provider: "realdebrid", ApiKeyEnc: enc1}); err != nil {
+		t.Fatal(err)
+	}
+	// A changed key re-seals (upsert), keeping one row per provider.
+	if err := q.UpsertDebridAccount(ctx, db.UpsertDebridAccountParams{Provider: "realdebrid", ApiKeyEnc: enc2}); err != nil {
+		t.Fatal(err)
+	}
+	if err := q.UpsertDebridAccount(ctx, db.UpsertDebridAccountParams{Provider: "torbox", ApiKeyEnc: enc1}); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := q.ListDebridAccounts(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("rows = %d, want 2", len(rows))
+	}
+	byProvider := map[string]db.ListDebridAccountsRow{}
+	for _, r := range rows {
+		byProvider[r.Provider] = r
+	}
+	if string(byProvider["realdebrid"].ApiKeyEnc) != "sealed-two" {
+		t.Errorf("realdebrid blob = %q, want the re-sealed one", byProvider["realdebrid"].ApiKeyEnc)
+	}
+	if !byProvider["torbox"].Enabled || byProvider["torbox"].ID == uuid.Nil {
+		t.Errorf("torbox row = %+v", byProvider["torbox"])
+	}
+
+	if err := q.DeleteDebridAccountByProvider(ctx, "torbox"); err != nil {
+		t.Fatal(err)
+	}
+	rows, err = q.ListDebridAccounts(ctx)
+	if err != nil || len(rows) != 1 || rows[0].Provider != "realdebrid" {
+		t.Fatalf("after delete: %v %v", rows, err)
+	}
+}
