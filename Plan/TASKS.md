@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P3.3 `stremio/` client: manifest, catalog (with extras), meta, stream, subtitles; timeouts; URL-as-secret handling [§7.1]
+- [ ] P3.4 Migrations + admin API for `stremio_addons` / `stremio_catalogs`
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -121,7 +121,8 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 - [x] P3.2 `resolve/`: Source types (file, strm-url, debrid torrent+file, stremio stream) → URL; Redis `link:*` cache; jellybird URL mapping [§6 .strm]
   - Done 2026-10-06 (DESIGN §6 .strm, §8.2): `resolve.Source` (File, URL, Debrid, Torrent→`ErrNotResolvable` until P3.8); debrid links via `FileLink`, cached for the provider's lifetime (5 min–24 h) with one call per burst (singleflight); jellybird targets resolved through blockbustr's own account, falling back to jellybird. Accounts opened at start (`loadProviders`). Live: Luca still streams (206 Matroska) through jellybird, as no debrid key is configured here.
   - Follow-up: the first-play probe (`library/remote.go`) still hands the `.strm` URL to ffprobe; route it through the resolver so it also skips jellybird
-- [ ] P3.3 `stremio/` client: manifest, catalog (with extras), meta, stream, subtitles; timeouts; URL-as-secret handling [§7.1]
+- [x] P3.3 `stremio/` client: manifest, catalog (with extras), meta, stream, subtitles; timeouts; URL-as-secret handling [§7.1]
+  - Done 2026-10-06 (DESIGN §7.1): `internal/stremio` client; errors name only the addon host; streams/metas cached; real Cinemeta/Torrentio fixtures; live test passed. Fixed along the way: Go re-normalising an escaped `/` or `&` in a search term.
 - [ ] P3.4 Migrations + admin API for `stremio_addons` / `stremio_catalogs`
 - [ ] P3.5 Catalog sync job → `stremio` libraries; series episodes from `meta.videos`; TMDB enrichment [§7.2]
 - [ ] P3.6 Stream collection + ranking (score function with unit tests) [§7.3]

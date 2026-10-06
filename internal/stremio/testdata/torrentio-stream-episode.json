@@ -1,0 +1,47 @@
+{
+ "streams": [
+  {
+   "name": "Torrentio\n4k HDR",
+   "title": "Game of Thrones (2011) S01 (2160p x265 10bit HDR UHD BD Atmos) [Prof]\nS01E02 - The Kingsroad.mkv\n👤 23 💾 15.98 GB ⚙️ 1337x",
+   "infoHash": "905d130c5b469267c96ee66ee4d2922a25877718",
+   "fileIdx": 1,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|905d130c5b469267c96ee66ee4d2922a25877718",
+    "filename": "S01E02 - The Kingsroad.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k HDR",
+   "title": "Game of Thrones - Integrale MULTI HDTV 2160p x265 2011-2019\nGame of Thrones S01 (2011) MULTi VFI 2160p 10bit 4KLight HDR BluRay TrueHD Atmos 7.1 x265-QTZ/Game of Thrones S01E02 MULTi VFI 2160p 10bit 4KLight HDR BluRay TrueHD Atmos 7.1 x265-QTZ.mkv\n👤 17 💾 4.25 GB ⚙️ Torrent9\nMulti Audio / 🇫🇷",
+   "infoHash": "106e91b93321f9c8aeeeb32ea6c92317327e7b3b",
+   "fileIdx": 1,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|106e91b93321f9c8aeeeb32ea6c92317327e7b3b",
+    "filename": "Game of Thrones S01E02 MULTi VFI 2160p 10bit 4KLight HDR BluRay TrueHD Atmos 7.1 x265-QTZ.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k DV | HDR",
+   "title": "Game.of.Thrones.S01.2160p.DoVi.HDR.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-PB69\nGame.of.Thrones.S01E02.2160p.DoVi.HDR.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-PB69.mkv\n👤 8 💾 29.2 GB ⚙️ TorrentGalaxy",
+   "infoHash": "f33ce65b218f7c51d65a69d90b09e46c2381c8ef",
+   "fileIdx": 1,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|f33ce65b218f7c51d65a69d90b09e46c2381c8ef",
+    "filename": "Game.of.Thrones.S01E02.2160p.DoVi.HDR.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-PB69.mkv"
+   }
+  },
+  {
+   "name": "Torrentio\n4k DV | HDR",
+   "title": "Game of Thrones S01E02 The Kingsroad REPACK 2160p MAX WEB-DL TrueHD 7 1 Atm\n👤 6 💾 10.56 GB ⚙️ ThePirateBay",
+   "infoHash": "81410d6607df2dcf0551744e0ae557be1b48af86",
+   "fileIdx": 0,
+   "behaviorHints": {
+    "bingeGroup": "torrentio|4k|DV|HDR|Kitsune",
+    "filename": "Game of Thrones S01E02 The Kingsroad REPACK 2160p MAX WEB-DL TrueHD 7 1 Atmos DV HDR H 265-Kitsune.mkv"
+   }
+  }
+ ],
+ "cacheMaxAge": 3600,
+ "staleRevalidate": 14400,
+ "staleError": 604800
+}

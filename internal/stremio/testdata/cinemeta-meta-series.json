@@ -1,0 +1,302 @@
+{
+ "meta": {
+  "awards": "Won 59 Primetime Emmys. 396 wins & 655 nominations total",
+  "cast": [
+   "Emilia Clarke",
+   "Peter Dinklage",
+   "Kit Harington"
+  ],
+  "country": "United States, United Kingdom",
+  "description": "Nine noble families fight for control over the lands of Westeros, while an ancient enemy returns after being dormant for millennia.",
+  "director": null,
+  "dvdRelease": null,
+  "genre": [
+   "Action",
+   "Adventure",
+   "Drama"
+  ],
+  "imdbRating": "9.2",
+  "imdb_id": "tt0944947",
+  "name": "Game of Thrones",
+  "popularity": 8.204076666666667,
+  "poster": "https://images.metahub.space/poster/small/tt0944947/img",
+  "released": "2011-04-17T00:00:00.000Z",
+  "runtime": "57 min",
+  "status": "Ended",
+  "tvdb_id": 121361,
+  "type": "series",
+  "writer": [
+   "David Benioff",
+   "D.B. Weiss"
+  ],
+  "year": "2011–2019",
+  "background": "https://images.metahub.space/background/medium/tt0944947/img",
+  "logo": "https://images.metahub.space/logo/medium/tt0944947/img",
+  "popularities": {
+   "PXS_TEST": 0,
+   "PXS": 4,
+   "SCM": 88,
+   "EXMD": 1,
+   "ALLIANCE": 88,
+   "EJD": 49,
+   "moviedb": 245.9723,
+   "trakt": 903,
+   "stremio": 8.204076666666667,
+   "stremio_lib": 0.005
+  },
+  "moviedb_id": 1399,
+  "slug": "series/game-of-thrones-0944947",
+  "trailers": [
+   {
+    "source": "KPLWWIOCOOQ",
+    "type": "Trailer"
+   },
+   {
+    "source": "BpJYNVhGf1s",
+    "type": "Trailer"
+   }
+  ],
+  "id": "tt0944947",
+  "genres": [
+   "Action",
+   "Adventure",
+   "Drama"
+  ],
+  "releaseInfo": "2011–2019",
+  "videos": [
+   {
+    "name": "Inside Game of Thrones",
+    "season": 0,
+    "number": 1,
+    "firstAired": "2010-12-06T05:00:00.000Z",
+    "tvdb_id": 3226241,
+    "rating": "0",
+    "overview": "A short look into the film-making process for the production Game of Thrones",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/1/w780.jpg",
+    "id": "tt0944947:0:1",
+    "released": "2010-12-06T05:00:00.000Z",
+    "episode": 1,
+    "description": "A short look into the film-making process for the production Game of Thrones"
+   },
+   {
+    "name": "15-Minute Preview",
+    "season": 0,
+    "number": 2,
+    "firstAired": "2011-04-04T05:00:00.000Z",
+    "tvdb_id": 4045941,
+    "rating": "0",
+    "overview": "An approximately 15-minute preview of the first episode of Game of Thrones.",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/2/w780.jpg",
+    "id": "tt0944947:0:2",
+    "released": "2011-04-04T05:00:00.000Z",
+    "episode": 2,
+    "description": "An approximately 15-minute preview of the first episode of Game of Thrones."
+   },
+   {
+    "name": "Making Game of Thrones",
+    "season": 0,
+    "number": 3,
+    "firstAired": "2011-04-08T05:00:00.000Z",
+    "tvdb_id": 4073401,
+    "rating": "0",
+    "overview": "An exclusive 30-minute feature including never-before-seen footage from the set and interviews from the cast and crew",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/3/w780.jpg",
+    "id": "tt0944947:0:3",
+    "released": "2011-04-08T05:00:00.000Z",
+    "episode": 3,
+    "description": "An exclusive 30-minute feature including never-before-seen footage from the set and interviews from the cast and crew"
+   },
+   {
+    "name": "El Juego Comienza",
+    "season": 0,
+    "number": 4,
+    "firstAired": "2011-04-11T05:00:00.000Z",
+    "tvdb_id": 4082317,
+    "rating": "0",
+    "overview": "A spanish \"Canal +`\" production with interviews to some famous spanish movie directors like Alex de La Iglesia and extracts from last special \"Making Game Of Thrones\"",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/4/w780.jpg",
+    "id": "tt0944947:0:4",
+    "released": "2011-04-11T05:00:00.000Z",
+    "episode": 4,
+    "description": "A spanish \"Canal +`\" production with interviews to some famous spanish movie directors like Alex de La Iglesia and extracts from last special \"Making Game Of Thrones\""
+   },
+   {
+    "name": "2011 Comic Con Panel",
+    "season": 0,
+    "number": 5,
+    "firstAired": "2011-07-22T05:00:00.000Z",
+    "tvdb_id": 4138149,
+    "rating": "0",
+    "overview": "",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/5/w780.jpg",
+    "id": "tt0944947:0:5",
+    "released": "2011-07-22T05:00:00.000Z",
+    "episode": 5
+   },
+   {
+    "name": "You Win or You Die",
+    "season": 0,
+    "number": 6,
+    "firstAired": "2012-03-25T05:00:00.000Z",
+    "tvdb_id": 4292422,
+    "rating": "0",
+    "overview": "A prequel to Game of Thrones Season 2 which recaps on the first season and gives insight into what's to come.",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/6/w780.jpg",
+    "id": "tt0944947:0:6",
+    "released": "2012-03-25T05:00:00.000Z",
+    "episode": 6,
+    "description": "A prequel to Game of Thrones Season 2 which recaps on the first season and gives insight into what's to come."
+   },
+   {
+    "name": "A Gathering Storm",
+    "season": 0,
+    "number": 7,
+    "firstAired": "2013-03-09T05:00:00.000Z",
+    "tvdb_id": 4517457,
+    "rating": "0",
+    "overview": "A prequel to Game of Thrones Season 3 which recaps on the first and second season and gives insight into what's to come.",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/7/w780.jpg",
+    "id": "tt0944947:0:7",
+    "released": "2013-03-09T05:00:00.000Z",
+    "episode": 7,
+    "description": "A prequel to Game of Thrones Season 3 which recaps on the first and second season and gives insight into what's to come."
+   },
+   {
+    "name": "Politics of  Marriage",
+    "season": 0,
+    "number": 8,
+    "firstAired": "2013-05-20T05:00:00.000Z",
+    "tvdb_id": 4576208,
+    "rating": "0",
+    "overview": "Love and marriage? They don't go together so well in 'Game of Thrones' where the concept of matrimony is all about making power plays and political alliances. Cast and crew members along with author George R.R. Martin take a fascinating look at this ancient institution and its place in the hit HBO series.",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/8/w780.jpg",
+    "id": "tt0944947:0:8",
+    "released": "2013-05-20T05:00:00.000Z",
+    "episode": 8,
+    "description": "Love and marriage? They don't go together so well in 'Game of Thrones' where the concept of matrimony is all about making power plays and political alliances. Cast and crew members along with author George R.R. Martin take a fascinating look at this ancient institution and its place in the hit HBO series."
+   },
+   {
+    "name": "Ice and Fire: A Foreshadowing",
+    "season": 0,
+    "number": 9,
+    "firstAired": "2014-02-10T05:00:00.000Z",
+    "tvdb_id": 4779102,
+    "rating": "0",
+    "overview": "Take a look back and a look forward to the fourth season of the hit HBO series, the show features clips from upcoming episodes, behind the scenes footage, interviews with talent, and cast members' answers to questions posed by fans.",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/9/w780.jpg",
+    "id": "tt0944947:0:9",
+    "released": "2014-02-10T05:00:00.000Z",
+    "episode": 9,
+    "description": "Take a look back and a look forward to the fourth season of the hit HBO series, the show features clips from upcoming episodes, behind the scenes footage, interviews with talent, and cast members' answers to questions posed by fans."
+   },
+   {
+    "name": "The Politics of Power: A Look Back at Season 3",
+    "season": 0,
+    "number": 10,
+    "firstAired": "2014-03-13T05:00:00.000Z",
+    "tvdb_id": 4824480,
+    "rating": "0",
+    "overview": "Relive every thrilling, dramatic and tragic highlight from Season 3 of \"Game of Thrones\" in this comprehensive featurette. From Daenerys building a slave army to the infamous Red Wedding, not a detail is missed as recalled by the stars of the hit HBO series.",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/10/w780.jpg",
+    "id": "tt0944947:0:10",
+    "released": "2014-03-13T05:00:00.000Z",
+    "episode": 10,
+    "description": "Relive every thrilling, dramatic and tragic highlight from Season 3 of \"Game of Thrones\" in this comprehensive featurette. From Daenerys building a slave army to the infamous Red Wedding, not a detail is missed as recalled by the stars of the hit HBO series."
+   },
+   {
+    "name": "A Day in the Life",
+    "season": 0,
+    "number": 11,
+    "firstAired": "2015-02-09T05:00:00.000Z",
+    "tvdb_id": 5124007,
+    "rating": "0",
+    "overview": "What does it take to put together 'Game of Thrones'? Spend a day on the set with the people who make it happen.",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/11/w780.jpg",
+    "id": "tt0944947:0:11",
+    "released": "2015-02-09T05:00:00.000Z",
+    "episode": 11,
+    "description": "What does it take to put together 'Game of Thrones'? Spend a day on the set with the people who make it happen."
+   },
+   {
+    "name": "The Story So Far (2015)",
+    "season": 0,
+    "number": 12,
+    "firstAired": "2015-03-17T05:00:00.000Z",
+    "tvdb_id": 5161729,
+    "rating": "0",
+    "overview": "Ahead of the eagerly-anticipated fifth season, we bring you up tp speed with the events of the epic fantasy drama to date. \r\n\r\nAnd to help the uninitiated ease into the wild world of Westeros, here's a beginner's guide to the fantasy epic.",
+    "thumbnail": "https://episodes.metahub.space/tt0944947/0/12/w780.jpg",
+    "id": "tt0944947:0:12",
+    "released": "2015-03-17T05:00:00.000Z",
+    "episode": 12,
+    "description": "Ahead of the eagerly-anticipated fifth season, we bring you up tp speed with the events of the epic fantasy drama to date. \r\n\r\nAnd to help the uninitiated ease into the wild world of Westeros, here's a beginner's guide to the fantasy epic."
+   }
+  ],
+  "trailerStreams": [
+   {
+    "title": "Game of Thrones",
+    "ytId": "KPLWWIOCOOQ"
+   },
+   {
+    "title": "Game of Thrones",
+    "ytId": "BpJYNVhGf1s"
+   }
+  ],
+  "links": [
+   {
+    "name": "9.2",
+    "category": "imdb",
+    "url": "https://imdb.com/title/tt0944947"
+   },
+   {
+    "name": "Game of Thrones",
+    "category": "share",
+    "url": "https://www.strem.io/s/series/game-of-thrones-0944947"
+   },
+   {
+    "name": "Action",
+    "category": "Genres",
+    "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=Action"
+   },
+   {
+    "name": "Adventure",
+    "category": "Genres",
+    "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=Adventure"
+   },
+   {
+    "name": "Drama",
+    "category": "Genres",
+    "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/series/top?genre=Drama"
+   },
+   {
+    "name": "Emilia Clarke",
+    "category": "Cast",
+    "url": "stremio:///search?search=Emilia%20Clarke"
+   },
+   {
+    "name": "Peter Dinklage",
+    "category": "Cast",
+    "url": "stremio:///search?search=Peter%20Dinklage"
+   },
+   {
+    "name": "Kit Harington",
+    "category": "Cast",
+    "url": "stremio:///search?search=Kit%20Harington"
+   },
+   {
+    "name": "David Benioff",
+    "category": "Writers",
+    "url": "stremio:///search?search=David%20Benioff"
+   },
+   {
+    "name": "D.B. Weiss",
+    "category": "Writers",
+    "url": "stremio:///search?search=D.B.%20Weiss"
+   }
+  ],
+  "behaviorHints": {
+   "defaultVideoId": null,
+   "hasScheduledVideos": true
+  }
+ }
+}

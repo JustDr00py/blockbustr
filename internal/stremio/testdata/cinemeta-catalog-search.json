@@ -1,0 +1,49 @@
+{
+ "query": "the matrix",
+ "rank": 33.125,
+ "cacheMaxAge": 86400,
+ "metas": [
+  {
+   "id": "tt0133093",
+   "imdb_id": "tt0133093",
+   "type": "movie",
+   "name": "The Matrix",
+   "poster": "https://m.media-amazon.com/images/M/MV5BN2NmN2VhMTQtMDNiOS00NDlhLTliMjgtODE2ZTY0ODQyNDRhXkEyXkFqcGc@._V1_SX250.jpg",
+   "background": "https://images.metahub.space/background/medium/tt0133093/img",
+   "releaseInfo": "1999",
+   "links": [],
+   "behaviorHints": {
+    "defaultVideoId": "tt0133093",
+    "hasScheduledVideos": false
+   }
+  },
+  {
+   "id": "tt0234215",
+   "imdb_id": "tt0234215",
+   "type": "movie",
+   "name": "The Matrix Reloaded",
+   "poster": "https://m.media-amazon.com/images/M/MV5BNjAxYjkxNjktYTU0YS00NjFhLWIyMDEtMzEzMTJjMzRkMzQ1XkEyXkFqcGc@._V1_SX250.jpg",
+   "background": "https://images.metahub.space/background/medium/tt0234215/img",
+   "releaseInfo": "2003",
+   "links": [],
+   "behaviorHints": {
+    "defaultVideoId": "tt0234215",
+    "hasScheduledVideos": false
+   }
+  },
+  {
+   "id": "tt10838180",
+   "imdb_id": "tt10838180",
+   "type": "movie",
+   "name": "The Matrix Resurrections",
+   "poster": "https://m.media-amazon.com/images/M/MV5BMDMyNDIzYzMtZTMyMy00NjUyLWI3Y2MtYzYzOGE1NzQ1MTBiXkEyXkFqcGc@._V1_SX250.jpg",
+   "background": "https://images.metahub.space/background/medium/tt10838180/img",
+   "releaseInfo": "2021",
+   "links": [],
+   "behaviorHints": {
+    "defaultVideoId": "tt10838180",
+    "hasScheduledVideos": false
+   }
+  }
+ ]
+}

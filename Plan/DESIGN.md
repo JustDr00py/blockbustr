@@ -409,6 +409,13 @@ Redis is a **cache and coordination layer only**. Everything has to be rebuildab
 - `GET {base}/stream/{type}/{id}.json` → `{streams:[{url | infoHash+fileIdx | externalUrl, name, title, behaviorHints:{bingeGroup, filename, videoSize}}]}`. Series ids look like `tt1234567:1:2`.
 - `GET {base}/subtitles/{type}/{id}.json` → `{subtitles:[{url, lang}]}`.
 - Configured addons (Torrentio, Comet, …) embed their config in the base URL. Treat the whole URL as a secret.
+- **Implemented (P3.3, `internal/stremio`):**
+  - **Addon URL:** `BaseURL` accepts what users paste (`…/manifest.json`, `stremio://…`) and keeps the base. Errors name only the scheme and host (`Redact`); cache keys use `AddonKey` (16 hex of the base's sha256), so a changed configuration is a different addon.
+  - **Requests:** 6 s each (`DefaultTimeout`, or the caller's earlier deadline), 16 MB body cap, `User-Agent: blockbustr`. Paths are sent exactly as encoded: extras are `name=value` joined by `&`, values escaped like `encodeURIComponent` (space `%20`). Go would otherwise turn an escaped `/` or `&` in a search term into a separator.
+  - **Caching:** streams for 30 min and metas for 24 h under `stremio:streams|meta:{addonKey}:{type}:{id}`. An empty stream list is cached too. Errors are never cached.
+  - **Manifest:** `resources` may be bare names or objects narrowing `types`/`idPrefixes` (Torrentio uses objects). `Supports(resource, type, id)` applies that. `CatalogDef.Accepts`/`Requires` read `extra` and the legacy `extraSupported`/`extraRequired`.
+  - **Real shapes (Cinemeta, Torrentio, 2026-10-06):** numbers where strings are documented (`moviedb_id`, sometimes `imdbRating`, read through `Text`), a null `director`, episodes named by `name` with both `episode` and legacy `number`, and stream details in `title` (newer addons use `description`; `Details()` picks). An infoHash is lower-cased. `Playable()` is a `url` or an `infoHash`; `externalUrl`/`ytId` aren't.
+  - **Tests:** real trimmed responses in `internal/stremio/testdata`; a live test against Cinemeta and Torrentio runs with `BLOCKBUSTR_LIVE_STREMIO=1` (passed 2026-10-06).
 
 ### 7.2 Catalogs as libraries
 - Each enabled `stremio_catalogs` row maps to a `stremio` library (or a BoxSet inside one).
