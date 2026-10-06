@@ -215,6 +215,27 @@ type ServerSetting struct {
 	UpdatedAt time.Time
 }
 
+type StremioAddon struct {
+	ID            uuid.UUID
+	UrlEnc        []byte
+	UrlSha        []byte
+	Host          string
+	Manifest      json.RawMessage
+	Enabled       bool
+	Priority      int32
+	LastFetchedAt time.Time
+	CreatedAt     time.Time
+}
+
+type StremioCatalog struct {
+	AddonID     uuid.UUID
+	CatalogType string
+	CatalogID   string
+	Name        string
+	LibraryID   *uuid.UUID
+	Enabled     bool
+}
+
 type Studio struct {
 	ID   uuid.UUID
 	Name string

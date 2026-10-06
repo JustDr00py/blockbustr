@@ -36,6 +36,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/secret"
 	"github.com/sysadmin/blockbustr/internal/store/pg"
 	sqlcdb "github.com/sysadmin/blockbustr/internal/store/pg/db"
+	"github.com/sysadmin/blockbustr/internal/stremio"
 	"github.com/sysadmin/blockbustr/internal/subtitles"
 	"github.com/sysadmin/blockbustr/internal/transcode"
 )
@@ -152,12 +153,18 @@ func run() error {
 	}()
 
 	router := jfapi.NewRouter(log, jfapi.Options{LegacyAuth: cfg.Compat.LegacyAuth})
+	addons := &stremio.Registry{Pool: pool, Client: &stremio.Client{Cache: rc}}
+	if cfg.SecretKey != "" {
+		if addons.Key, err = secret.ParseKey(cfg.SecretKey); err != nil {
+			log.Warn("secret_key is invalid; Stremio addons can't be added or used", "err", err)
+		}
+	}
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
 		Resolver: &resolve.Resolver{Cache: rc, Providers: debrid, Log: log}, Probe: scanner,
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
-		Events:      bus, Hub: hub,
+		Events:      bus, Hub: hub, Addons: addons,
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P3.4 Migrations + admin API for `stremio_addons` / `stremio_catalogs`
+- [ ] P3.5 Catalog sync job → `stremio` libraries; series episodes from `meta.videos`; TMDB enrichment [§7.2]
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -123,7 +123,9 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
   - Follow-up: the first-play probe (`library/remote.go`) still hands the `.strm` URL to ffprobe; route it through the resolver so it also skips jellybird
 - [x] P3.3 `stremio/` client: manifest, catalog (with extras), meta, stream, subtitles; timeouts; URL-as-secret handling [§7.1]
   - Done 2026-10-06 (DESIGN §7.1): `internal/stremio` client; errors name only the addon host; streams/metas cached; real Cinemeta/Torrentio fixtures; live test passed. Fixed along the way: Go re-normalising an escaped `/` or `&` in a search term.
-- [ ] P3.4 Migrations + admin API for `stremio_addons` / `stremio_catalogs`
+- [x] P3.4 Migrations + admin API for `stremio_addons` / `stremio_catalogs`
+  - Done 2026-10-06 (DESIGN §4, §7.1b): migration 00013 (URL sealed like debrid keys, not plain `manifest_url`); `stremio.Registry`; `/blockbustr/addons` admin API (add, list, get, update, delete, refresh, catalog on/off). Adding addons needs `BLOCKBUSTR_SECRET_KEY` (503 otherwise). Live: migration applied, route mounted.
+  - Follow-up: no UI yet (P4.3); until then addons are added with curl and an admin token
 - [ ] P3.5 Catalog sync job → `stremio` libraries; series episodes from `meta.videos`; TMDB enrichment [§7.2]
 - [ ] P3.6 Stream collection + ranking (score function with unit tests) [§7.3]
 - [ ] P3.7 Multiple MediaSources per item for the top-N streams, with readable `Name` labels

@@ -19,6 +19,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
+	"github.com/sysadmin/blockbustr/internal/stremio"
 	"github.com/sysadmin/blockbustr/internal/subtitles"
 )
 
@@ -57,6 +58,9 @@ type Deps struct {
 	Events *events.Bus
 	// Hub serves /socket; nil leaves the route out.
 	Hub *Hub
+	// Addons is the Stremio addon registry behind /blockbustr/addons; nil
+	// leaves those routes out.
+	Addons *stremio.Registry
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.
@@ -94,6 +98,7 @@ func Register(rt *jfapi.Router, d Deps) {
 	a.registerSubtitles(rt)
 	a.registerSessions(rt)
 	a.registerSocket(rt)
+	a.registerAddons(rt)
 }
 
 func ptr[T any](v T) *T { return &v }
