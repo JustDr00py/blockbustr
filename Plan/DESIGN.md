@@ -207,6 +207,7 @@ Original sketch:
 - **`/Shows/{id}/Seasons`:** the series' seasons by `IndexNumber` (ParentId + Season type via `pg.ItemQuery`).
 - **`/Shows/{id}/Episodes`:** aired order (`parent_index_number, index_number`), optionally narrowed to `seasonId`. **`adjacentTo`** returns the episode before, the named one and the one after (as many as exist), capped by `limit` — what clients ask around autoplay (captured: E1 → `[E1, E2]`, total 2).
 - **`/Items/{id}/Similar`** (`pg.SimilarItemIDs`): **every** other Movie/Series (Jellyfin also lists items that share nothing), scored 3 per shared genre + 2 per studio + 1 per person, ties broken by the closer production year then sort name. `ProviderIds` is always sent on similar items, whatever `fields` says. Episodes/seasons get an empty result.
+- **`/Items/Suggestions`** (+ legacy `/Users/{id}/Suggestions`): **random** items, recursive, of the `type` list (Findroid sends `Movie,Series`), narrowed by `mediaType` (Streamyfin: `Video`, so no Series), paged like `/Items`. Every entry uses the **full item-detail field set** (media sources, streams, people…), as Jellyfin 12.1.0 sends. All 29 captures return Jellyfin's items and shapes; Findroid's early ones are replayed against the `.strm` files as unprobed as they were then. *(Added after P2.12: Streamyfin's home called it on every load.)*
 - **Not yet:** Redis caching of the §5 `q:latest`/`q:nextup` keys (cheap queries so far), `excludeActiveSessions` (P2.9), `enableRewatching`.
 
 ### 3.9 Browse aux: names, filters, search hints (implemented, P1.22)

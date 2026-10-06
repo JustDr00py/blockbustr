@@ -29,6 +29,32 @@ func (a *api) registerItems(rt *jfapi.Router) {
 	rt.Get("/Users/{userId}/Items", a.requireUser(a.getItems)) // legacy route
 	rt.Get("/Items/Latest", a.requireUser(a.getLatestMedia))
 	rt.Get("/UserItems/Resume", a.requireUser(a.getResume))
+	rt.Get("/Items/Suggestions", a.requireUser(a.getSuggestions))
+	rt.Get("/Users/{userId}/Suggestions", a.requireUser(a.getSuggestions)) // legacy route
+}
+
+// getSuggestions serves /Items/Suggestions (Findroid's and Streamyfin's
+// home row): random items of the `type` list (Findroid: Movie,Series),
+// narrowed by `mediaType` (Streamyfin: Video), with the full detail field
+// set Jellyfin 12.1.0 sends there.
+func (a *api) getSuggestions(w http.ResponseWriter, r *http.Request, s auth.Session) {
+	user, ok := queryUser(r, s)
+	if !ok {
+		errorText(w, http.StatusForbidden)
+		return
+	}
+	q := jfapi.QueryOf(r)
+	iq := pg.ItemQuery{
+		UserID: user, Recursive: true, IncludeTypes: q.List("type"), MediaTypes: q.List("mediaType"),
+		SortBy: []pg.SortKey{{By: "Random"}}, Count: true,
+	}
+	pageParams(q, &iq)
+	res, err := pg.QueryItems(r.Context(), a.DB, iq)
+	if err != nil {
+		a.internalError(w, r, err)
+		return
+	}
+	a.writeItemPage(w, r, user, res.Items, detailOptions(), res.Total, iq.StartIndex)
 }
 
 // queryUser is the user a request acts for: the session's, or for an admin,
