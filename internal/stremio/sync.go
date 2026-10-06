@@ -116,7 +116,7 @@ func (s *Syncer) SyncAll(ctx context.Context) error {
 	if err != nil || len(rows) == 0 {
 		return err
 	}
-	addons, order, err := s.openAddons(ctx)
+	addons, order, err := s.Registry.openAddons(ctx, s.Log)
 	if err != nil {
 		return err
 	}
@@ -139,34 +139,6 @@ func (s *Syncer) SyncAll(ctx context.Context) error {
 		}
 	}
 	return errors.Join(errs...)
-}
-
-// openAddons opens every enabled addon, keyed by id and in priority order.
-func (s *Syncer) openAddons(ctx context.Context) (map[uuid.UUID]addonInfo, []addonInfo, error) {
-	rows, err := s.Registry.q().ListStremioAddons(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	byID := map[uuid.UUID]addonInfo{}
-	var order []addonInfo
-	for _, row := range rows {
-		if !row.Enabled {
-			continue
-		}
-		base, err := s.Registry.Base(row)
-		if err != nil {
-			s.Log.Warn("stremio addon can't be opened", "host", row.Host, "err", err)
-			continue
-		}
-		info := addonInfo{row: row, base: base}
-		if err := json.Unmarshal(row.Manifest, &info.manifest); err != nil {
-			s.Log.Warn("stremio addon manifest unreadable", "host", row.Host, "err", err)
-			continue
-		}
-		byID[row.ID] = info
-		order = append(order, info)
-	}
-	return byID, order, nil
 }
 
 // metaSources lists the addons to ask for a series' episodes: the catalog's

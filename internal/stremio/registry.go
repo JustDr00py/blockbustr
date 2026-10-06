@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -283,4 +284,33 @@ func (r *Registry) view(ctx context.Context, row db.StremioAddon) (Addon, error)
 		})
 	}
 	return a, nil
+}
+
+// openAddons opens every enabled addon, keyed by id and in priority order.
+// An addon that can't be opened is logged and left out.
+func (r *Registry) openAddons(ctx context.Context, log *slog.Logger) (map[uuid.UUID]addonInfo, []addonInfo, error) {
+	rows, err := r.q().ListStremioAddons(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	byID := map[uuid.UUID]addonInfo{}
+	var order []addonInfo
+	for _, row := range rows {
+		if !row.Enabled {
+			continue
+		}
+		base, err := r.Base(row)
+		if err != nil {
+			log.Warn("stremio addon can't be opened", "host", row.Host, "err", err)
+			continue
+		}
+		info := addonInfo{row: row, base: base}
+		if err := json.Unmarshal(row.Manifest, &info.manifest); err != nil {
+			log.Warn("stremio addon manifest unreadable", "host", row.Host, "err", err)
+			continue
+		}
+		byID[row.ID] = info
+		order = append(order, info)
+	}
+	return byID, order, nil
 }

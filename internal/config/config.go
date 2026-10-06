@@ -45,6 +45,16 @@ type Config struct {
 type Stremio struct {
 	SyncInterval time.Duration `yaml:"sync_interval"` // re-sync enabled catalogs; "0s" syncs only at start and on changes
 	CatalogPages int           `yaml:"catalog_pages"` // pages fetched per catalog (Cinemeta pages hold 50 titles)
+	Streams      Streams       `yaml:"streams"`
+}
+
+// Streams configures stream collection and ranking at playback (DESIGN §7.3).
+type Streams struct {
+	Timeout     time.Duration `yaml:"timeout"`      // per addon
+	Top         int           `yaml:"top"`          // MediaSources offered per title
+	Languages   []string      `yaml:"languages"`    // preferred audio, ISO 639-1 ("en", "de")
+	AllowGroups []string      `yaml:"allow_groups"` // release groups ranked higher
+	DenyGroups  []string      `yaml:"deny_groups"`  // release groups never offered
 }
 
 // Library is one media library (DESIGN §6). Libraries are matched to the
@@ -193,7 +203,10 @@ func Defaults() Config {
 		Transcode: Transcode{HWAccel: "auto", SegmentSeconds: 3, MaxSessions: 4},
 		Metadata:  Metadata{Language: "en-US"},
 		Log:       Log{Level: "info", Format: "text"},
-		Stremio:   Stremio{SyncInterval: 6 * time.Hour, CatalogPages: 2},
+		Stremio: Stremio{
+			SyncInterval: 6 * time.Hour, CatalogPages: 2,
+			Streams: Streams{Timeout: 6 * time.Second, Top: 3},
+		},
 		Scan: Scan{
 			OnStart: true, Interval: 6 * time.Hour, ProbeTimeout: 2 * time.Minute, MissingGrace: 24 * time.Hour,
 			Watch: true, WatchDelay: 30 * time.Second,
@@ -346,6 +359,17 @@ func (c *Config) Validate() error {
 	}
 	if c.Stremio.CatalogPages < 1 || c.Stremio.CatalogPages > 20 {
 		add("stremio.catalog_pages must be between 1 and 20")
+	}
+	if c.Stremio.Streams.Timeout < time.Second || c.Stremio.Streams.Timeout > 30*time.Second {
+		add("stremio.streams.timeout must be between 1s and 30s")
+	}
+	if c.Stremio.Streams.Top < 1 || c.Stremio.Streams.Top > 10 {
+		add("stremio.streams.top must be between 1 and 10")
+	}
+	for _, l := range c.Stremio.Streams.Languages {
+		if len(l) != 2 {
+			add("stremio.streams.languages must be ISO 639-1 codes (\"en\"), got %q", l)
+		}
 	}
 	if c.Debrid.RealDebridAPIKey != "" || c.Debrid.TorBoxAPIKey != "" {
 		if c.SecretKey == "" {

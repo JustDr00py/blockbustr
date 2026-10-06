@@ -448,6 +448,23 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
 3. Take the top N (default 3) → one `MediaSource` each, with `Name` = a short label (`2160p HDR • 18.2 GB • RD+`).
 4. Resolve when the stream is requested, not at PlaybackInfo: `url` is used directly. `infoHash` goes through `provider.AddMagnet` → select file (`fileIdx`, or the largest video) → unrestrict → CDN URL, cached in `link:*`.
 5. Not cached on any debrid: return the source with `Name` suffixed `• not cached` and start the debrid download in the background. Never block PlaybackInfo for more than ~8s.
+- **Implemented (P3.6, `stremio.Collector` and `stremio.Rank`):**
+  - **Collection:** every enabled addon whose manifest serves `stream` for the type and id prefix is asked in parallel, with `stremio.streams.timeout` (6 s) each. A slow or failing addon is logged by host and left out. Offers keep the addons' priority order. Enabled debrid accounts are then asked about the torrents' hashes (`InstantCheck`, 2 s budget, failures ignored). Real-Debrid no longer offers that check, so for RD the addon's own markers carry it.
+  - **Labels (`Parse`):** best effort from the name, details and filename. Height (`2160p`…, or `4k`/`UHD`), HDR, Dolby Vision, codec (hevc/av1/vp9/h264), size (`videoSize`, or `💾 15.98 GB`), seeders (`👤`), the release group (`…-GROUP[.ext]`, `- GROUP`, minus a trailing `[TGx]`), languages from Torrentio's flags plus `multi`, the cached markers `[RD+]`/`⚡`, the uncached marker `[RD download]`, CAM/TS/screener (release name only), and remux. A direct `url` counts as cached.
+  - **Score:**
+    - +1000 when cached;
+    - height 2160 = 400, 1080 = 300, 720 = 200, 576 = 120, 480 = 100, unknown = 150;
+    - −250 when the height is above the client's cap;
+    - −150 for HEVC or AV1 the client can't decode;
+    - −50 for HDR/DV on an SDR client;
+    - −200 when size ÷ runtime is over the bitrate cap;
+    - +100 for an allowed group;
+    - language +80 for a match, +40 for multi, −300 for a miss (an unflagged release counts as English; no preference is neutral);
+    - −2000 for CAM;
+    - up to +10 for seeders, so they only break ties.
+    - A denied group is never offered.
+  - **Rank:** only playable streams (`url` or `infoHash`). Duplicates by infoHash+fileIdx or URL keep the first copy, from the higher-priority addon. The sort is stable, so equal scores keep addon order.
+  - **Config:** `stremio.streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] }`. The client side (`Prefs`: height and bitrate caps, HEVC/AV1/HDR support, runtime) comes from the DeviceProfile in P3.7.
 
 ### 7.4 In-client search and discovery (core feature)
 Every captured client searches through `GET /Items?searchTerm=…&recursive=true` (Jellyfin Android sends three in parallel, split by `includeItemTypes`/`excludeItemTypes`/`mediaTypes`; §3.5). blockbustr answers those with **library matches first, then remote matches**, so the app's normal search becomes "search everything".
@@ -656,7 +673,8 @@ compat:    { reported_version: "12.1.0", product_name: "Jellyfin Server", proxy_
 transcode: { hwaccel: auto, segment_seconds: 3, max_sessions: 4 }   # hwaccel: auto|none|qsv|vaapi
 metadata:  { tmdb_api_key: "", language: en-US }                    # BLOCKBUSTR_TMDB_API_KEY
 debrid:    { realdebrid_api_key: "", torbox_api_key: "" }           # BLOCKBUSTR_REALDEBRID_API_KEY / _TORBOX_API_KEY
-stremio:   { sync_interval: 6h, catalog_pages: 2 }                 # addons themselves: /blockbustr/addons
+stremio:   { sync_interval: 6h, catalog_pages: 2,                  # addons themselves: /blockbustr/addons
+             streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] } }
 log:       { level: info, format: text }                            # format: text|json
 ```
 Port 8096 matches Jellyfin, so clients find it with the default port. Secrets belong in env (`.env.example`), not YAML.

@@ -1,8 +1,12 @@
 package stremio
 
 import (
+	"context"
+	"io"
+	"log/slog"
 	"os"
 	"testing"
+	"time"
 )
 
 // TestLive talks to the real Cinemeta and (unconfigured) Torrentio. It only
@@ -43,4 +47,23 @@ func TestLive(t *testing.T) {
 		t.Errorf("streams: %d, %v", len(streams), err)
 	}
 	t.Logf("cinemeta: %d search results, %d on page 2, %d GoT videos; torrentio: %d streams for S01E02", len(metas), len(page2), len(got.Videos), len(streams))
+
+	col := &Collector{
+		Registry: &Registry{Client: c},
+		Log:      slog.New(slog.NewTextHandler(io.Discard, nil)),
+		addons: func(context.Context) ([]addonInfo, error) {
+			return []addonInfo{testAddon("Torrentio", torrentio, 0, tm)}, nil
+		},
+	}
+	offers, err := col.Collect(t.Context(), "movie", "tt0133093")
+	if err != nil || len(offers) == 0 {
+		t.Fatalf("collect: %d, %v", len(offers), err)
+	}
+	ranked := Rank(offers, Prefs{MaxHeight: 1080, Runtime: 136 * time.Minute, MaxBitrate: 20_000_000, Languages: []string{"en"}})
+	for i, r := range ranked[:min(5, len(ranked))] {
+		t.Logf("#%d score %d: %dp %s hdr=%v %.1f GB group=%q langs=%v", i+1, r.Score, r.Info.Height, r.Info.Codec, r.Info.HDR, float64(r.Info.Size)/(1<<30), r.Info.Group, r.Info.Languages)
+	}
+	if ranked[0].Info.Height != 1080 {
+		t.Errorf("a 1080p-capped H.264 client got %dp first", ranked[0].Info.Height)
+	}
 }

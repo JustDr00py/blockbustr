@@ -43,3 +43,12 @@ scan:
   missing_grace: 24h           # missing files are kept (hidden) this long before deletion
   watch: true                  # rescan a library when its files change (not on network shares)
   watch_delay: 30s             # ...once they've been quiet this long
+stremio:                       # addons themselves are managed through /blockbustr/addons
+  sync_interval: 6h            # re-sync enabled catalogs; "0s" = only at start and on changes
+  catalog_pages: 2             # pages fetched per catalog
+  streams:
+    timeout: 6s                # per addon, when collecting streams for playback
+    top: 3                     # best streams offered as MediaSources
+    languages: []              # preferred audio, ISO 639-1 (e.g. [en, de])
+    allow_groups: []           # release groups ranked higher
+    deny_groups: []            # release groups never offered

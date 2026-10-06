@@ -54,6 +54,11 @@ transcode:
   hwaccel: qsv
 log:
   format: json
+stremio:
+  streams:
+    top: 5
+    languages: [de, en]
+    deny_groups: [YIFY]
 `)
 	t.Setenv("BLOCKBUSTR_LISTEN", ":9100")
 	t.Setenv("BLOCKBUSTR_TMDB_API_KEY", "tmdb-key")
@@ -75,6 +80,9 @@ log:
 	if cfg.Metadata.TMDBAPIKey != "tmdb-key" || len(cfg.Compat.ProxyClients) != 1 {
 		t.Errorf("unexpected: %+v", cfg)
 	}
+	if st := cfg.Stremio.Streams; st.Top != 5 || len(st.Languages) != 2 || st.DenyGroups[0] != "YIFY" || st.Timeout != 6*time.Second {
+		t.Errorf("stremio.streams = %+v", st)
+	}
 	if cfg.Transcode.SegmentSeconds != 3 {
 		t.Errorf("unset yaml keys keep defaults: segment_seconds = %d", cfg.Transcode.SegmentSeconds)
 	}
@@ -95,11 +103,15 @@ func TestValidateReportsAllErrors(t *testing.T) {
 	cfg.Transcode.HWAccel = "nvenc"
 	cfg.Server.ExternalURL = "blockbustr.local"
 	cfg.Server.AdminUsername = "admin" // without a password
+	cfg.Stremio.Streams.Timeout = time.Minute
+	cfg.Stremio.Streams.Top = 0
+	cfg.Stremio.Streams.Languages = []string{"eng"}
 	err := cfg.Validate()
 	if err == nil {
 		t.Fatal("expected errors")
 	}
-	for _, want := range []string{"database.url", "redis.url", "reported_version", "hwaccel", "external_url", "admin_username"} {
+	for _, want := range []string{"database.url", "redis.url", "reported_version", "hwaccel", "external_url", "admin_username",
+		"streams.timeout", "streams.top", "streams.languages"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("missing %q in %v", want, err)
 		}
