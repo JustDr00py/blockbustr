@@ -432,6 +432,15 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
 - A sync job pages the catalog (default 2 pages / 100 items, configurable) and upserts items with `source_kind='stremio'` and `stremio_ref`. Metadata is enriched from TMDB when the id is IMDb.
 - Series episodes are created from `meta.videos`.
 - Search across addons is the core feature described in §7.4.
+- **Implemented (P3.5, `stremio.Syncer`):**
+  - **When:** at start, every `stremio.sync_interval` (6 h; `0s` means only at start and on changes), and right after the admin API changes an addon or catalog.
+  - **Libraries:** one `libraries` row per enabled movie/series catalog: `kind='stremio'`, named "{addon} {catalog}" with a `(2)`… suffix if the name is taken. `options` holds `collectionType` (`movies`/`tvshows`, which `ListCollectionFolders` reports as the kind so every handler treats the library like a normal one), `addonId`, `catalogType` and `catalogId`. A disabled catalog or addon disables its library; re-enabling brings the same library and items back. Startup's config library sync no longer disables `stremio` libraries.
+  - **Titles:** the first `stremio.catalog_pages` pages (default 2; `skip` = titles so far, since page sizes differ; only when the catalog accepts `skip`), deduplicated. Each is upserted with `source_kind='stremio'`, `path` = `stremio:{type}:{id}` (the unique upsert key), `stremio_ref` = `{addonId, type, id}`, an Imdb id (`tt…`) and Cinemeta's `moviedb_id` as Tmdb, year, release date and overview. Artwork (Primary/Backdrop/Logo) comes from the catalog until metadata takes over. As with files, applied metadata wins over the catalog's name, year and overview.
+  - **Episodes:** for series, `meta.videos` from the catalog's addon, or else the highest-priority addon serving `meta` for that id, 4 at a time and cached 24 h. Episodes that haven't aired yet are skipped, season 0 is "Specials", and `thumbnail` becomes the episode's Primary image.
+  - **Change:** titles that leave the catalog are hidden at once and deleted after `scan.missing_grace` (24 h). A series whose meta fails keeps its episodes. A catalog whose first page fails, or which comes back empty, is left as it was. Empty series are kept (episodes may come later, P3.15).
+  - **Enrichment:** the metadata refresher runs on the library afterwards. It now looks up a stored Imdb id with TMDB `/find` (catalog items have no `.nfo`), and it skips `.nfo` lookups for `stremio:` paths.
+  - **Playback placeholder:** until streams are collected (P3.7), a catalog title's one MediaSource is a remote placeholder. It's named after the title, `Protocol: Http`, and its `Path` is this server's stream URL, never the `stremio:` path. Play answers 502 for now.
+  - **Live (2026-10-06, test DB):** Cinemeta's popular movies and series synced 95 movies, 100 series and 9,421 episodes in 11 s.
 
 ### 7.3 Stream resolution (at PlaybackInfo)
 1. Collect streams from every enabled addon that lists `stream` for the type and id prefix, in parallel, with a 6s timeout per addon. Cache the results (§5).
@@ -647,6 +656,7 @@ compat:    { reported_version: "12.1.0", product_name: "Jellyfin Server", proxy_
 transcode: { hwaccel: auto, segment_seconds: 3, max_sessions: 4 }   # hwaccel: auto|none|qsv|vaapi
 metadata:  { tmdb_api_key: "", language: en-US }                    # BLOCKBUSTR_TMDB_API_KEY
 debrid:    { realdebrid_api_key: "", torbox_api_key: "" }           # BLOCKBUSTR_REALDEBRID_API_KEY / _TORBOX_API_KEY
+stremio:   { sync_interval: 6h, catalog_pages: 2 }                 # addons themselves: /blockbustr/addons
 log:       { level: info, format: text }                            # format: text|json
 ```
 Port 8096 matches Jellyfin, so clients find it with the default port. Secrets belong in env (`.env.example`), not YAML.

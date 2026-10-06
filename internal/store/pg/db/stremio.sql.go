@@ -8,9 +8,37 @@ package db
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+const createStremioLibrary = `-- name: CreateStremioLibrary :one
+INSERT INTO libraries (name, kind, options) VALUES ($1, 'stremio', $2)
+ON CONFLICT (name) DO NOTHING
+RETURNING id, name, kind, paths, options, created_at, enabled
+`
+
+type CreateStremioLibraryParams struct {
+	Name    string
+	Options json.RawMessage
+}
+
+// A name already taken returns no row; the caller tries another.
+func (q *Queries) CreateStremioLibrary(ctx context.Context, arg CreateStremioLibraryParams) (Library, error) {
+	row := q.db.QueryRow(ctx, createStremioLibrary, arg.Name, arg.Options)
+	var i Library
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Kind,
+		&i.Paths,
+		&i.Options,
+		&i.CreatedAt,
+		&i.Enabled,
+	)
+	return i, err
+}
 
 const deleteStremioAddon = `-- name: DeleteStremioAddon :execrows
 DELETE FROM stremio_addons WHERE id = $1
@@ -38,6 +66,25 @@ type DeleteStremioCatalogsExceptParams struct {
 func (q *Queries) DeleteStremioCatalogsExcept(ctx context.Context, arg DeleteStremioCatalogsExceptParams) error {
 	_, err := q.db.Exec(ctx, deleteStremioCatalogsExcept, arg.AddonID, arg.Keep)
 	return err
+}
+
+const getLibrary = `-- name: GetLibrary :one
+SELECT id, name, kind, paths, options, created_at, enabled FROM libraries WHERE id = $1
+`
+
+func (q *Queries) GetLibrary(ctx context.Context, id uuid.UUID) (Library, error) {
+	row := q.db.QueryRow(ctx, getLibrary, id)
+	var i Library
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Kind,
+		&i.Paths,
+		&i.Options,
+		&i.CreatedAt,
+		&i.Enabled,
+	)
+	return i, err
 }
 
 const getStremioAddon = `-- name: GetStremioAddon :one
@@ -165,6 +212,70 @@ func (q *Queries) ListStremioCatalogs(ctx context.Context, addonID uuid.UUID) ([
 	return items, nil
 }
 
+const listSyncCatalogs = `-- name: ListSyncCatalogs :many
+
+SELECT c.addon_id, c.catalog_type, c.catalog_id, c.name, c.library_id, c.enabled,
+       a.enabled AS addon_enabled
+FROM stremio_catalogs c JOIN stremio_addons a ON a.id = c.addon_id
+WHERE (c.enabled AND a.enabled) OR c.library_id IS NOT NULL
+ORDER BY a.priority DESC, a.created_at, c.catalog_type, c.catalog_id
+`
+
+type ListSyncCatalogsRow struct {
+	AddonID      uuid.UUID
+	CatalogType  string
+	CatalogID    string
+	Name         string
+	LibraryID    *uuid.UUID
+	Enabled      bool
+	AddonEnabled bool
+}
+
+// Catalog sync (P3.5).
+// Every catalog of an enabled addon that is enabled or still has a library
+// (to switch that library off).
+func (q *Queries) ListSyncCatalogs(ctx context.Context) ([]ListSyncCatalogsRow, error) {
+	rows, err := q.db.Query(ctx, listSyncCatalogs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSyncCatalogsRow{}
+	for rows.Next() {
+		var i ListSyncCatalogsRow
+		if err := rows.Scan(
+			&i.AddonID,
+			&i.CatalogType,
+			&i.CatalogID,
+			&i.Name,
+			&i.LibraryID,
+			&i.Enabled,
+			&i.AddonEnabled,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const setLibraryEnabled = `-- name: SetLibraryEnabled :exec
+UPDATE libraries SET enabled = $1 WHERE id = $2 AND enabled IS DISTINCT FROM $1
+`
+
+type SetLibraryEnabledParams struct {
+	Enabled bool
+	ID      uuid.UUID
+}
+
+func (q *Queries) SetLibraryEnabled(ctx context.Context, arg SetLibraryEnabledParams) error {
+	_, err := q.db.Exec(ctx, setLibraryEnabled, arg.Enabled, arg.ID)
+	return err
+}
+
 const setStremioAddonManifest = `-- name: SetStremioAddonManifest :exec
 UPDATE stremio_addons SET manifest = $2, last_fetched_at = now() WHERE id = $1
 `
@@ -202,6 +313,46 @@ func (q *Queries) SetStremioCatalogEnabled(ctx context.Context, arg SetStremioCa
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const setStremioCatalogLibrary = `-- name: SetStremioCatalogLibrary :exec
+UPDATE stremio_catalogs SET library_id = $4
+WHERE addon_id = $1 AND catalog_type = $2 AND catalog_id = $3
+`
+
+type SetStremioCatalogLibraryParams struct {
+	AddonID     uuid.UUID
+	CatalogType string
+	CatalogID   string
+	LibraryID   *uuid.UUID
+}
+
+func (q *Queries) SetStremioCatalogLibrary(ctx context.Context, arg SetStremioCatalogLibraryParams) error {
+	_, err := q.db.Exec(ctx, setStremioCatalogLibrary,
+		arg.AddonID,
+		arg.CatalogType,
+		arg.CatalogID,
+		arg.LibraryID,
+	)
+	return err
+}
+
+const touchStremioEpisodes = `-- name: TouchStremioEpisodes :exec
+UPDATE items SET date_last_refreshed = now()
+WHERE library_id = $1 AND type = 'Episode' AND missing_since IS NULL
+  AND starts_with(path, $2::text)
+`
+
+type TouchStremioEpisodesParams struct {
+	LibraryID uuid.UUID
+	Prefix    string
+}
+
+// Keeps a series' episodes when its meta couldn't be fetched this sync, so
+// an addon hiccup doesn't mark them missing.
+func (q *Queries) TouchStremioEpisodes(ctx context.Context, arg TouchStremioEpisodesParams) error {
+	_, err := q.db.Exec(ctx, touchStremioEpisodes, arg.LibraryID, arg.Prefix)
+	return err
 }
 
 const updateStremioAddon = `-- name: UpdateStremioAddon :one
@@ -254,4 +405,77 @@ func (q *Queries) UpsertStremioCatalog(ctx context.Context, arg UpsertStremioCat
 		arg.Name,
 	)
 	return err
+}
+
+const upsertStremioItem = `-- name: UpsertStremioItem :one
+INSERT INTO items (library_id, parent_id, top_parent_id, type, name, sort_name, source_kind,
+                   path, stremio_ref, index_number, parent_index_number, production_year,
+                   premiere_date, overview, provider_ids, date_last_refreshed)
+VALUES ($1, $2, $3, $4, $5, $6, 'stremio',
+        $7, $8, $9, $10,
+        $11, $12, $13, $14, now())
+ON CONFLICT (library_id, path) WHERE path IS NOT NULL DO UPDATE SET
+    parent_id           = EXCLUDED.parent_id,
+    top_parent_id       = EXCLUDED.top_parent_id,
+    type                = EXCLUDED.type,
+    stremio_ref         = EXCLUDED.stremio_ref,
+    index_number        = EXCLUDED.index_number,
+    parent_index_number = EXCLUDED.parent_index_number,
+    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.name ELSE items.name END,
+    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.sort_name ELSE items.sort_name END,
+    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.production_year ELSE items.production_year END,
+    premiere_date   = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.premiere_date ELSE items.premiere_date END,
+    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.overview ELSE items.overview END,
+    provider_ids        = items.provider_ids || EXCLUDED.provider_ids,
+    date_last_refreshed = now(),
+    is_missing          = false,
+    missing_since       = NULL
+RETURNING id, (coalesce(metadata_source, 'none') = 'none')::boolean AS catalog_owned
+`
+
+type UpsertStremioItemParams struct {
+	LibraryID         uuid.UUID
+	ParentID          *uuid.UUID
+	TopParentID       *uuid.UUID
+	Type              string
+	Name              string
+	SortName          string
+	Path              *string
+	StremioRef        json.RawMessage
+	IndexNumber       *int32
+	ParentIndexNumber *int32
+	ProductionYear    *int32
+	PremiereDate      *time.Time
+	Overview          *string
+	ProviderIds       json.RawMessage
+}
+
+type UpsertStremioItemRow struct {
+	ID           uuid.UUID
+	CatalogOwned bool
+}
+
+// Catalog titles and their episodes, keyed by path ("stremio:{type}:{id}").
+// Like UpsertPathItem, metadata applied later (TMDB) wins over the
+// catalog's name/year/overview; provider ids from the catalog are merged in.
+func (q *Queries) UpsertStremioItem(ctx context.Context, arg UpsertStremioItemParams) (UpsertStremioItemRow, error) {
+	row := q.db.QueryRow(ctx, upsertStremioItem,
+		arg.LibraryID,
+		arg.ParentID,
+		arg.TopParentID,
+		arg.Type,
+		arg.Name,
+		arg.SortName,
+		arg.Path,
+		arg.StremioRef,
+		arg.IndexNumber,
+		arg.ParentIndexNumber,
+		arg.ProductionYear,
+		arg.PremiereDate,
+		arg.Overview,
+		arg.ProviderIds,
+	)
+	var i UpsertStremioItemRow
+	err := row.Scan(&i.ID, &i.CatalogOwned)
+	return i, err
 }

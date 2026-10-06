@@ -300,3 +300,35 @@ func TestBestMatch(t *testing.T) {
 		t.Error("normTitle")
 	}
 }
+
+// A Stremio catalog item has no files (no .nfo) but carries its IMDb id:
+// that id is looked up directly, never the name.
+func TestRefreshCatalogItemByIMDb(t *testing.T) {
+	e := newEnv(t)
+	ctx := t.Context()
+	folder, err := e.q.EnsureCollectionFolder(ctx, db.EnsureCollectionFolderParams{LibraryID: e.movies.ID, Name: e.movies.Name, SortName: "movies"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := "stremio:movie:tt0133093"
+	if _, err := e.q.UpsertStremioItem(ctx, db.UpsertStremioItemParams{
+		LibraryID: e.movies.ID, ParentID: &folder, TopParentID: &folder, Type: "Movie",
+		Name: "No Search Would Find This", SortName: "no search would find this", Path: &path,
+		StremioRef: []byte(`{"addonId":"x","type":"movie","id":"tt0133093"}`), ProviderIds: []byte(`{"Imdb":"tt0133093"}`),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var calls atomic.Int32
+	e.refresh(NewRefresher(e.pool, fakeTMDB(t, &calls), testutil.Discard()))
+	var got db.Item
+	for _, it := range e.byType(e.movies, "Movie") {
+		if deref(it.Path) == path {
+			got = it
+		}
+	}
+	var ids map[string]string
+	_ = json.Unmarshal(got.ProviderIds, &ids)
+	if got.Name != "The Matrix" || deref(got.Overview) != "TMDB plot" || ids["Tmdb"] != "603" || deref(got.MetadataSource) != "tmdb" {
+		t.Errorf("catalog item: %q %q %v %v", got.Name, deref(got.Overview), ids, deref(got.MetadataSource))
+	}
+}

@@ -6,8 +6,10 @@ ON CONFLICT (name) DO UPDATE SET kind = EXCLUDED.kind, paths = EXCLUDED.paths, e
 RETURNING *;
 
 -- name: DisableLibrariesExcept :execrows
--- Libraries no longer in config.yaml stop being listed and scanned.
-UPDATE libraries SET enabled = false WHERE enabled AND NOT (id = ANY(@keep::uuid[]));
+-- Libraries no longer in config.yaml stop being listed and scanned. Stremio
+-- catalog libraries aren't in config; the catalog sync manages them.
+UPDATE libraries SET enabled = false
+WHERE enabled AND kind <> 'stremio' AND NOT (id = ANY(@keep::uuid[]));
 
 -- name: EnsureCollectionFolder :one
 INSERT INTO items (library_id, type, name, sort_name)

@@ -1,9 +1,13 @@
 -- Library views (TASKS P1.18).
 
 -- name: ListCollectionFolders :many
--- The top-level folder of every enabled library, in browse order.
+-- The top-level folder of every enabled library, in browse order. A Stremio
+-- catalog library reports the collection type of its catalog (movies or
+-- tvshows), which is what clients and handlers switch on.
 SELECT i.id, i.name, i.sort_name, i.date_created, i.date_modified, i.etag,
-       l.id AS library_id, l.kind, l.paths
+       l.id AS library_id,
+       (CASE WHEN l.kind = 'stremio' THEN coalesce(l.options ->> 'collectionType', 'movies') ELSE l.kind END)::text AS kind,
+       l.paths
 FROM items i JOIN libraries l ON l.id = i.library_id
 WHERE i.type = 'CollectionFolder' AND l.enabled
 ORDER BY i.sort_name, i.id;

@@ -89,7 +89,7 @@ func (a *api) addonError(w http.ResponseWriter, r *http.Request, err error) {
 		status = http.StatusNotFound
 	case errors.Is(err, stremio.ErrDuplicate):
 		status = http.StatusConflict
-	case errors.Is(err, stremio.ErrBadURL), errors.Is(err, stremio.ErrCatalogNeedsArg):
+	case errors.Is(err, stremio.ErrBadURL), errors.Is(err, stremio.ErrCatalogNeedsArg), errors.Is(err, stremio.ErrCatalogType):
 		status = http.StatusBadRequest
 	case errors.Is(err, stremio.ErrNoSecretKey):
 		status = http.StatusServiceUnavailable
@@ -100,6 +100,14 @@ func (a *api) addonError(w http.ResponseWriter, r *http.Request, err error) {
 		return
 	}
 	jfapi.WriteJSON(w, r, status, map[string]string{"Error": err.Error()})
+}
+
+// syncCatalogs asks for a catalog sync, so enabled catalogs appear and
+// disabled ones disappear without waiting for the schedule.
+func (a *api) syncCatalogs() {
+	if a.CatalogSync != nil {
+		a.CatalogSync.Trigger()
+	}
 }
 
 func badBody(w http.ResponseWriter, r *http.Request, want string) {
@@ -177,6 +185,7 @@ func (a *api) updateAddon(w http.ResponseWriter, r *http.Request, _ auth.Session
 		a.addonError(w, r, err)
 		return
 	}
+	a.syncCatalogs()
 	jfapi.WriteJSON(w, r, http.StatusOK, toAddonDto(ad))
 }
 
@@ -189,6 +198,7 @@ func (a *api) deleteAddon(w http.ResponseWriter, r *http.Request, _ auth.Session
 		a.addonError(w, r, err)
 		return
 	}
+	a.syncCatalogs()
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -202,6 +212,7 @@ func (a *api) refreshAddon(w http.ResponseWriter, r *http.Request, _ auth.Sessio
 		a.addonError(w, r, err)
 		return
 	}
+	a.syncCatalogs()
 	jfapi.WriteJSON(w, r, http.StatusOK, toAddonDto(ad))
 }
 
@@ -220,5 +231,6 @@ func (a *api) setCatalog(w http.ResponseWriter, r *http.Request, _ auth.Session)
 		a.addonError(w, r, err)
 		return
 	}
+	a.syncCatalogs()
 	jfapi.WriteJSON(w, r, http.StatusOK, toAddonDto(ad))
 }

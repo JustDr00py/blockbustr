@@ -38,3 +38,65 @@ SELECT * FROM stremio_catalogs WHERE addon_id = $1 ORDER BY catalog_type, catalo
 -- name: SetStremioCatalogEnabled :execrows
 UPDATE stremio_catalogs SET enabled = $4
 WHERE addon_id = $1 AND catalog_type = $2 AND catalog_id = $3;
+
+-- Catalog sync (P3.5).
+
+-- name: ListSyncCatalogs :many
+-- Every catalog of an enabled addon that is enabled or still has a library
+-- (to switch that library off).
+SELECT c.addon_id, c.catalog_type, c.catalog_id, c.name, c.library_id, c.enabled,
+       a.enabled AS addon_enabled
+FROM stremio_catalogs c JOIN stremio_addons a ON a.id = c.addon_id
+WHERE (c.enabled AND a.enabled) OR c.library_id IS NOT NULL
+ORDER BY a.priority DESC, a.created_at, c.catalog_type, c.catalog_id;
+
+-- name: CreateStremioLibrary :one
+-- A name already taken returns no row; the caller tries another.
+INSERT INTO libraries (name, kind, options) VALUES (@name, 'stremio', @options)
+ON CONFLICT (name) DO NOTHING
+RETURNING *;
+
+-- name: GetLibrary :one
+SELECT * FROM libraries WHERE id = $1;
+
+-- name: SetLibraryEnabled :exec
+UPDATE libraries SET enabled = @enabled WHERE id = @id AND enabled IS DISTINCT FROM @enabled;
+
+-- name: SetStremioCatalogLibrary :exec
+UPDATE stremio_catalogs SET library_id = $4
+WHERE addon_id = $1 AND catalog_type = $2 AND catalog_id = $3;
+
+-- name: UpsertStremioItem :one
+-- Catalog titles and their episodes, keyed by path ("stremio:{type}:{id}").
+-- Like UpsertPathItem, metadata applied later (TMDB) wins over the
+-- catalog's name/year/overview; provider ids from the catalog are merged in.
+INSERT INTO items (library_id, parent_id, top_parent_id, type, name, sort_name, source_kind,
+                   path, stremio_ref, index_number, parent_index_number, production_year,
+                   premiere_date, overview, provider_ids, date_last_refreshed)
+VALUES (@library_id, @parent_id, @top_parent_id, @type, @name, @sort_name, 'stremio',
+        @path, @stremio_ref, sqlc.narg('index_number'), sqlc.narg('parent_index_number'),
+        sqlc.narg('production_year'), sqlc.narg('premiere_date'), sqlc.narg('overview'), @provider_ids, now())
+ON CONFLICT (library_id, path) WHERE path IS NOT NULL DO UPDATE SET
+    parent_id           = EXCLUDED.parent_id,
+    top_parent_id       = EXCLUDED.top_parent_id,
+    type                = EXCLUDED.type,
+    stremio_ref         = EXCLUDED.stremio_ref,
+    index_number        = EXCLUDED.index_number,
+    parent_index_number = EXCLUDED.parent_index_number,
+    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.name ELSE items.name END,
+    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.sort_name ELSE items.sort_name END,
+    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.production_year ELSE items.production_year END,
+    premiere_date   = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.premiere_date ELSE items.premiere_date END,
+    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.overview ELSE items.overview END,
+    provider_ids        = items.provider_ids || EXCLUDED.provider_ids,
+    date_last_refreshed = now(),
+    is_missing          = false,
+    missing_since       = NULL
+RETURNING id, (coalesce(metadata_source, 'none') = 'none')::boolean AS catalog_owned;
+
+-- name: TouchStremioEpisodes :exec
+-- Keeps a series' episodes when its meta couldn't be fetched this sync, so
+-- an addon hiccup doesn't mark them missing.
+UPDATE items SET date_last_refreshed = now()
+WHERE library_id = @library_id AND type = 'Episode' AND missing_since IS NULL
+  AND starts_with(path, @prefix::text);

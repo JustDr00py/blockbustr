@@ -174,15 +174,16 @@ func (m Meta) Year() int {
 
 // Video is an episode of a series meta (or a movie's single video).
 type Video struct {
-	ID        string `json:"id"` // "tt0944947:1:2"
-	Title     string `json:"title"`
-	Name      string `json:"name"` // some addons use name instead of title
-	Season    int    `json:"season"`
-	Episode   int    `json:"episode"`
-	Number    int    `json:"number"` // older addons
-	Released  string `json:"released"`
-	Thumbnail string `json:"thumbnail"`
-	Overview  string `json:"overview"`
+	ID          string `json:"id"` // "tt0944947:1:2"
+	Title       string `json:"title"`
+	Name        string `json:"name"` // some addons use name instead of title
+	Season      int    `json:"season"`
+	Episode     int    `json:"episode"`
+	Number      int    `json:"number"` // older addons
+	Released    string `json:"released"`
+	Thumbnail   string `json:"thumbnail"`
+	Overview    string `json:"overview"`
+	Description string `json:"description"` // Cinemeta sends both
 }
 
 // EpisodeNumber is Episode, or the legacy Number.

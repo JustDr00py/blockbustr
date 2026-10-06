@@ -37,6 +37,14 @@ type Config struct {
 	Log       Log       `yaml:"log"`
 	Libraries []Library `yaml:"libraries"`
 	Scan      Scan      `yaml:"scan"`
+	Stremio   Stremio   `yaml:"stremio"`
+}
+
+// Stremio configures the catalog sync (DESIGN §7.2). Addons themselves are
+// managed through the admin API and stored in the database.
+type Stremio struct {
+	SyncInterval time.Duration `yaml:"sync_interval"` // re-sync enabled catalogs; "0s" syncs only at start and on changes
+	CatalogPages int           `yaml:"catalog_pages"` // pages fetched per catalog (Cinemeta pages hold 50 titles)
 }
 
 // Library is one media library (DESIGN §6). Libraries are matched to the
@@ -185,6 +193,7 @@ func Defaults() Config {
 		Transcode: Transcode{HWAccel: "auto", SegmentSeconds: 3, MaxSessions: 4},
 		Metadata:  Metadata{Language: "en-US"},
 		Log:       Log{Level: "info", Format: "text"},
+		Stremio:   Stremio{SyncInterval: 6 * time.Hour, CatalogPages: 2},
 		Scan: Scan{
 			OnStart: true, Interval: 6 * time.Hour, ProbeTimeout: 2 * time.Minute, MissingGrace: 24 * time.Hour,
 			Watch: true, WatchDelay: 30 * time.Second,
@@ -331,6 +340,12 @@ func (c *Config) Validate() error {
 	}
 	if c.Scan.ProbeWorkers < 0 || c.Scan.ProbeTimeout <= 0 || c.Scan.MissingGrace < 0 {
 		add("scan.probe_workers, scan.probe_timeout and scan.missing_grace must not be negative (probe_timeout > 0)")
+	}
+	if c.Stremio.SyncInterval < 0 || (c.Stremio.SyncInterval > 0 && c.Stremio.SyncInterval < 10*time.Minute) {
+		add("stremio.sync_interval must be 0 (off) or at least 10m")
+	}
+	if c.Stremio.CatalogPages < 1 || c.Stremio.CatalogPages > 20 {
+		add("stremio.catalog_pages must be between 1 and 20")
 	}
 	if c.Debrid.RealDebridAPIKey != "" || c.Debrid.TorBoxAPIKey != "" {
 		if c.SecretKey == "" {

@@ -34,10 +34,18 @@ func mediaSourceDtos(it db.Item, sources []db.MediaSource, streams map[uuid.UUID
 		switch {
 		case it.StrmUrl != nil:
 			src.Protocol, src.IsRemote, src.PathOrUrl = "Http", true, *it.StrmUrl
+		case it.SourceKind == "stremio" && it.Path != nil:
+			// A catalog title: its streams come from addons at play time
+			// (P3.7); until then the placeholder is remote, so clients see
+			// this server's stream URL, never the internal stremio: path.
+			src.Protocol, src.IsRemote, src.PathOrUrl = "Http", true, *it.Path
 		case it.Path != nil:
 			src.PathOrUrl = *it.Path
 		}
-		if it.Path != nil {
+		switch {
+		case it.SourceKind == "stremio":
+			src.Name = it.Name
+		case it.Path != nil:
 			src.Name = strings.TrimSuffix(filepath.Base(*it.Path), filepath.Ext(*it.Path))
 		}
 		sources = []db.MediaSource{src}

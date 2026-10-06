@@ -22,6 +22,7 @@ var (
 	ErrDuplicate       = errors.New("stremio: addon already added")
 	ErrNotFound        = errors.New("stremio: no such addon or catalog")
 	ErrCatalogNeedsArg = errors.New("stremio: catalog needs an extra (search, genre…) and can't be a library")
+	ErrCatalogType     = errors.New("stremio: only movie and series catalogs can be libraries")
 )
 
 // Registry stores the configured addons and their catalogs (DESIGN §4, §7).
@@ -248,6 +249,9 @@ func (r *Registry) SetCatalogEnabled(ctx context.Context, id uuid.UUID, typ, cat
 	}
 	if enabled && len(found.Requires) > 0 {
 		return Addon{}, ErrCatalogNeedsArg
+	}
+	if enabled && CollectionType(typ) == "" {
+		return Addon{}, ErrCatalogType
 	}
 	if _, err := r.q().SetStremioCatalogEnabled(ctx, db.SetStremioCatalogEnabledParams{
 		AddonID: id, CatalogType: typ, CatalogID: catalog, Enabled: enabled,

@@ -151,6 +151,13 @@ func (u *run) movie(ctx context.Context, row db.ItemsNeedingMetadataRow) (Meta, 
 				id = mid
 			}
 		}
+		if imdb := providerID(row.ProviderIds, "Imdb"); id == 0 && imdb != "" { // Stremio catalog items
+			mid, _, err := c.FindByIMDb(ctx, imdb)
+			if err != nil {
+				return Meta{}, err
+			}
+			id = mid
+		}
 		if id == 0 {
 			res, err := c.SearchMovie(ctx, row.Name, int(deref(row.ProductionYear)))
 			if err != nil {
@@ -185,6 +192,13 @@ func (u *run) series(ctx context.Context, row db.ItemsNeedingMetadataRow) (Meta,
 				}
 				id = sid
 			}
+		}
+		if imdb := providerID(row.ProviderIds, "Imdb"); id == 0 && imdb != "" { // Stremio catalog items
+			_, sid, err := c.FindByIMDb(ctx, imdb)
+			if err != nil {
+				return Meta{}, err
+			}
+			id = sid
 		}
 		if id == 0 {
 			res, err := c.SearchTV(ctx, row.Name, int(deref(row.ProductionYear)))
@@ -644,7 +658,7 @@ func foldAccent(r rune) rune {
 
 func readNFO(paths ...string) *nfo.Info {
 	for _, p := range paths {
-		if p == "" {
+		if p == "" || strings.HasPrefix(p, "stremio:") { // catalog items have no files
 			continue
 		}
 		if _, err := os.Stat(p); err != nil {

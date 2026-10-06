@@ -119,7 +119,8 @@ func run() error {
 	} else {
 		log.Info("no TMDB API key (BLOCKBUSTR_TMDB_API_KEY); metadata comes from .nfo files only")
 	}
-	scanner.SetMetadata(metadata.NewRefresher(pool, tmdbClient, log))
+	refresher := metadata.NewRefresher(pool, tmdbClient, log)
+	scanner.SetMetadata(refresher)
 	imageStore := images.New(cfg.Paths.ImagesDir())
 	scanner.AddPostScan("images", images.Prefetcher{Store: imageStore, Q: queries, Log: log}.Run)
 	libs, err := scanner.SyncLibraries(ctx, cfg.Libraries)
@@ -159,12 +160,16 @@ func run() error {
 			log.Warn("secret_key is invalid; Stremio addons can't be added or used", "err", err)
 		}
 	}
+	catalogs := &stremio.Syncer{
+		Registry: addons, Cache: rc, Log: log, Pages: cfg.Stremio.CatalogPages,
+		MissingGrace: cfg.Scan.MissingGrace, Refresh: refresher.Refresh, Events: bus,
+	}
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
 		Resolver: &resolve.Resolver{Cache: rc, Providers: debrid, Log: log}, Probe: scanner,
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
-		Events:      bus, Hub: hub, Addons: addons,
+		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs,
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -197,6 +202,7 @@ func run() error {
 	// Scans run in the background so the server answers while a large
 	// library is first indexed.
 	go scanner.Run(ctx, libs)
+	go catalogs.Run(ctx, cfg.Stremio.SyncInterval)
 	if cfg.Scan.Watch {
 		go func() {
 			if err := scanner.Watch(ctx, libs); err != nil {

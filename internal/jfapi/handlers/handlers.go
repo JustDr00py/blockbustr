@@ -61,6 +61,9 @@ type Deps struct {
 	// Addons is the Stremio addon registry behind /blockbustr/addons; nil
 	// leaves those routes out.
 	Addons *stremio.Registry
+	// CatalogSync re-syncs catalog libraries after an addon or catalog
+	// changes (stremio.Syncer); nil waits for the next scheduled sync.
+	CatalogSync interface{ Trigger() }
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.
