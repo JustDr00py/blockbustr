@@ -3,6 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
+- [x] AIOStreams fixes 2026-10-07 (user report): TMDB-keyed catalogs asked by IMDb id first (AIOStreams returned 0 streams for `tmdb:` ids; OpenSubtitles only knows IMDb); "FHD" read as 1080p; ready stream choices probed (tracks, audio switching, default audio in the preferred language, real play decisions); preferred language defaults to metadata.language. Follow-ups: rank by probed audio languages, not just the addon's flags; `TestCatalogStreamsAsMediaSources` fails since the quota commit (a CAM rip fills the 4th HD slot) — decision pending
 - [ ] P4.5 `scripts/seed` 50k items + vegeta load test; hit p95 targets [§1, §9.6]
 
 ## Next

@@ -44,6 +44,9 @@ type StreamChoice struct {
 	Target    string    // for resolve.FromURL: the stream URL, or resolve.Magnet
 	Container string    // from the file name; "" when unknown
 	Size      int64
+	// Ready: playable now (a direct URL, or cached on debrid), so it can be
+	// probed ahead of play without starting a download.
+	Ready bool
 }
 
 // SubtitleChoice is one addon subtitle offered as an external track.
@@ -181,6 +184,7 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 	if len(set.Choices) > 0 {
 		var streams map[uuid.UUID][]db.MediaStream
 		b.sources[it.ID], streams = choiceSources(it, set.Choices, set.Subtitles)
+		applyProbes(b.sources[it.ID], streams, a.loadChoiceProbes(ctx, set.Choices), a.preferredAudio())
 		for id, st := range streams {
 			b.streams[id] = st
 		}
@@ -217,11 +221,14 @@ func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) {
 	}
 	go func() {
 		defer func() { <-a.prefetch }()
-		defer lock.Unlock(context.WithoutCancel(ctx)) // the request is answered already
+		defer func() { _ = lock.Unlock(context.WithoutCancel(ctx)) }() // the request is answered already
 		pctx := context.WithoutCancel(ctx)
-		if _, err := a.pickStreams(pctx, it, streamPrefs(media.DeviceProfile{}, 0)); err != nil {
+		pick, err := a.pickStreams(pctx, it, streamPrefs(media.DeviceProfile{}, 0))
+		if err != nil {
 			a.Log.WarnContext(pctx, "background stream collection failed", "item", it.ID, "err", err)
+			return
 		}
+		a.probeChoices(pctx, pick.Choices, 0) // tracks ready by the time it's played
 	}()
 }
 
@@ -267,7 +274,7 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 		return streamSet{}, err
 	}
 	cfg := a.Config.Stremio.Streams
-	prefs.Languages, prefs.Allow, prefs.Deny = cfg.Languages, cfg.AllowGroups, cfg.DenyGroups
+	prefs.Languages, prefs.Allow, prefs.Deny = a.preferredLanguages(), cfg.AllowGroups, cfg.DenyGroups
 	if prefs.Runtime == 0 && it.RuntimeTicks != nil {
 		prefs.Runtime = time.Duration(*it.RuntimeTicks) * 100 // ticks are 100 ns
 	}
@@ -411,7 +418,7 @@ func streamChoice(item uuid.UUID, r stremio.Ranked) StreamChoice {
 	}
 	return StreamChoice{
 		ID: uuid.NewSHA1(item, []byte(key)), Name: streamLabel(r), Target: target,
-		Container: streamContainer(s), Size: r.Info.Size,
+		Container: streamContainer(s), Size: r.Info.Size, Ready: r.Info.Cached,
 	}
 }
 

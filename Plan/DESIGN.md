@@ -523,6 +523,11 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
   - **Remembered choices:** the Redis key `streamset:{item}` (12 h, refreshed by each PlaybackInfo) holds the latest choices first, then earlier ones (up to 12), so a client still playing an older pick finds it.
     - Stream, HLS and subtitle requests look sources up through it (`loadPlaySources`). If it has expired, they collect again with permissive prefs.
     - The details of a single item list the remembered choices as versions. Lists and details never ask the addons themselves.
+  - **Probed choices and audio language (2026-10-07, AIOStreams):**
+    - Multi-audio releases ("iTA-ENG", Russian dubs first) default to another language, and unprobed choices had no tracks to switch to. Ready choices (a direct URL or cached on debrid, never a torrent or `[RD download]`, which would start a download) are now resolved and ffprobed: after a pick, up to 3 at a time across requests, with PlaybackInfo waiting at most 5 s. Opening a title's details probes in the background. A torrent choice is probed after its first successful play. Results are cached per choice for 30 days (`probe:choice:{id}`).
+    - A probed choice reports its container, bitrate, runtime and every track (addon subtitles stay at 100+), so clients can switch audio and subtitles, and PlaybackInfo decides direct play or transcode as for any probed source. Its default audio is the first track in the preferred language.
+    - **Preferred language:** `stremio.streams.languages`, else `metadata.language`'s ("en-US" → en). A release in the wanted language only ranks slightly (−20) above one that mixes it with others.
+    - Live: Conclave and Dune: Part Two (AIOStreams) list up to 18 audio tracks; Russian- or Italian-first releases start in English; probes take 4–13 s each, so a title's first PlaybackInfo may not have them yet.
   - **Targets:** a `url` stream keeps its URL. An infoHash stream is stored as `magnet:?xt=urn:btih:{hash}&bb.file={fileIdx}&bb.name={filename}`, which `resolve.FromURL` reads back as a Torrent source.
 - **Implemented (P3.8, `resolve/torrent.go`):** a Torrent source resolves through a debrid account.
   1. **Find:** a torrent already on an account (`debrid_torrents`, accounts in priority order) is used if the account still has it.

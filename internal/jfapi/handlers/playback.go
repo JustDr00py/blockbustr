@@ -252,7 +252,11 @@ func (a *api) offerStreams(r *http.Request, b *itemBatch, it db.Item, prefs stre
 			}
 		}
 	}
+	// Probe the ready choices (waiting a little): their tracks let the
+	// client switch audio, and start in the preferred language.
+	a.probeChoices(r.Context(), choices, probeWait)
 	rows, streams := choiceSources(it, choices, pick.Subtitles)
+	applyProbes(rows, streams, a.loadChoiceProbes(r.Context(), choices), a.preferredAudio())
 	for id, st := range streams {
 		b.streams[id] = st
 	}

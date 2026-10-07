@@ -230,6 +230,14 @@ func (a *api) playLink(ctx context.Context, it db.Item, src db.MediaSource, sour
 		target := resolve.FromURL(s.PathOrUrl)
 		link, err := a.Resolver.Resolve(ctx, target)
 		if err == nil {
+			if catalog && s.IsRemote {
+				// It plays now (a torrent too, once added): probe its tracks
+				// for the next PlaybackInfo, in the background.
+				c := StreamChoice{ID: s.ID, Target: s.PathOrUrl, Ready: true}
+				if _, probed := a.loadChoiceProbes(ctx, []StreamChoice{c})[c.ID]; !probed && a.ChoiceProber != nil {
+					go a.probeChoice(context.WithoutCancel(ctx), c)
+				}
+			}
 			return s, target, link, nil
 		}
 		if ctx.Err() != nil {

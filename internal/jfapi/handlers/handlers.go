@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/singleflight"
 
 	"github.com/sysadmin/blockbustr/internal/adminui"
 	"github.com/sysadmin/blockbustr/internal/auth"
@@ -76,6 +77,9 @@ type Deps struct {
 	// Debrid manages the debrid accounts behind /blockbustr/debrid; nil
 	// leaves those routes out.
 	Debrid DebridManager
+	// ChoiceProber probes addon stream choices for their tracks; nil
+	// leaves them unprobed.
+	ChoiceProber ChoiceProber
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.
@@ -89,6 +93,9 @@ type api struct {
 	// prefetch bounds the background stream collections that opening a
 	// title's details starts (prefetchStreamChoices).
 	prefetch chan struct{}
+	// probeSem and probeFlight bound stream choice probes (probeChoice).
+	probeSem    chan struct{}
+	probeFlight singleflight.Group
 }
 
 // Register mounts every implemented endpoint on rt.
@@ -96,7 +103,7 @@ func Register(rt *jfapi.Router, d Deps) {
 	if d.Log == nil {
 		d.Log = slog.Default()
 	}
-	a := &api{Deps: d, prefetch: make(chan struct{}, 2)}
+	a := &api{Deps: d, prefetch: make(chan struct{}, 2), probeSem: make(chan struct{}, probeParallel)}
 	a.registerSystem(rt)
 	registerBranding(rt)
 	a.registerUsers(rt)

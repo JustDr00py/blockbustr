@@ -209,6 +209,7 @@ func run() error {
 		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams, RemoteSearch: remote,
 		StreamSigner: &urlsign.Signer{Key: streamKey, TTL: cfg.Server.StreamURLTTL},
 		Debrid:       debridAdmin,
+		ChoiceProber: media.Prober{},
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

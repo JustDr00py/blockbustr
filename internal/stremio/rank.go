@@ -198,6 +198,7 @@ const (
 	scoreLangMatch  = 80
 	scoreLangMulti  = 40
 	scoreLangMiss   = -300
+	scoreLangExtra  = 20 // a wanted language among others
 	scoreCodecMiss  = -150
 	scoreHDRMiss    = -50
 	scoreOverBudget = -200
@@ -253,6 +254,13 @@ func langScore(have, want []string) int {
 	}
 	for _, w := range want {
 		if slices.Contains(have, strings.ToLower(w)) {
+			// A release in the wanted language only beats a multi-language
+			// one, whose default audio is often another language.
+			for _, h := range have {
+				if h != "multi" && !containsFold(want, h) {
+					return scoreLangMatch - scoreLangExtra
+				}
+			}
 			return scoreLangMatch
 		}
 	}

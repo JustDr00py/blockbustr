@@ -397,7 +397,7 @@ func TestDetailsPrefetchLockGuarded(t *testing.T) {
 	if n := fs.calls.Load(); n != 0 {
 		t.Fatalf("collected with the lock held: %d", n)
 	}
-	lock.Unlock(t.Context())
+	_ = lock.Unlock(t.Context())
 	getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
 	for range 200 {
 		if fs.calls.Load() > 0 {
@@ -825,5 +825,89 @@ func TestAddonIDsFallBackToCatalogID(t *testing.T) {
 	defer fs.mu.Unlock()
 	if !slices.Contains(fs.asked, "streams movie/tt0133093") || !slices.Contains(fs.asked, "streams movie/tmdb:603") {
 		t.Errorf("asked %v", fs.asked)
+	}
+}
+
+// multiAudioProber reports a multi-audio release: Italian first (and default),
+// English second, plus an embedded subtitle.
+type multiAudioProber struct{ calls atomic.Int32 }
+
+func (f *multiAudioProber) Probe(_ context.Context, target string, _ media.Options) (*media.Info, error) {
+	f.calls.Add(1)
+	return &media.Info{Container: "matroska,webm", Bitrate: 12_000_000, Duration: 2 * time.Hour, Streams: []media.Stream{
+		{Index: 0, Type: media.StreamVideo, Codec: "h264", Width: 1920, Height: 1080},
+		{Index: 1, Type: media.StreamAudio, Codec: "ac3", Language: "ita", Channels: 6, IsDefault: true},
+		{Index: 2, Type: media.StreamAudio, Codec: "ac3", Language: "eng", Channels: 6},
+		{Index: 3, Type: media.StreamSubtitle, Codec: "subrip", Language: "eng"},
+	}}, nil
+}
+
+// Ready addon choices are probed: they carry their real tracks (so clients
+// can switch audio) with the preferred language's audio as the default.
+// Choices still downloading and torrents aren't probed ahead of play.
+func TestChoiceProbes(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ FHD", Description: "iTA-ENG", URL: cdn.URL + "/ready.mkv", Hints: stremio.StreamHints{Filename: "The.Matrix.1999.iTA-ENG.1080p.mkv"}}},
+		{Addon: "AIO", Stream: stremio.Stream{Name: "[RD download] 4k", URL: cdn.URL + "/uncached.mkv"}},
+		{Addon: "Torrentio", Stream: stremio.Stream{Name: "720p", InfoHash: "aaaa"}},
+	}}}
+	pr := &multiAudioProber{}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.ChoiceProber = pr
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+		d.Config.Metadata.Language = "en-US"
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	type source struct {
+		Name                    string
+		Container               string
+		DefaultAudioStreamIndex *int
+		MediaStreams            []struct {
+			Index          int
+			Type, Language string
+		}
+	}
+	playback := func() []source {
+		t.Helper()
+		rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`)
+		var out struct{ MediaSources []source }
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil || rec.Code != 200 {
+			t.Fatalf("PlaybackInfo: %d %v", rec.Code, err)
+		}
+		return out.MediaSources
+	}
+	srcs := playback()
+	if pr.calls.Load() != 1 {
+		t.Errorf("probes = %d, want 1 (only the ready URL)", pr.calls.Load())
+	}
+	var probed *source
+	for i := range srcs {
+		if strings.Contains(srcs[i].Name, "1080p") {
+			probed = &srcs[i]
+		} else if len(srcs[i].MediaStreams) > 0 {
+			t.Errorf("unprobed choice %q has streams %v", srcs[i].Name, srcs[i].MediaStreams)
+		}
+	}
+	if probed == nil {
+		t.Fatalf("no probed choice among %v", srcs)
+	}
+	var tracks []string
+	for _, st := range probed.MediaStreams {
+		tracks = append(tracks, st.Type+":"+st.Language)
+	}
+	if strings.Join(tracks, " ") != "Video: Audio:ita Audio:eng Subtitle:eng" || probed.Container != "mkv" {
+		t.Errorf("tracks %v, container %q", tracks, probed.Container)
+	}
+	if probed.DefaultAudioStreamIndex == nil || *probed.DefaultAudioStreamIndex != 2 {
+		t.Errorf("default audio = %v, want 2 (English)", probed.DefaultAudioStreamIndex)
+	}
+	// Cached: the next PlaybackInfo doesn't probe again.
+	playback()
+	if pr.calls.Load() != 1 {
+		t.Errorf("probed again: %d", pr.calls.Load())
 	}
 }

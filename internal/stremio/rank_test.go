@@ -136,6 +136,8 @@ func TestScore(t *testing.T) {
 			Prefs{MaxBitrate: 40_000_000, Runtime: 2 * time.Hour, HEVC: true, HDR: true}, "(60 GB over 2h ≈ 72 Mb/s)"},
 		{"allowed group", Info{Height: 1080, Group: "FLUX"}, Info{Height: 1080, Group: "OTHER"}, Prefs{Allow: []string{"flux"}}, ""},
 		{"preferred language", Info{Height: 1080, Languages: []string{"de"}}, Info{Height: 1080, Languages: []string{"fr"}}, Prefs{Languages: []string{"de"}}, ""},
+		{"wanted language only beats it among others", Info{Height: 1080, Languages: []string{"en"}}, Info{Height: 1080, Languages: []string{"en", "it"}}, Prefs{Languages: []string{"en"}}, "(iTA-ENG releases often default to Italian)"},
+		{"…but not a resolution step", Info{Height: 2160, Languages: []string{"en", "it"}}, Info{Height: 1080, Languages: []string{"en"}}, Prefs{Languages: []string{"en"}, HEVC: true, HDR: true}, ""},
 		{"multi beats wrong language", Info{Height: 1080, Languages: []string{"multi", "it"}}, Info{Height: 1080, Languages: []string{"fr"}}, Prefs{Languages: []string{"de"}}, ""},
 		{"unflagged counts as English", Info{Height: 720}, Info{Height: 2160, Languages: []string{"ru"}}, Prefs{Languages: []string{"en"}}, ""},
 		{"cam sinks below everything", Info{Height: 480}, Info{Height: 2160, Cached: true, Cam: true}, all, ""},
