@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -224,6 +225,26 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		}
 		out = append(out, dtos[i])
 	}
+	// A version that plays as is beats one that needs the transcoder: the
+	// client takes the first source, and switching versions is free where
+	// transcoding spends the CPU. Rank works from addon labels, so an
+	// over-cap source with no size hint can still rank first; its probe
+	// knows better, and this order is where that correction lands. Rank
+	// order is kept within each group, and undecided sources (unprobed,
+	// uncached choices) stay behind the decided ones.
+	playsAsIs := func(ms dto.MediaSourceInfo) bool {
+		d, ok := session.Sources[*ms.Id]
+		return ok && (d.Mode == media.ModeDirect || d.Mode == media.ModeRemux)
+	}
+	slices.SortStableFunc(out, func(a, b dto.MediaSourceInfo) int {
+		switch {
+		case playsAsIs(a) && !playsAsIs(b):
+			return -1
+		case playsAsIs(b) && !playsAsIs(a):
+			return 1
+		}
+		return 0
+	})
 	if a.Cache != nil {
 		if err := a.Cache.SetJSON(r.Context(), cache.PlaySessionKey(playSessionID), session, cache.PlaySessionTTL); err != nil {
 			a.internalError(w, r, err)
@@ -245,7 +266,7 @@ func (a *api) offerStreams(r *http.Request, b *itemBatch, it db.Item, prefs stre
 	choices := pick.Choices
 	if want != nil && *want != "" && !sameID(*want, dto.IDFromUUID(it.ID).String()) {
 		if set, ok := a.loadStreamSet(r.Context(), it.ID); ok {
-			for _, c := range set.Choices {
+			for _, c := range set.All() {
 				if sameID(*want, dto.IDFromUUID(c.ID).String()) && !hasChoice(choices, c.ID) {
 					choices = append(choices, c)
 				}

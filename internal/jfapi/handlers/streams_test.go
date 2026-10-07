@@ -500,6 +500,67 @@ func TestCatalogVersionsHeightCapped(t *testing.T) {
 	}
 }
 
+// The remembered versions stay two picks deep: each device or quality
+// adds its pick's versions and keeps the previous pick's (a client still
+// playing one, or pinning its id, finds it), but the pick before that
+// drops off instead of accumulating.
+func TestStreamSetTwoPicksDeep(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4a.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4b.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f1.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f2.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "720p", URL: "https://cdn.example/s1.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "720p", URL: "https://cdn.example/s2.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	auth := `MediaBrowser Token="` + captureToken + `"`
+	type src struct{ Id, Name string }
+	playback := func(body string) []src {
+		t.Helper()
+		rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", auth, body)
+		var out struct{ MediaSources []src }
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil || rec.Code != 200 {
+			t.Fatalf("PlaybackInfo: %d %v %s", rec.Code, err, rec.Body)
+		}
+		return out.MediaSources
+	}
+	details := func() []string {
+		t.Helper()
+		rec := call(t, sf.h, "GET", "/Items/"+matrix.Id, auth, "")
+		var out struct {
+			MediaSources []struct{ Name string }
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil || rec.Code != 200 {
+			t.Fatalf("details: %d %v %s", rec.Code, err, rec.Body)
+		}
+		var names []string
+		for _, s := range out.MediaSources {
+			names = append(names, s.Name)
+		}
+		return names
+	}
+
+	// Three devices: uncapped, 1080-capped, 720-capped.
+	playback(h264Profile)
+	fhd := playback(cappedProfile)
+	playback(strings.Replace(cappedProfile, `"1080"`, `"720"`, 1))
+
+	names := details()
+	if counted(names, "2160p") != 0 || counted(names, "1080p") != 2 || counted(names, "720p") != 2 {
+		t.Errorf("remembered versions (%d): %v; want the last two picks only", len(names), names)
+	}
+	// A client pinning a version from the previous pick still gets it
+	// (fhd[1]: the first choice of a pick answers to the item id).
+	pinned := fhd[1].Id
+	got := playback(`{"MediaSourceId":"` + pinned + `"}`)
+	if len(got) != 1 || got[0].Id != pinned {
+		t.Errorf("pinned previous-pick source: %+v", got)
+	}
+}
+
 func TestCatalogWithoutStreamsKeepsPlaceholder(t *testing.T) {
 	fs := &fakeStreams{}
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
@@ -898,6 +959,84 @@ func TestChoiceProbes(t *testing.T) {
 	playback()
 	if pr.calls.Load() != 1 {
 		t.Errorf("probed again: %d", pr.calls.Load())
+	}
+}
+
+// targetProber probes each URL as given.
+type targetProber struct{ byTarget map[string]media.Info }
+
+func (f targetProber) Probe(_ context.Context, target string, _ media.Options) (*media.Info, error) {
+	in, ok := f.byTarget[target]
+	if !ok {
+		return nil, fmt.Errorf("unexpected probe target %s", target)
+	}
+	return &in, nil
+}
+
+// A version that direct-plays is offered before one that needs the
+// transcoder: the client takes the first source, so a mid-play quality
+// change (a lower MaxStreamingBitrate) switches to the version that fits
+// the cap instead of transcoding. Rank works from labels, so the 4K
+// (no size hint, nothing to penalise) still ranks first; its probe says
+// 60 Mb/s, and the probe is what the offered order listens to.
+func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "Torrentio", Stream: stremio.Stream{Name: "4k", Title: "The.Matrix.1999.2160p.BluRay.x264-GRP", URL: cdn.URL + "/uhd.mkv"}},
+		{Addon: "Torrentio", Stream: stremio.Stream{Name: "720p", Title: "The.Matrix.1999.720p.BluRay.x264-GRP\n💾 2 GB", URL: cdn.URL + "/sd.mkv"}},
+	}}}
+	video := func(height int) []media.Stream {
+		return []media.Stream{
+			{Index: 0, Type: media.StreamVideo, Codec: "h264", Height: height},
+			{Index: 1, Type: media.StreamAudio, Codec: "ac3", Channels: 6},
+		}
+	}
+	pr := targetProber{byTarget: map[string]media.Info{
+		cdn.URL + "/uhd.mkv": {Container: "matroska,webm", Bitrate: 60_000_000, Streams: video(2160)},
+		cdn.URL + "/sd.mkv":  {Container: "matroska,webm", Bitrate: 3_000_000, Streams: video(720)},
+	}}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.ChoiceProber = pr
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	playback := func(body string) []struct {
+		Name               string
+		SupportsDirectPlay bool
+	} {
+		t.Helper()
+		rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, body)
+		var out struct {
+			MediaSources []struct {
+				Name               string
+				SupportsDirectPlay bool
+			}
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil || rec.Code != 200 {
+			t.Fatalf("PlaybackInfo: %d %v", rec.Code, err)
+		}
+		return out.MediaSources
+	}
+
+	// Uncapped: the 4K direct-plays and keeps its ranked place.
+	if got := playback(h264Profile); got[0].Name != "2160p H.264 • Torrentio" || !got[0].SupportsDirectPlay {
+		t.Errorf("uncapped first = %+v", got[0])
+	}
+	// Capped at 8 Mb/s: the 4K is transcode-only, so the 720p that fits
+	// is offered first and direct-plays.
+	capped := strings.Replace(h264Profile, "120000000", "8000000", 1)
+	got := playback(capped)
+	if len(got) != 2 {
+		t.Fatalf("sources = %+v", got)
+	}
+	if got[0].Name != "720p H.264 • 2.0 GB • Torrentio" || !got[0].SupportsDirectPlay {
+		t.Errorf("capped first = %+v", got[0])
+	}
+	if got[1].SupportsDirectPlay {
+		t.Errorf("4k over the cap still direct-plays: %+v", got[1])
 	}
 }
 

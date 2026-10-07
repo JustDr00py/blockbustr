@@ -192,17 +192,18 @@ type Prefs struct {
 // Score weights. Being playable right away outweighs everything else;
 // then the picture; then how well it fits the client.
 const (
-	scoreCached     = 1000
-	scoreAllowGroup = 100
-	scoreLangMatch  = 80
-	scoreLangMulti  = 40
-	scoreLangMiss   = -300
-	scoreLangExtra  = 20 // a wanted language among others
-	scoreCodecMiss  = -150
-	scoreHDRMiss    = -50
-	scoreOverBudget = -200
-	scoreOverHeight = -250
-	maxSeederScore  = 10 // seeders only break ties
+	scoreCached          = 1000
+	scoreAllowGroup      = 100
+	scoreLangMatch       = 80
+	scoreLangMulti       = 40
+	scoreLangMiss        = -300
+	scoreLangExtra       = 20 // a wanted language among others
+	scoreCodecMiss       = -150
+	scoreHDRMiss         = -50
+	scoreOverBudget      = -200 // per multiple of the client's bitrate cap
+	scoreOverBudgetFloor = -800 // …clamped, so cached still dominates however far over
+	scoreOverHeight      = -250
+	maxSeederScore       = 10 // seeders only break ties
 )
 
 var heightScore = map[int]int{2160: 400, 1080: 300, 720: 200, 576: 120, 480: 100, 0: 150}
@@ -228,8 +229,15 @@ func Score(in Info, p Prefs) (score int, ok bool) {
 		score += scoreHDRMiss
 	}
 	if p.MaxBitrate > 0 && p.Runtime > 0 && in.Size > 0 {
-		if bitrate := float64(in.Size) * 8 / p.Runtime.Seconds(); bitrate > float64(p.MaxBitrate) {
-			score += scoreOverBudget
+		// The penalty grows with the multiple of the cap: a stream's
+		// transcode cost is its input bitrate (decode is software), so
+		// when every version is over budget the nearest one above the cap
+		// becomes the default and is the transcode input, not the biggest.
+		// The floor keeps scoreCached dominant: a cached stream however
+		// far over still outranks an uncached in-budget one (≤590 at the
+		// top of every other score, against 1000+400−800).
+		if ratio := (float64(in.Size) * 8 / p.Runtime.Seconds()) / float64(p.MaxBitrate); ratio > 1 {
+			score += max(int(float64(scoreOverBudget)*ratio), scoreOverBudgetFloor)
 		}
 	}
 	if in.Group != "" && containsFold(p.Allow, in.Group) {

@@ -58,11 +58,27 @@ type SubtitleChoice struct {
 	Addon    string
 }
 
-// streamSet is what streamset:{item} holds: the latest offer first, then
-// earlier offers a client may still be playing, and the title's subtitles.
+// streamSet is what streamset:{item} holds: the latest pick's choices,
+// then the previous pick's — a client still playing one of those (a
+// quality change re-picks under different prefs) or pinning one by id
+// finds it — and the title's subtitles. Picks older than that drop off,
+// so the versions a title offers stay two picks deep however many
+// devices and qualities ask for it.
 type streamSet struct {
 	Choices   []StreamChoice
+	Earlier   []StreamChoice
 	Subtitles []SubtitleChoice
+}
+
+// All is every choice still resolvable by id, the latest pick first.
+func (s streamSet) All() []StreamChoice {
+	out := append([]StreamChoice{}, s.Choices...)
+	for _, c := range s.Earlier {
+		if !hasChoice(out, c.ID) {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // firstAddonSubtitle is the index of a choice's first addon subtitle,
@@ -185,7 +201,7 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 	}
 	if len(set.Choices) > 0 {
 		var streams map[uuid.UUID][]db.MediaStream
-		b.sources[it.ID], streams = choiceSources(it, set.Choices, set.Subtitles)
+		b.sources[it.ID], streams = choiceSources(it, set.All(), set.Subtitles)
 		applyProbes(b.sources[it.ID], streams, a.loadChoiceProbes(ctx, set.Choices), a.preferredAudio())
 		for id, st := range streams {
 			b.streams[id] = st
@@ -393,16 +409,20 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 		return pick, nil
 	}
 	set, _ := a.loadStreamSet(ctx, it.ID)
-	merged := append([]StreamChoice{}, choices...)
+	// The previous pick's choices stay one generation back for clients
+	// still on them; the generation before that drops off, so the
+	// remembered list stays bounded however many devices and qualities
+	// pick this title.
+	earlier := make([]StreamChoice, 0, len(set.Choices))
 	for _, c := range set.Choices {
-		if len(merged) >= maxStreamSet {
+		if len(earlier) >= maxStreamSet-len(choices) {
 			break
 		}
-		if !hasChoice(merged, c.ID) {
-			merged = append(merged, c)
+		if !hasChoice(choices, c.ID) {
+			earlier = append(earlier, c)
 		}
 	}
-	if err := a.Cache.SetJSON(ctx, cache.StreamSetKey(it.ID.String()), streamSet{Choices: merged, Subtitles: pick.Subtitles}, cache.StreamSetTTL); err != nil {
+	if err := a.Cache.SetJSON(ctx, cache.StreamSetKey(it.ID.String()), streamSet{Choices: choices, Earlier: earlier, Subtitles: pick.Subtitles}, cache.StreamSetTTL); err != nil {
 		return streamSet{}, err
 	}
 	return pick, nil
