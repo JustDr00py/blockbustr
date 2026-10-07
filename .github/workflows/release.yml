@@ -1,0 +1,53 @@
+# Release (TASKS P4.7): pushing a tag vMAJOR.MINOR.PATCH builds the image for
+# linux/amd64 and linux/arm64 and publishes it to GitHub's registry as
+# ghcr.io/<owner>/blockbustr:<version> (and :<major>.<minor>, and :latest for
+# a release that isn't a pre-release such as v0.4.0-rc.1).
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write   # the GitHub release
+  packages: write   # the image
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3      # arm64 runtime stage (apt-get) under emulation
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5      # lower-cases the image name
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/blockbustr
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          flavor: latest=auto
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: VERSION=${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          pre=""
+          case "$GITHUB_REF_NAME" in *-*) pre="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" --generate-notes $pre \
+            --notes "Image: \`ghcr.io/${OWNER,,}/blockbustr:${GITHUB_REF_NAME#v}\` (linux/amd64, linux/arm64)"

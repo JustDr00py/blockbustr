@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/buckket/go-blurhash"
+	"github.com/bbrks/go-blurhash"
 	"golang.org/x/image/draw"
 	_ "golang.org/x/image/webp" // decode WebP originals (encoding stays JPEG/PNG)
 	"golang.org/x/sync/singleflight"

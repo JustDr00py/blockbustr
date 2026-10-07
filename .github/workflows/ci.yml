@@ -1,0 +1,41 @@
+# The definition of done (Plan/AGENTS.md): `make check` on every push and
+# pull request, against Postgres and Redis service containers.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: blockbustr
+          POSTGRES_PASSWORD: blockbustr
+          POSTGRES_DB: blockbustr
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U blockbustr" --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:8.10
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Tools (ffmpeg for the transcode tests, sqlc, golangci-lint)
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
+      - run: make check
