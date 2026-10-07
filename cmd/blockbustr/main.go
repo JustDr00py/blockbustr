@@ -144,6 +144,7 @@ func run() error {
 	encoder := transcode.Choose(hw, cfg.Transcode.HWAccel)
 	log.Info("transcoding", "encoder", encoder, "available", hw.Available, "device", hw.Device)
 	transcoder := transcode.NewManager(cfg.Paths.TranscodeDir(), cfg.Transcode.MaxSessions)
+	transcoder.Log = log
 	if err := transcoder.RemoveStale(); err != nil {
 		log.Warn("could not clear old transcode sessions", "dir", cfg.Paths.TranscodeDir(), "err", err)
 	}

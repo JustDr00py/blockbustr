@@ -226,6 +226,7 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 	}
 	if !o.CopyVideo && j.video != nil {
 		o.Tonemap = isHDR(deref(j.video.VideoRangeType))
+		o.SourceCodec = deref(j.video.Codec)
 	}
 	o.Input = j.src.PathOrUrl
 	if j.src.IsRemote || !strings.EqualFold(j.src.Protocol, "File") {

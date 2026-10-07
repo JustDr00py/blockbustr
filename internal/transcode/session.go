@@ -23,6 +23,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -71,8 +72,13 @@ type StartOptions struct {
 	Encoder      Capability // from Choose
 	Device       string     // DRI render node for qsv/vaapi
 	VideoCodec   string     // "h264" (default) or "hevc"
+	SourceCodec  string     // the input's video codec ("hevc", "av1"…); "" unknown
 	VideoBitrate int64      // bits/s target; 0 = the encoder's quality default
 	Tonemap      bool       // HDR → SDR before encoding (CPU filter, hardware encode)
+
+	// swDecode is set by Manager.Start's fallback when the GPU refused to
+	// decode the input; never set by callers.
+	swDecode bool
 
 	// AudioStream is the source stream index to play; -1 = the first audio.
 	AudioStream   int
@@ -124,6 +130,29 @@ func encoderName(c Capability, codec string) string {
 	return "libx264"
 }
 
+// hwDecoded are the codecs Intel's media driver decodes in hardware —
+// everything a modern iGPU ships with.
+var hwDecoded = map[string]bool{"h264": true, "hevc": true, "vp9": true, "av1": true}
+
+// hwDecode reports whether this session should decode on the GPU too.
+// Only when nothing needs the frames on the CPU: measured on a 4K 10-bit
+// HEVC source, GPU decode keeps the frames on the device and takes a
+// 6-second encode from 11.1 CPU-seconds to 0.89 — but downloading P010
+// frames for the CPU tonemap costs more than software decode saves
+// (16-bit planes: 48 CPU-seconds against 38), so tonemap and burn-in
+// sessions keep software decode until VPP tonemapping.
+func (o StartOptions) hwDecode() bool {
+	if o.swDecode || o.CopyVideo || o.Tonemap || o.BurnText != "" || o.BurnImage != nil {
+		return false
+	}
+	switch o.Encoder {
+	case CapQSV, CapVAAPI:
+	default:
+		return false
+	}
+	return hwDecoded[o.SourceCodec]
+}
+
 func buildArgs(o StartOptions, dir string) []string {
 	seg := o.segmentSeconds()
 	start := float64(o.StartSegment * seg)
@@ -134,12 +163,25 @@ func buildArgs(o StartOptions, dir string) []string {
 	if start > 0 {
 		args = append(args, "-ss", strconv.FormatFloat(start, 'f', 3, 64))
 	}
+	hw := o.hwDecode()
 	if !o.CopyVideo {
-		switch o.Encoder {
-		case CapVAAPI:
-			args = append(args, "-init_hw_device", "vaapi=va:"+o.Device, "-filter_hw_device", "va")
-		case CapQSV:
-			args = append(args, "-init_hw_device", "qsv=qs:"+o.Device, "-filter_hw_device", "qs")
+		switch {
+		case hw && o.Encoder == CapQSV:
+			// QSV decode derives from VAAPI (the reliable oneVPL form, as
+			// Jellyfin runs it): one device pair for decode and encode, and
+			// frames reach the encoder without touching system memory.
+			args = append(args, "-init_hw_device", "vaapi=va:"+o.Device, "-init_hw_device", "qsv=qs@va", "-filter_hw_device", "qs",
+				"-hwaccel", "qsv", "-hwaccel_output_format", "qsv")
+		case hw && o.Encoder == CapVAAPI:
+			args = append(args, "-init_hw_device", "vaapi=va:"+o.Device, "-filter_hw_device", "va",
+				"-hwaccel", "vaapi", "-hwaccel_output_format", "vaapi")
+		default:
+			switch o.Encoder {
+			case CapVAAPI:
+				args = append(args, "-init_hw_device", "vaapi=va:"+o.Device, "-filter_hw_device", "va")
+			case CapQSV:
+				args = append(args, "-init_hw_device", "qsv=qs:"+o.Device, "-filter_hw_device", "qs")
+			}
 		}
 	}
 	args = append(args, "-i", o.Input)
@@ -166,14 +208,21 @@ func buildArgs(o StartOptions, dir string) []string {
 			pre = append(pre, sub)
 		}
 		suffix := ""
-		switch o.Encoder {
-		case CapVAAPI:
-			suffix = "format=nv12,hwupload"
-		case CapQSV:
-			suffix = "format=nv12,hwupload=extra_hw_frames=64"
-		case CapNVENC:
+		switch {
+		case hw && o.Encoder == CapQSV:
+			suffix = "scale_qsv=format=nv12" // P010 → NV12 on the GPU; frames never leave it
+		case hw && o.Encoder == CapVAAPI:
+			suffix = "scale_vaapi=format=nv12"
 		default:
-			suffix = "format=yuv420p" // 8-bit output from 10-bit sources
+			switch o.Encoder {
+			case CapVAAPI:
+				suffix = "format=nv12,hwupload"
+			case CapQSV:
+				suffix = "format=nv12,hwupload=extra_hw_frames=64"
+			case CapNVENC:
+			default:
+				suffix = "format=yuv420p" // 8-bit output from 10-bit sources
+			}
 		}
 		join := func(parts ...string) string {
 			var out []string
@@ -386,6 +435,9 @@ type Manager struct {
 	// IdleTimeout closes sessions nobody fetched a segment from for this
 	// long (Run). Set before Run.
 	IdleTimeout time.Duration
+	// Log warns when a hardware-decode session falls back to software.
+	// Optional; nil logs nothing.
+	Log *slog.Logger
 
 	mu       sync.Mutex
 	sessions map[string]*Session
@@ -416,8 +468,46 @@ func (m *Manager) RemoveStale() error {
 
 // Start launches ffmpeg for session id (replacing a running one with that
 // id) and waits up to startupTimeout for its first segment. Segments a
-// previous run of the same id already wrote are kept.
+// previous run of the same id already wrote are kept. A session meant to
+// decode on the GPU that fails to start (a codec profile or driver quirk
+// the hardware won't decode) is retried once with software decode —
+// unless the input itself wouldn't open, which fails the same way in
+// software (seen live: a proxied URL answering 5XX to the first attempt
+// only, silently pinning a whole session to software decode).
 func (m *Manager) Start(ctx context.Context, id string, opts StartOptions, startupTimeout time.Duration) (*Session, error) {
+	s, err := m.start(ctx, id, opts, startupTimeout)
+	if err == nil || !opts.hwDecode() || inputFailed(err) {
+		return s, err
+	}
+	if m.Log != nil {
+		m.Log.WarnContext(ctx, "hardware decode didn't start; retrying software decode", "session", id, "err", err)
+	}
+	opts.swDecode = true
+	return m.start(ctx, id, opts, startupTimeout)
+}
+
+// inputOpenFailures are the stderr signatures of an input that never
+// opened — a dead URL, a 5XX, a missing file. Software decode can't fix
+// those, so the fallback doesn't try.
+var inputOpenFailures = []string{
+	"Error opening input", "Server returned", "HTTP error",
+	"No such file or directory", "Protocol not found",
+}
+
+func inputFailed(err error) bool {
+	if errors.Is(err, ErrSegmentTimeout) {
+		return false // ffmpeg may still be working; not proven an input fault
+	}
+	msg := err.Error()
+	for _, sig := range inputOpenFailures {
+		if strings.Contains(msg, sig) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Manager) start(ctx context.Context, id string, opts StartOptions, startupTimeout time.Duration) (*Session, error) {
 	if !validID.MatchString(id) {
 		return nil, ErrBadSessionID
 	}

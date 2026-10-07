@@ -43,6 +43,15 @@ func TestBuildArgs(t *testing.T) {
 			[]string{"-vf setpts=PTS+12.000/TB,subtitles=filename=/c/subs/3.ass,setpts=PTS-12.000/TB,format=yuv420p"}, nil},
 		{"vaapi hevc", StartOptions{Input: "/m/a.mkv", Encoder: CapVAAPI, Device: "/dev/dri/renderD128", VideoCodec: "hevc", AudioStream: 1, CopyAudio: true},
 			[]string{"-init_hw_device vaapi=va:/dev/dri/renderD128", "-vf format=nv12,hwupload -c:v hevc_vaapi -qp 23"}, []string{"forced_idr", "forced-idr"}},
+		{"qsv decodes hevc on the gpu, frames never leave it", StartOptions{Input: "/m/a.mkv", Encoder: CapQSV, Device: "/dev/dri/renderD128", SourceCodec: "hevc", AudioStream: 1},
+			[]string{"-init_hw_device vaapi=va:/dev/dri/renderD128 -init_hw_device qsv=qs@va -filter_hw_device qs -hwaccel qsv -hwaccel_output_format qsv -i /m/a.mkv",
+				"-vf scale_qsv=format=nv12 -c:v h264_qsv"}, []string{"hwupload"}},
+		{"vaapi decodes h264 on the gpu", StartOptions{Input: "/m/a.mkv", Encoder: CapVAAPI, Device: "/dev/dri/renderD128", SourceCodec: "h264", VideoBitrate: 4_000_000, AudioStream: -1},
+			[]string{"-hwaccel vaapi -hwaccel_output_format vaapi -i /m/a.mkv", "-vf scale_vaapi=format=nv12 -c:v h264_vaapi"}, []string{"hwupload"}},
+		{"tonemap keeps software decode", StartOptions{Input: "/m/a.mkv", Encoder: CapQSV, Device: "/dev/dri/renderD128", SourceCodec: "hevc", Tonemap: true, AudioStream: 1},
+			[]string{"-vf " + tonemapChain + ",format=nv12,hwupload=extra_hw_frames=64"}, []string{"-hwaccel"}},
+		{"a codec the gpu doesn't decode", StartOptions{Input: "/m/a.mkv", Encoder: CapQSV, Device: "/dev/dri/renderD128", SourceCodec: "mpeg4", AudioStream: 1},
+			[]string{"-init_hw_device qsv=qs:/dev/dri/renderD128", "-vf format=nv12,hwupload=extra_hw_frames=64"}, []string{"-hwaccel"}},
 	} {
 		got := strings.Join(buildArgs(c.opts, dir), " ") + " "
 		for _, w := range c.want {
@@ -297,7 +306,7 @@ func TestSessionQSVRealHardware(t *testing.T) {
 	}
 	src := testSource(t)
 	m := NewManager(t.TempDir(), 0)
-	s, err := m.Start(t.Context(), "qsv", StartOptions{Input: src, Encoder: CapQSV, Device: caps.Device, VideoBitrate: 1_000_000, AudioStream: 1, SegmentSeconds: 2}, 30*time.Second)
+	s, err := m.Start(t.Context(), "qsv", StartOptions{Input: src, Encoder: CapQSV, Device: caps.Device, SourceCodec: "h264", VideoBitrate: 1_000_000, AudioStream: 1, SegmentSeconds: 2}, 30*time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,6 +320,89 @@ func TestSessionQSVRealHardware(t *testing.T) {
 		if d := probe(t, s.SegmentPath(n)).Format.Duration; !strings.HasPrefix(d, "2.0") && !strings.HasPrefix(d, "1.99") {
 			t.Errorf("qsv segment %d lasts %s", n, d)
 		}
+	}
+}
+
+// A session meant to decode on the GPU that can't start (a codec profile
+// or driver quirk the hardware refuses) is retried once with software
+// decode instead of failing the play.
+func TestStartFallsBackToSoftwareDecode(t *testing.T) {
+	orig := runFFmpegSession
+	t.Cleanup(func() { runFFmpegSession = orig })
+	var calls int
+	runFFmpegSession = func(ctx context.Context, args []string, stderr *bytes.Buffer) (*exec.Cmd, error) {
+		calls++
+		if slices.Contains(args, "-hwaccel") { // die at once, like a refused decoder
+			cmd := exec.CommandContext(ctx, "sh", "-c", "exit 1")
+			cmd.Stderr = stderr
+			return cmd, cmd.Start()
+		}
+		i := slices.Index(args, "-hls_segment_filename")
+		start := args[slices.Index(args, "-start_number")+1]
+		seg := strings.Replace(args[i+1], "%d", start, 1)
+		cmd := exec.CommandContext(ctx, "sh", "-c", "printf x > '"+seg+"'; exec sleep 60")
+		cmd.Stderr = stderr
+		return cmd, cmd.Start()
+	}
+	m := NewManager(t.TempDir(), 0)
+	s, err := m.Start(t.Context(), "fb", StartOptions{Input: "/m/a.mkv", Encoder: CapQSV, Device: "/dev/dri/renderD128", SourceCodec: "hevc", AudioStream: -1}, 5*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { m.Close("fb") })
+	if calls != 2 || !s.Opts.swDecode {
+		t.Errorf("calls %d, swDecode %v; want one hw attempt then software", calls, s.Opts.swDecode)
+	}
+}
+
+// An input that wouldn't open (a proxied URL answering 5XX) fails the
+// same way in software, so the fallback leaves it alone: seen live, one
+// flaky 5XX pinned a whole session to software decode for no reason.
+func TestStartDoesNotFallBackOnInputFailure(t *testing.T) {
+	orig := runFFmpegSession
+	t.Cleanup(func() { runFFmpegSession = orig })
+	var calls int
+	runFFmpegSession = func(ctx context.Context, args []string, stderr *bytes.Buffer) (*exec.Cmd, error) {
+		calls++
+		cmd := exec.CommandContext(ctx, "sh", "-c", "echo 'Error opening input: Server returned 5XX Server Error reply' >&2; exit 1")
+		cmd.Stderr = stderr
+		return cmd, cmd.Start()
+	}
+	m := NewManager(t.TempDir(), 0)
+	_, err := m.Start(t.Context(), "fbx", StartOptions{Input: "https://x/y.mkv", Encoder: CapQSV, Device: "/dev/dri/renderD128", SourceCodec: "hevc", AudioStream: -1}, 5*time.Second)
+	if err == nil {
+		t.Fatal("session started")
+	}
+	if calls != 1 {
+		t.Errorf("calls %d; want the failure returned, not retried", calls)
+	}
+}
+
+// 10-bit HEVC decodes on the GPU and scale_qsv makes NV12 of it there:
+// validated against a 4K remux, 0.89 CPU-seconds per 6s of video where
+// software decode costs 11.1.
+func TestSessionQSVHWDecodeRealHardware(t *testing.T) {
+	needFFmpeg(t)
+	caps := Probe(t.Context(), "")
+	if !caps.Has(CapQSV) {
+		t.Skip("no QSV")
+	}
+	p := filepath.Join(t.TempDir(), "hevc10.mkv")
+	if out, err := exec.CommandContext(t.Context(), "ffmpeg", "-v", "error", "-f", "lavfi",
+		"-i", "testsrc2=duration=8:size=1280x720:rate=24", "-c:v", "libx265", "-preset", "ultrafast",
+		"-pix_fmt", "yuv420p10le", p).CombinedOutput(); err != nil {
+		t.Fatalf("make hevc source: %v: %s", err, out)
+	}
+	m := NewManager(t.TempDir(), 0)
+	s, err := m.Start(t.Context(), "qsvhw", StartOptions{Input: p, Encoder: CapQSV, Device: caps.Device,
+		SourceCodec: "hevc", VideoBitrate: 1_000_000, AudioStream: -1, SegmentSeconds: 2}, 30*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { m.Close("qsvhw") })
+	waitDone(t, s)
+	if got := probe(t, s.SegmentPath(0)).Streams[0].CodecName; got != "h264" {
+		t.Errorf("segment codec %s", got)
 	}
 }
 
