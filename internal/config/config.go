@@ -38,6 +38,15 @@ type Config struct {
 	Libraries []Library `yaml:"libraries"`
 	Scan      Scan      `yaml:"scan"`
 	Stremio   Stremio   `yaml:"stremio"`
+	Search    Search    `yaml:"search"`
+}
+
+// Search configures in-client search beyond the library (DESIGN §7.4).
+type Search struct {
+	Enabled          bool          `yaml:"enabled"`           // search addons/Cinemeta from the clients' search
+	Timeout          time.Duration `yaml:"timeout"`           // budget for one search; late sources are left out
+	Retention        time.Duration `yaml:"retention"`         // found titles nobody played or favourited are dropped after this
+	CinemetaFallback bool          `yaml:"cinemeta_fallback"` // search Cinemeta when no enabled addon has a search catalog
 }
 
 // Stremio configures the catalog sync (DESIGN §7.2). Addons themselves are
@@ -220,6 +229,7 @@ func Defaults() Config {
 			Streams:   Streams{Timeout: 6 * time.Second, Top: 3},
 			Subtitles: Subtitles{PerLanguage: 3},
 		},
+		Search: Search{Enabled: true, Timeout: 3 * time.Second, Retention: 7 * 24 * time.Hour, CinemetaFallback: true},
 		Scan: Scan{
 			OnStart: true, Interval: 6 * time.Hour, ProbeTimeout: 2 * time.Minute, MissingGrace: 24 * time.Hour,
 			Watch: true, WatchDelay: 30 * time.Second,
@@ -375,6 +385,12 @@ func (c *Config) Validate() error {
 	}
 	if c.Server.StreamURLTTL < time.Hour || c.Server.StreamURLTTL > 30*24*time.Hour {
 		add("server.stream_url_ttl must be between 1h and 720h")
+	}
+	if c.Search.Timeout < 500*time.Millisecond || c.Search.Timeout > 15*time.Second {
+		add("search.timeout must be between 500ms and 15s")
+	}
+	if c.Search.Retention < time.Hour {
+		add("search.retention must be at least 1h")
 	}
 	if c.Stremio.Streams.Timeout < time.Second || c.Stremio.Streams.Timeout > 30*time.Second {
 		add("stremio.streams.timeout must be between 1s and 30s")

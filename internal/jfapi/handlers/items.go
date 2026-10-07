@@ -22,6 +22,20 @@ import (
 // types is a subset of {Movie, Series}.
 type RemoteSearch interface {
 	SearchItems(ctx context.Context, term string, types []string, limit int) ([]db.Item, error)
+	// EnsureEpisodes gives a series found by search its seasons and
+	// episodes before they're listed; it leaves other items alone.
+	EnsureEpisodes(ctx context.Context, series db.Item) error
+}
+
+// ensureEpisodes fills a search-found series' episodes before they're
+// listed (DESIGN §7.4 step 4). A failure only leaves it empty for now.
+func (a *api) ensureEpisodes(r *http.Request, it db.Item) {
+	if a.RemoteSearch == nil || it.Type != "Series" {
+		return
+	}
+	if err := a.RemoteSearch.EnsureEpisodes(r.Context(), it); err != nil {
+		a.Log.WarnContext(r.Context(), "series episodes unavailable", "series", it.ID, "err", err)
+	}
 }
 
 func (a *api) registerItems(rt *jfapi.Router) {
@@ -242,6 +256,11 @@ func (a *api) getItems(w http.ResponseWriter, r *http.Request, s auth.Session) {
 	if !ok {
 		jfapi.WriteJSON(w, r, http.StatusOK, queryResult([]dto.BaseItemDto{}))
 		return
+	}
+	if iq.ParentID != nil && a.RemoteSearch != nil {
+		if parent, ok, err := a.visibleItem(r, user, *iq.ParentID); err == nil && ok {
+			a.ensureEpisodes(r, parent)
+		}
 	}
 	res, err := pg.QueryItems(r.Context(), a.DB, iq)
 	if err != nil {

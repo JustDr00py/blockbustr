@@ -108,12 +108,13 @@ func TestValidateReportsAllErrors(t *testing.T) {
 	cfg.Stremio.Streams.Languages = []string{"eng"}
 	cfg.Stremio.Subtitles.PerLanguage = 0
 	cfg.Server.StreamURLTTL = time.Minute
+	cfg.Search.Timeout = time.Minute
 	err := cfg.Validate()
 	if err == nil {
 		t.Fatal("expected errors")
 	}
 	for _, want := range []string{"database.url", "redis.url", "reported_version", "hwaccel", "external_url", "admin_username",
-		"streams.timeout", "streams.top", "streams.languages", "subtitles.per_language", "stream_url_ttl"} {
+		"streams.timeout", "streams.top", "streams.languages", "subtitles.per_language", "stream_url_ttl", "search.timeout"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("missing %q in %v", want, err)
 		}

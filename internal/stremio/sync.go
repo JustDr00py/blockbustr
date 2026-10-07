@@ -239,7 +239,7 @@ func (s *Syncer) syncCatalog(ctx context.Context, ad addonInfo, sources []addonI
 		s.Log.Warn("stremio catalog empty; library left as it was", "library", lib.Name)
 		return nil
 	}
-	w := &catalogWriter{s: s, q: q, lib: lib, folder: folder, addon: ad.row.ID}
+	w := &catalogWriter{s: s, q: q, lib: lib, folder: &folder, addon: ad.row.ID}
 	var series []Meta
 	var seriesIDs []uuid.UUID
 	for _, m := range metas {
@@ -324,7 +324,7 @@ type catalogWriter struct {
 	s      *Syncer
 	q      *db.Queries
 	lib    db.Library
-	folder uuid.UUID
+	folder *uuid.UUID // the library's CollectionFolder; nil for discover
 	addon  uuid.UUID
 
 	mu           sync.Mutex
@@ -387,7 +387,7 @@ func (w *catalogWriter) title(ctx context.Context, m Meta, catalogType string) (
 	}
 	name := strings.TrimSpace(m.Name)
 	res, err := w.q.UpsertStremioItem(ctx, db.UpsertStremioItemParams{
-		LibraryID: w.lib.ID, ParentID: &w.folder, TopParentID: &w.folder, Type: typ,
+		LibraryID: w.lib.ID, ParentID: w.folder, TopParentID: w.folder, Type: typ,
 		Name: name, SortName: library.SortName(name), Path: ptr("stremio:" + catalogType + ":" + m.ID),
 		StremioRef: w.ref(catalogType, m.ID), ProductionYear: year, PremiereDate: date(m.Released),
 		Overview: optString(m.Description), ProviderIds: providerIDs(m),
@@ -489,7 +489,7 @@ func (w *catalogWriter) seriesEpisodes(ctx context.Context, seriesID uuid.UUID, 
 			}
 			var err error
 			seasonID, err = w.q.UpsertSeason(ctx, db.UpsertSeasonParams{
-				LibraryID: w.lib.ID, ParentID: &seriesID, TopParentID: &w.folder,
+				LibraryID: w.lib.ID, ParentID: &seriesID, TopParentID: w.folder,
 				Name: name, SortName: fmt.Sprintf("%04d", v.Season), IndexNumber: ptr(int32(v.Season)),
 			})
 			if err != nil {
@@ -509,7 +509,7 @@ func (w *catalogWriter) seriesEpisodes(ctx context.Context, seriesID uuid.UUID, 
 			overview = v.Description
 		}
 		res, err := w.q.UpsertStremioItem(ctx, db.UpsertStremioItemParams{
-			LibraryID: w.lib.ID, ParentID: &seasonID, TopParentID: &w.folder, Type: "Episode",
+			LibraryID: w.lib.ID, ParentID: &seasonID, TopParentID: w.folder, Type: "Episode",
 			Name: name, SortName: fmt.Sprintf("%04d %s", ep, library.SortName(name)), Path: ptr("stremio:series:" + v.ID),
 			StremioRef: w.ref("series", v.ID), IndexNumber: ptr(int32(ep)), ParentIndexNumber: ptr(int32(v.Season)),
 			PremiereDate: date(v.Released), Overview: optString(overview), ProviderIds: []byte("{}"),

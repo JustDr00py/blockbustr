@@ -7,9 +7,9 @@ RETURNING *;
 
 -- name: DisableLibrariesExcept :execrows
 -- Libraries no longer in config.yaml stop being listed and scanned. Stremio
--- catalog libraries aren't in config; the catalog sync manages them.
+-- catalog libraries and the discover library aren't in config.
 UPDATE libraries SET enabled = false
-WHERE enabled AND kind <> 'stremio' AND NOT (id = ANY(@keep::uuid[]));
+WHERE enabled AND kind NOT IN ('stremio', 'discover') AND NOT (id = ANY(@keep::uuid[]));
 
 -- name: EnsureCollectionFolder :one
 INSERT INTO items (library_id, type, name, sort_name)

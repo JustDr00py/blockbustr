@@ -31,13 +31,15 @@ func (a *api) visibleSeries(w http.ResponseWriter, r *http.Request, user uuid.UU
 		errorText(w, http.StatusNotFound)
 		return uuid.Nil, false
 	}
-	if _, ok, err := a.visibleItem(r, user, id.UUID()); err != nil {
+	it, ok, err := a.visibleItem(r, user, id.UUID())
+	if err != nil {
 		a.internalError(w, r, err)
 		return uuid.Nil, false
 	} else if !ok {
 		errorText(w, http.StatusNotFound)
 		return uuid.Nil, false
 	}
+	a.ensureEpisodes(r, it)
 	return id.UUID(), true
 }
 

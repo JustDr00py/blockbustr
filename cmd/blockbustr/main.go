@@ -177,12 +177,24 @@ func run() error {
 	if len(debrid) > 0 {
 		streams.Known = torrents.Ready
 	}
+	var remote handlers.RemoteSearch
+	if cfg.Search.Enabled {
+		discover := &stremio.Discover{
+			Registry: addons, Cache: rc, Log: log, Timeout: cfg.Search.Timeout, Retention: cfg.Search.Retention,
+			Refresh: refresher.Refresh,
+		}
+		if cfg.Search.CinemetaFallback {
+			discover.Fallback = stremio.CinemetaURL
+		}
+		go discover.Run(ctx)
+		remote = discover
+	}
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
 		Resolver: &resolve.Resolver{Cache: rc, Providers: debrid, Order: debridOrder, Torrents: torrents, Log: log}, Probe: scanner,
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
-		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams,
+		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams, RemoteSearch: remote,
 		StreamSigner: &urlsign.Signer{Key: streamKey, TTL: cfg.Server.StreamURLTTL},
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {

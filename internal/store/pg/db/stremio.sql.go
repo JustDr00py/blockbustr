@@ -40,6 +40,28 @@ func (q *Queries) CreateStremioLibrary(ctx context.Context, arg CreateStremioLib
 	return i, err
 }
 
+const deleteStaleDiscoverItems = `-- name: DeleteStaleDiscoverItems :execrows
+DELETE FROM items i
+USING libraries l
+WHERE l.id = i.library_id AND l.kind = 'discover' AND i.parent_id IS NULL
+  AND coalesce(i.date_last_refreshed, i.date_created) < $1
+  AND NOT EXISTS (
+    SELECT 1 FROM user_data ud JOIN items d ON d.id = ud.item_id
+    WHERE (ud.played OR ud.is_favorite OR ud.playback_position_ticks > 0)
+      AND (d.id = i.id OR d.parent_id = i.id
+           OR d.parent_id IN (SELECT s.id FROM items s WHERE s.parent_id = i.id)))
+`
+
+// Discover titles nobody kept: not found by a search since @before and with
+// no user data (played, favourite, in progress) on them or their episodes.
+func (q *Queries) DeleteStaleDiscoverItems(ctx context.Context, before *time.Time) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteStaleDiscoverItems, before)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteStremioAddon = `-- name: DeleteStremioAddon :execrows
 DELETE FROM stremio_addons WHERE id = $1
 `
@@ -66,6 +88,29 @@ type DeleteStremioCatalogsExceptParams struct {
 func (q *Queries) DeleteStremioCatalogsExcept(ctx context.Context, arg DeleteStremioCatalogsExceptParams) error {
 	_, err := q.db.Exec(ctx, deleteStremioCatalogsExcept, arg.AddonID, arg.Keep)
 	return err
+}
+
+const ensureDiscoverLibrary = `-- name: EnsureDiscoverLibrary :one
+INSERT INTO libraries (name, kind) VALUES ('blockbustr:discover', 'discover')
+ON CONFLICT (name) DO UPDATE SET kind = 'discover', enabled = true
+RETURNING id, name, kind, paths, options, created_at, enabled
+`
+
+// The hidden library search results are stored in (P3.13); its name can't
+// clash with a configured library's.
+func (q *Queries) EnsureDiscoverLibrary(ctx context.Context) (Library, error) {
+	row := q.db.QueryRow(ctx, ensureDiscoverLibrary)
+	var i Library
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Kind,
+		&i.Paths,
+		&i.Options,
+		&i.CreatedAt,
+		&i.Enabled,
+	)
+	return i, err
 }
 
 const getLibrary = `-- name: GetLibrary :one
@@ -145,6 +190,75 @@ func (q *Queries) InsertStremioAddon(ctx context.Context, arg InsertStremioAddon
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const libraryItemsByImdb = `-- name: LibraryItemsByImdb :many
+SELECT i.id, i.library_id, i.parent_id, i.top_parent_id, i.type, i.name, i.original_title, i.sort_name, i.forced_sort_name, i.index_number, i.index_number_end, i.parent_index_number, i.production_year, i.premiere_date, i.end_date, i.overview, i.tagline, i.official_rating, i.community_rating, i.critic_rating, i.runtime_ticks, i.provider_ids, i.source_kind, i.path, i.strm_url, i.stremio_ref, i.etag, i.date_created, i.date_modified, i.date_last_refreshed, i.is_missing, i.missing_since, i.metadata_refreshed_at, i.metadata_source, i.original_language FROM items i JOIN libraries l ON l.id = i.library_id
+WHERE l.enabled AND l.kind <> 'discover' AND i.missing_since IS NULL
+  AND i.type = ANY($1::text[]) AND i.provider_ids ->> 'Imdb' = ANY($2::text[])
+`
+
+type LibraryItemsByImdbParams struct {
+	Types []string
+	Imdb  []string
+}
+
+// Titles already in an enabled library (not discover) with these IMDb ids:
+// search shows those instead of a discover copy.
+func (q *Queries) LibraryItemsByImdb(ctx context.Context, arg LibraryItemsByImdbParams) ([]Item, error) {
+	rows, err := q.db.Query(ctx, libraryItemsByImdb, arg.Types, arg.Imdb)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Item{}
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.LibraryID,
+			&i.ParentID,
+			&i.TopParentID,
+			&i.Type,
+			&i.Name,
+			&i.OriginalTitle,
+			&i.SortName,
+			&i.ForcedSortName,
+			&i.IndexNumber,
+			&i.IndexNumberEnd,
+			&i.ParentIndexNumber,
+			&i.ProductionYear,
+			&i.PremiereDate,
+			&i.EndDate,
+			&i.Overview,
+			&i.Tagline,
+			&i.OfficialRating,
+			&i.CommunityRating,
+			&i.CriticRating,
+			&i.RuntimeTicks,
+			&i.ProviderIds,
+			&i.SourceKind,
+			&i.Path,
+			&i.StrmUrl,
+			&i.StremioRef,
+			&i.Etag,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.DateLastRefreshed,
+			&i.IsMissing,
+			&i.MissingSince,
+			&i.MetadataRefreshedAt,
+			&i.MetadataSource,
+			&i.OriginalLanguage,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listStremioAddons = `-- name: ListStremioAddons :many
@@ -379,6 +493,66 @@ func (q *Queries) UpdateStremioAddon(ctx context.Context, arg UpdateStremioAddon
 		&i.LastFetchedAt,
 		&i.CreatedAt,
 	)
+	return i, err
+}
+
+const upsertDiscoverItem = `-- name: UpsertDiscoverItem :one
+INSERT INTO items (id, library_id, type, name, sort_name, source_kind, path, stremio_ref,
+                   production_year, premiere_date, overview, provider_ids, date_last_refreshed)
+VALUES ($1, $2, $3, $4, $5, 'stremio', $6, $7,
+        $8, $9, $10, $11, now())
+ON CONFLICT (library_id, path) WHERE path IS NOT NULL DO UPDATE SET
+    stremio_ref     = EXCLUDED.stremio_ref,
+    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.name ELSE items.name END,
+    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.sort_name ELSE items.sort_name END,
+    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.production_year ELSE items.production_year END,
+    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN coalesce(EXCLUDED.overview, items.overview) ELSE items.overview END,
+    provider_ids    = items.provider_ids || EXCLUDED.provider_ids,
+    date_last_refreshed = now(),
+    is_missing      = false,
+    missing_since   = NULL
+RETURNING id, (coalesce(metadata_source, 'none') = 'none')::boolean AS catalog_owned
+`
+
+type UpsertDiscoverItemParams struct {
+	ID             uuid.UUID
+	LibraryID      uuid.UUID
+	Type           string
+	Name           string
+	SortName       string
+	Path           *string
+	StremioRef     json.RawMessage
+	ProductionYear *int32
+	PremiereDate   *time.Time
+	Overview       *string
+	ProviderIds    json.RawMessage
+}
+
+type UpsertDiscoverItemRow struct {
+	ID           uuid.UUID
+	CatalogOwned bool
+}
+
+// A search result, keyed by path like a catalog title but with the id the
+// caller derives (UUIDv5 of its IMDb id), so the same title always has the
+// same id even after it was cleaned up and found again. Searching it again
+// keeps it (date_last_refreshed).
+func (q *Queries) UpsertDiscoverItem(ctx context.Context, arg UpsertDiscoverItemParams) (UpsertDiscoverItemRow, error) {
+	row := q.db.QueryRow(ctx, upsertDiscoverItem,
+		arg.ID,
+		arg.LibraryID,
+		arg.Type,
+		arg.Name,
+		arg.SortName,
+		arg.Path,
+		arg.StremioRef,
+		arg.ProductionYear,
+		arg.PremiereDate,
+		arg.Overview,
+		arg.ProviderIds,
+	)
+	var i UpsertDiscoverItemRow
+	err := row.Scan(&i.ID, &i.CatalogOwned)
 	return i, err
 }
 

@@ -148,6 +148,16 @@ func lowerAll(in []string) []string {
 	return out
 }
 
+// reachesDiscover reports whether q may return items of the hidden
+// discover library (search results, DESIGN §7.4): by id, as a parent's
+// children, or by the user's own state (played, favourite, resumable).
+// Browsing (Latest, all movies, genres…) never shows them, and nor does
+// the library part of a search: remote matches come after the library's
+// (handlers.withRemoteMatches), found titles included.
+func (q ItemQuery) reachesDiscover() bool {
+	return len(q.IDs) > 0 || q.ParentID != nil || q.IsPlayed != nil || q.IsFavorite != nil || q.IsResumable != nil
+}
+
 // mediaTypeItems maps Jellyfin MediaType to the item types blockbustr has.
 var mediaTypeItems = map[string][]string{"video": {"Movie", "Episode"}}
 
@@ -161,6 +171,9 @@ func (q ItemQuery) from(b *sqlBuilder) (from, user string) {
 	user = b.arg(q.UserID)
 	b.and("l.enabled")
 	b.and("i.missing_since IS NULL")
+	if !q.reachesDiscover() {
+		b.and("l.kind <> 'discover'")
+	}
 
 	switch {
 	case q.ParentID != nil && q.Recursive:

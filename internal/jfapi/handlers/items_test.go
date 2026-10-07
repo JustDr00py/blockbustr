@@ -136,6 +136,8 @@ type fakeRemote struct {
 	calls []string
 }
 
+func (f *fakeRemote) EnsureEpisodes(context.Context, db.Item) error { return nil }
+
 func (f *fakeRemote) SearchItems(_ context.Context, term string, types []string, limit int) ([]db.Item, error) {
 	f.calls = append(f.calls, fmt.Sprintf("%s %v %d", term, types, limit))
 	return f.items, f.err

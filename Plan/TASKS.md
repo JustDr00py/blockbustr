@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources
+- [ ] P3.16 Remote item presentation: placeholder MediaSource, `LocationType`, source line in Overview; verify Play button and visibility in every MVP client (R6)
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -149,12 +149,19 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
   - Trade-off: debrid playback always flows through the server (bandwidth), as the safety rule requires
 - [x] Live-test fixes 2026-10-07 (DESIGN §7.3 "Hardening"): `[RD download]` URLs ranked uncached; Torrentio notice videos (`failed_access_v3.mp4`…) detected as failures; `User-Agent: blockbustr` (Torrentio's Cloudflare 403s Go's); addon links always proxied; default-source fallback through the ranked versions with failed ones remembered 6 h; next debrid account tried when one refuses; debrid keys checked at start.
 - [ ] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources
+  - In progress 2026-10-07 (user testing): dev server has Cinemeta (Popular movies + series), Torrentio RD and OpenSubtitles v3; Avengers, Paddington and others play through the API
 
 - Reference for P3.12–P3.13: lostb1t/remux (Rust, Jellyfin-compatible, Stremio addons, search in the Jellyfin UI)
-- [ ] P3.12 `search.Provider` interface + Cinemeta provider (no key) + TMDB provider (when keyed) + addon search catalogs; parallel fan-out with a time budget, Redis `search:*` cache [§7.4]
-- [ ] P3.13 Hidden `discover` library + deterministic UUIDv5 item IDs + upsert of remote results (with posters/backdrops into `images`) + retention GC
-- [ ] P3.14 Merge remote results into `/Items?searchTerm=` (and `/Search/Hints`): library first, dedupe by provider IDs, honour type filters and limits
-- [ ] P3.15 Remote series on demand: Seasons/Episodes from addon `meta.videos` or TMDB with deterministic IDs
+- [x] P3.12 `search.Provider` interface + Cinemeta provider (no key) + TMDB provider (when keyed) + addon search catalogs; parallel fan-out with a time budget, Redis `search:*` cache [§7.4]
+  - Done 2026-10-07 (DESIGN §7.4 item 8): `stremio.Discover` searches every enabled addon's search catalog (Cinemeta when none), in parallel within 3 s, cached 1 h; `search` config. Live: "paddington" 1.4 s.
+  - Follow-up: TMDB as a search source (titles TMDB knows but Cinemeta doesn't); only IMDb-keyed results are kept
+- [x] P3.13 Hidden `discover` library + deterministic UUIDv5 item IDs + upsert of remote results (with posters/backdrops into `images`) + retention GC
+  - Done 2026-10-07: migration 00015 (`discover` kind); UUIDv5 ids from the IMDb id; artwork from the addon, TMDB enrichment in the background; hidden from views and browsing; hourly cleanup after 7 days unless played/favourited/started
+- [x] P3.14 Merge remote results into `/Items?searchTerm=` (and `/Search/Hints`): library first, dedupe by provider IDs, honour type filters and limits
+  - Done 2026-10-07: the P1.19 hook now has a provider; library items found by IMDb id instead of discover copies; found titles kept out of the library part of a search so remote matches always follow the library's
+- [x] P3.15 Remote series on demand: Seasons/Episodes from addon `meta.videos` or TMDB with deterministic IDs
+  - Done 2026-10-07: on first open (`/Shows/{id}/Seasons|Episodes`, `/Items?ParentId=`), at most every 12 h. Live: Breaking Bad, 6 seasons.
+  - Deviation: season/episode ids are stable while the series exists (keyed by path), not UUIDv5; a cleaned-up series' episodes get new ids when found again
 - [ ] P3.16 Remote item presentation: placeholder MediaSource, `LocationType`, source line in Overview; verify Play button and visibility in every MVP client (R6)
 - [ ] P3.17 Manual: in Findroid, Streamyfin and Jellyfin Android, search "the matrix" (not in library) → open → play via debrid; search a show → season → episode → play
 

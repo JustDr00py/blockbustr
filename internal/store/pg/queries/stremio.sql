@@ -100,3 +100,51 @@ RETURNING id, (coalesce(metadata_source, 'none') = 'none')::boolean AS catalog_o
 UPDATE items SET date_last_refreshed = now()
 WHERE library_id = @library_id AND type = 'Episode' AND missing_since IS NULL
   AND starts_with(path, @prefix::text);
+
+-- name: EnsureDiscoverLibrary :one
+-- The hidden library search results are stored in (P3.13); its name can't
+-- clash with a configured library's.
+INSERT INTO libraries (name, kind) VALUES ('blockbustr:discover', 'discover')
+ON CONFLICT (name) DO UPDATE SET kind = 'discover', enabled = true
+RETURNING *;
+
+-- name: UpsertDiscoverItem :one
+-- A search result, keyed by path like a catalog title but with the id the
+-- caller derives (UUIDv5 of its IMDb id), so the same title always has the
+-- same id even after it was cleaned up and found again. Searching it again
+-- keeps it (date_last_refreshed).
+INSERT INTO items (id, library_id, type, name, sort_name, source_kind, path, stremio_ref,
+                   production_year, premiere_date, overview, provider_ids, date_last_refreshed)
+VALUES (@id, @library_id, @type, @name, @sort_name, 'stremio', @path, @stremio_ref,
+        sqlc.narg('production_year'), sqlc.narg('premiere_date'), sqlc.narg('overview'), @provider_ids, now())
+ON CONFLICT (library_id, path) WHERE path IS NOT NULL DO UPDATE SET
+    stremio_ref     = EXCLUDED.stremio_ref,
+    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.name ELSE items.name END,
+    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.sort_name ELSE items.sort_name END,
+    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.production_year ELSE items.production_year END,
+    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN coalesce(EXCLUDED.overview, items.overview) ELSE items.overview END,
+    provider_ids    = items.provider_ids || EXCLUDED.provider_ids,
+    date_last_refreshed = now(),
+    is_missing      = false,
+    missing_since   = NULL
+RETURNING id, (coalesce(metadata_source, 'none') = 'none')::boolean AS catalog_owned;
+
+-- name: LibraryItemsByImdb :many
+-- Titles already in an enabled library (not discover) with these IMDb ids:
+-- search shows those instead of a discover copy.
+SELECT i.* FROM items i JOIN libraries l ON l.id = i.library_id
+WHERE l.enabled AND l.kind <> 'discover' AND i.missing_since IS NULL
+  AND i.type = ANY(@types::text[]) AND i.provider_ids ->> 'Imdb' = ANY(@imdb::text[]);
+
+-- name: DeleteStaleDiscoverItems :execrows
+-- Discover titles nobody kept: not found by a search since @before and with
+-- no user data (played, favourite, in progress) on them or their episodes.
+DELETE FROM items i
+USING libraries l
+WHERE l.id = i.library_id AND l.kind = 'discover' AND i.parent_id IS NULL
+  AND coalesce(i.date_last_refreshed, i.date_created) < @before
+  AND NOT EXISTS (
+    SELECT 1 FROM user_data ud JOIN items d ON d.id = ud.item_id
+    WHERE (ud.played OR ud.is_favorite OR ud.playback_position_ticks > 0)
+      AND (d.id = i.id OR d.parent_id = i.id
+           OR d.parent_id IN (SELECT s.id FROM items s WHERE s.parent_id = i.id)));

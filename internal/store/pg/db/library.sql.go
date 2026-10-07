@@ -121,11 +121,11 @@ func (q *Queries) DeleteMissingBefore(ctx context.Context, arg DeleteMissingBefo
 
 const disableLibrariesExcept = `-- name: DisableLibrariesExcept :execrows
 UPDATE libraries SET enabled = false
-WHERE enabled AND kind <> 'stremio' AND NOT (id = ANY($1::uuid[]))
+WHERE enabled AND kind NOT IN ('stremio', 'discover') AND NOT (id = ANY($1::uuid[]))
 `
 
 // Libraries no longer in config.yaml stop being listed and scanned. Stremio
-// catalog libraries aren't in config; the catalog sync manages them.
+// catalog libraries and the discover library aren't in config.
 func (q *Queries) DisableLibrariesExcept(ctx context.Context, keep []uuid.UUID) (int64, error) {
 	result, err := q.db.Exec(ctx, disableLibrariesExcept, keep)
 	if err != nil {

@@ -56,3 +56,8 @@ stremio:                       # addons themselves are managed through /blockbus
   subtitles:                   # from subtitle addons (e.g. OpenSubtitles v3)
     languages: []              # ISO 639-1 (e.g. [en, fr]); empty = English
     per_language: 3            # tracks offered per language
+search:                        # the clients' search also finds titles you don't have (DESIGN §7.4)
+  enabled: true
+  timeout: 3s                  # budget for one search; slower sources are left out
+  retention: 168h              # found titles nobody played or favourited are dropped after this
+  cinemeta_fallback: true      # search Cinemeta when no enabled addon has a search catalog

@@ -535,6 +535,15 @@ Every captured client searches through `GET /Items?searchTerm=…&recursive=true
    - The `Overview` gets a short source line ("Not in your library · via Torrentio").
    - Verify per client in the P3 manual matrix.
 7. **Later (optional):** `/Items/Suggestions` and the home rows can also be filled from addon catalogs ("Trending on Cinemeta"), driven by the same machinery.
+8. **Implemented (P3.12–P3.15, `stremio.Discover`, migration 00015):**
+   - **Sources:** each enabled addon with a movie or series catalog that accepts `search` (and requires nothing else), one catalog per addon and kind. Built-in Cinemeta is used for a kind no addon searches (`search.cinemeta_fallback`). They're asked in parallel within `search.timeout` (3 s); a late or failing source is left out. Each source's results are cached 1 h (`search:{addonKey:catalog}:{kind}:{term}`). Only IMDb-keyed results (`tt…`) are kept, because stream addons look titles up by them. **TMDB search isn't a source yet** (follow-up); TMDB still enriches found titles.
+   - **Merge:** kinds interleaved by rank (movie 1, series 1, movie 2…), each IMDb id once, higher-priority addons first. A title already in an enabled library (`LibraryItemsByImdb`) is returned as the library's item. `/Items` and `/Search/Hints` put remote matches after the library's (`withRemoteMatches`).
+   - **Discover library:** `kind='discover'`, named `blockbustr:discover`. It has no CollectionFolder, so it isn't a view, and `DisableLibrariesExcept` skips it.
+     - Items are upserted with **id = UUIDv5(ns, "imdb:tt…")**, `path` = `stremio:{type}:{id}` (so P3.7–P3.9 streams and subtitles work unchanged), the addon's poster/backdrop/logo, year and overview. The metadata refresher (TMDB) then runs on the library in the background.
+     - `pg.ItemQuery` leaves discover items out unless the query is by ids, by parent, or by the user's state (played, favourite, resumable). Browsing, Latest and the library part of a search never show them.
+   - **Series on demand:** opening a discover series (`/Shows/{id}/Seasons|Episodes`, or `/Items?ParentId=`) fetches its `meta.videos`, from an addon serving `meta` or else Cinemeta, through the catalog sync's episode writer. This happens once per 12 h (`discover:eps:{id}`). Season and episode ids are stable while the series exists (keyed by path), not UUIDv5.
+   - **Cleanup:** hourly, titles not found by a search for `search.retention` (7 days) are dropped, together with their seasons and episodes. A title stays while anyone has played, favourited or started it or one of its episodes. Found again later, it gets the same id.
+   - **Live (2026-10-07):** "paddington" and "breaking bad" in 1.0–1.4 s, with titles not in any library. *Paddington in Peru* plays through Torrentio RD; *Breaking Bad* shows 6 seasons when opened.
 
 ## 8. Playback
 
@@ -723,6 +732,7 @@ compat:    { reported_version: "12.1.0", product_name: "Jellyfin Server", proxy_
 transcode: { hwaccel: auto, segment_seconds: 3, max_sessions: 4 }   # hwaccel: auto|none|qsv|vaapi
 metadata:  { tmdb_api_key: "", language: en-US }                    # BLOCKBUSTR_TMDB_API_KEY
 debrid:    { realdebrid_api_key: "", torbox_api_key: "" }           # BLOCKBUSTR_REALDEBRID_API_KEY / _TORBOX_API_KEY
+search:    { enabled: true, timeout: 3s, retention: 168h, cinemeta_fallback: true }
 stremio:   { sync_interval: 6h, catalog_pages: 2,                  # addons themselves: /blockbustr/addons
              streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] },
              subtitles: { languages: [], per_language: 3 } }
