@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 
@@ -66,11 +68,33 @@ func TestMetricsAndPprof(t *testing.T) {
 		t.Errorf("goroutine profile: %d", rec.Code)
 	}
 
-	// Disabled: no /metrics at all.
+	// Disabled: no /metrics at all, but the admin UI's stats still work.
 	d.Config.Metrics.Enabled = false
 	off := jfapi.NewRouter(testutil.Discard(), jfapi.Options{LegacyAuth: true})
 	Register(off, d)
 	if rec := call(t, off, "GET", "/metrics", "", ""); rec.Code != 404 {
 		t.Errorf("disabled /metrics: %d", rec.Code)
+	}
+	if rec := call(t, off, "GET", "/blockbustr/stats", "", ""); rec.Code != 401 {
+		t.Errorf("stats anonymous: %d", rec.Code)
+	}
+	rec = call(t, off, "GET", "/blockbustr/stats", admin, "")
+	var stats struct {
+		UptimeSeconds float64
+		Requests      []struct {
+			Name  string
+			Count float64
+		}
+	}
+	if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &stats) != nil || stats.UptimeSeconds <= 0 {
+		t.Fatalf("stats: %d %s", rec.Code, rec.Body)
+	}
+	if !slices.ContainsFunc(stats.Requests, func(r struct {
+		Name  string
+		Count float64
+	}) bool {
+		return r.Name == "/System/Info" && r.Count >= 1
+	}) {
+		t.Errorf("stats lack /System/Info: %+v", stats.Requests)
 	}
 }

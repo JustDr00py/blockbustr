@@ -10,12 +10,21 @@ import (
 )
 
 // registerOps mounts the operator endpoints (P4.4): Prometheus metrics when
-// enabled, and Go's pprof for admins.
+// enabled, the admin UI's summary of them (/blockbustr/stats, always on, for
+// admins), and Go's pprof for admins.
 func (a *api) registerOps(rt *jfapi.Router) {
 	if a.Config.Metrics.Enabled {
 		m := metrics.Handler(a.Config.Metrics.Token)
 		rt.Get("/metrics", m.ServeHTTP)
 	}
+	rt.Get("/blockbustr/stats", a.requireAdmin(func(w http.ResponseWriter, r *http.Request, _ auth.Session) {
+		s, err := metrics.Snapshot()
+		if err != nil {
+			a.internalError(w, r, err)
+			return
+		}
+		jfapi.WriteJSON(w, r, http.StatusOK, s)
+	}))
 	admin := func(h http.HandlerFunc) http.HandlerFunc {
 		return a.requireAdmin(func(w http.ResponseWriter, r *http.Request, _ auth.Session) { h(w, r) })
 	}
