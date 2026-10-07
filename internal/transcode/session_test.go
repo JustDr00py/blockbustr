@@ -536,3 +536,36 @@ func TestThrottle(t *testing.T) {
 	}
 	m.Close("th") // a paused ffmpeg still stops
 }
+
+// A 5.1(side) source (DD+'s usual layout) re-encoded to AAC: every HLS
+// segment decodes on its own, not just the first. Without a standard
+// layout the encoder wrote the channel layout once, in a PCE, and later
+// segments decoded to nothing (seen live, 2026-10-07).
+func TestSessionSideLayoutAudioDecodesPerSegment(t *testing.T) {
+	needFFmpeg(t)
+	src := filepath.Join(t.TempDir(), "side.mkv")
+	if out, err := exec.CommandContext(t.Context(), "ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc=duration=8:size=320x240:rate=24",
+		"-f", "lavfi", "-i", "sine=frequency=440:duration=8", "-filter_complex", "[1]pan=5.1(side)|FL=c0|FR=c0|FC=c0|LFE=c0|SL=c0|SR=c0[a]",
+		"-map", "0", "-map", "[a]", "-c:v", "libx264", "-preset", "ultrafast", "-g", "24", "-c:a", "eac3", src).CombinedOutput(); err != nil {
+		t.Fatalf("make source: %v: %s", err, out)
+	}
+	m := NewManager(t.TempDir(), 0)
+	s, err := m.Start(t.Context(), "side", StartOptions{Input: src, Encoder: CapSoftware, AudioStream: 1, SegmentSeconds: 2}, 30*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer m.Close("side")
+	waitDone(t, s)
+	for _, n := range []int{1, 2} {
+		p := s.SegmentPath(n)
+		out, err := exec.CommandContext(t.Context(), "ffmpeg", "-v", "error", "-i", p, "-map", "0:a", "-f", "null", "-").CombinedOutput()
+		if err != nil || len(bytes.TrimSpace(out)) > 0 {
+			t.Errorf("segment %d audio doesn't decode alone: %v %s", n, err, out)
+		}
+		for _, st := range probe(t, p).Streams {
+			if st.CodecType == "audio" && (st.CodecName != "aac" || st.Channels != 6) {
+				t.Errorf("segment %d audio %s ×%d, want aac ×6", n, st.CodecName, st.Channels)
+			}
+		}
+	}
+}

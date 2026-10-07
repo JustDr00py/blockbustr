@@ -286,6 +286,14 @@ func buildArgs(o StartOptions, dir string) []string {
 			codec = "aac"
 		}
 		args = append(args, "-c:a", codec)
+		if codec == "aac" && o.AudioChannels == 0 {
+			// A layout AAC has no code for, such as DD+'s 5.1(side), is
+			// written as a PCE that only the stream's first frames carry,
+			// so every HLS segment after the first decoded to nothing (no
+			// channels, "Invalid data"; seen live on a 5.1 DD+ source).
+			// Standard layouts are named in every ADTS header.
+			args = append(args, "-af", "aformat=channel_layouts=7.1|5.1|stereo|mono")
+		}
 		if o.AudioBitrate > 0 {
 			args = append(args, "-b:a", strconv.FormatInt(o.AudioBitrate, 10))
 		}
