@@ -1133,3 +1133,36 @@ func TestDetailsCollectWhileProbing(t *testing.T) {
 		}
 	}
 }
+
+// The stream and HLS endpoints give a remembered (earlier) choice its
+// probed tracks too, not only the latest pick's: without them a transcode
+// didn't know the source codec and decoded HEVC on the CPU instead of the
+// GPU (2026-10-07, a 1080p HEVC "Earlier" version at 450% CPU).
+func TestPlaySourcesUseEarlierChoiceProbes(t *testing.T) {
+	c := testutil.Cache(t)
+	a := &api{Deps: Deps{Cache: c, Log: testutil.Discard()}}
+	path := "stremio:movie:tt0295297"
+	it := db.Item{ID: uuid.New(), Type: "Movie", SourceKind: "stremio", Path: &path}
+	latest := StreamChoice{ID: uuid.New(), Name: "1080p", Target: "https://cdn/latest.mkv", Ready: true}
+	earlier := StreamChoice{ID: uuid.New(), Name: "1080p HEVC", Target: "https://cdn/earlier.mkv", Ready: true}
+	set := streamSet{Choices: []StreamChoice{latest}, Earlier: []StreamChoice{earlier}}
+	if err := c.SetJSON(t.Context(), cache.StreamSetKey(it.ID.String()), set, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+	for _, ch := range []StreamChoice{latest, earlier} {
+		p := choiceProbe{Container: "mkv", Streams: []db.MediaStream{{Idx: 0, Type: "Video", Codec: ptr("hevc")}}}
+		if err := c.SetJSON(t.Context(), choiceProbeKey(ch.ID), p, time.Hour); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
+	if err := a.addStreamChoices(t.Context(), b, it, false, stremio.Prefs{}); err != nil {
+		t.Fatal(err)
+	}
+	for _, ch := range []StreamChoice{latest, earlier} {
+		st := b.streams[ch.ID]
+		if len(st) == 0 || st[0].Type != "Video" || deref(st[0].Codec) != "hevc" {
+			t.Errorf("%s: streams %v, want its probed video track", ch.Name, st)
+		}
+	}
+}

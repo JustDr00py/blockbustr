@@ -200,9 +200,12 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 		}
 	}
 	if len(set.Choices) > 0 {
+		// Every choice offered gets its probe, earlier ones too: a source
+		// without tracks transcodes with software decode (no codec known).
+		all := set.All()
 		var streams map[uuid.UUID][]db.MediaStream
-		b.sources[it.ID], streams = choiceSources(it, set.All(), set.Subtitles)
-		applyProbes(b.sources[it.ID], streams, a.loadChoiceProbes(ctx, set.Choices), a.preferredAudio())
+		b.sources[it.ID], streams = choiceSources(it, all, set.Subtitles)
+		applyProbes(b.sources[it.ID], streams, a.loadChoiceProbes(ctx, all), a.preferredAudio())
 		for id, st := range streams {
 			b.streams[id] = st
 		}
