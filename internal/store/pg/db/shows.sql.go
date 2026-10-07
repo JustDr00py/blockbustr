@@ -14,59 +14,46 @@ import (
 
 const nextUpEpisodeIDs = `-- name: NextUpEpisodeIDs :many
 
-WITH candidates AS (
-    SELECT i.id,
-           coalesce((SELECT s.parent_id FROM items s WHERE s.id = i.parent_id AND s.type = 'Season'), i.parent_id) AS series_id,
-           i.parent_index_number AS season, i.index_number AS number,
-           coalesce(ud.playback_position_ticks, 0) > 0 AS resumable
+WITH episodes AS (
+    SELECT i.id, coalesce(s.parent_id, i.parent_id) AS series_id,
+           i.parent_index_number AS season, i.index_number AS number, i.premiere_date
     FROM items i
     JOIN libraries l ON l.id = i.library_id
-    LEFT JOIN user_data ud ON ud.item_id = i.id AND ud.user_id = $1
+    LEFT JOIN items s ON s.id = i.parent_id AND s.type = 'Season'
     WHERE i.type = 'Episode' AND i.missing_since IS NULL AND l.enabled
-      AND NOT coalesce(ud.played, false)
-      AND ($4::date IS NULL OR i.premiere_date IS NULL OR i.premiere_date <= $4)
-), ranked AS (
-    SELECT c.id, c.series_id, c.season, c.number, c.resumable, count(*) OVER () AS total
-    FROM candidates c
-    WHERE ($5::uuid IS NULL OR c.series_id = $5)
-      AND (
-          -- the earliest half-watched episode of the series
-          ($6::boolean AND c.resumable AND NOT EXISTS (
-              SELECT 1 FROM candidates e
-              WHERE e.series_id = c.series_id AND e.resumable
-                AND (coalesce(e.season, -1), coalesce(e.number, -1)) < (coalesce(c.season, -1), coalesce(c.number, -1))))
-          OR
-          -- else the earliest unplayed episode nobody is halfway through,
-          -- unless @include_resumable already picked the resumed one above
-          (NOT c.resumable
-           AND NOT ($6::boolean AND EXISTS (SELECT 1 FROM candidates e WHERE e.series_id = c.series_id AND e.resumable))
-           AND NOT EXISTS (
-              SELECT 1 FROM candidates e
-              WHERE e.series_id = c.series_id AND NOT e.resumable
-                AND (coalesce(e.season, -1), coalesce(e.number, -1)) < (coalesce(c.season, -1), coalesce(c.number, -1)))))
-      -- only series the user has started
-      AND EXISTS (
-          SELECT 1 FROM items p2
-          JOIN user_data pu2 ON pu2.item_id = p2.id AND pu2.user_id = $1
-          WHERE p2.type = 'Episode' AND p2.missing_since IS NULL
-            AND coalesce((SELECT s3.parent_id FROM items s3 WHERE s3.id = p2.parent_id AND s3.type = 'Season'), p2.parent_id) = c.series_id
-            AND (pu2.played OR pu2.play_count > 0 OR pu2.playback_position_ticks > 0))
+), started AS (
+    SELECT e.series_id, max(ud.last_played_at) AS last_played
+    FROM user_data ud
+    JOIN episodes e ON e.id = ud.item_id
+    WHERE ud.user_id = $3
+    GROUP BY e.series_id
+    HAVING bool_or(ud.played OR ud.play_count > 0 OR ud.playback_position_ticks > 0)
+), picked AS (
+    SELECT DISTINCT ON (e.series_id) e.id, e.series_id, st.last_played
+    FROM episodes e
+    JOIN started st ON st.series_id = e.series_id
+    LEFT JOIN user_data ud ON ud.item_id = e.id AND ud.user_id = $3
+    WHERE NOT coalesce(ud.played, false)
+      AND ($4::date IS NULL OR e.premiere_date IS NULL OR e.premiere_date <= $4)
+      AND ($5::uuid IS NULL OR e.series_id = $5)
+      -- without @include_resumable, half-watched episodes are skipped
+      AND ($6::boolean OR coalesce(ud.playback_position_ticks, 0) = 0)
+    -- with it, the earliest half-watched episode wins over unwatched ones
+    ORDER BY e.series_id, coalesce(ud.playback_position_ticks, 0) > 0 DESC,
+             coalesce(e.season, -1), coalesce(e.number, -1), e.id
 )
-SELECT r.id, r.total
-FROM ranked r
-ORDER BY (SELECT max(pu3.last_played_at)
-          FROM user_data pu3 JOIN items p3 ON p3.id = pu3.item_id
-          WHERE pu3.user_id = $1 AND p3.type = 'Episode' AND p3.missing_since IS NULL
-            AND coalesce((SELECT s4.parent_id FROM items s4 WHERE s4.id = p3.parent_id AND s4.type = 'Season'), p3.parent_id) = r.series_id) DESC NULLS LAST,
-         (SELECT lower(coalesce(sr.forced_sort_name, sr.sort_name)) FROM items sr WHERE sr.id = r.series_id),
-         r.series_id, r.season NULLS FIRST, r.number NULLS FIRST
-LIMIT $3 OFFSET $2
+SELECT p.id, count(*) OVER () AS total
+FROM picked p
+ORDER BY p.last_played DESC NULLS LAST,
+         (SELECT lower(coalesce(sr.forced_sort_name, sr.sort_name)) FROM items sr WHERE sr.id = p.series_id),
+         p.series_id
+LIMIT $2 OFFSET $1
 `
 
 type NextUpEpisodeIDsParams struct {
-	UserID           uuid.UUID
 	StartIdx         int32
 	Lim              int32
+	UserID           uuid.UUID
 	Cutoff           *time.Time
 	SeriesID         *uuid.UUID
 	IncludeResumable bool
@@ -85,11 +72,14 @@ type NextUpEpisodeIDsRow struct {
 // played, begun or re-watched). Ordered by the series' most recent
 // activity, then the series' sort name. total (a window count over the
 // whole result) fills TotalRecordCount when the page is full.
+// Started series are found first and one episode is picked per series
+// (DISTINCT ON), so the cost grows with the library, not its square
+// (TASKS P4.5: 9 s at 19.5k episodes before).
 func (q *Queries) NextUpEpisodeIDs(ctx context.Context, arg NextUpEpisodeIDsParams) ([]NextUpEpisodeIDsRow, error) {
 	rows, err := q.db.Query(ctx, nextUpEpisodeIDs,
-		arg.UserID,
 		arg.StartIdx,
 		arg.Lim,
+		arg.UserID,
 		arg.Cutoff,
 		arg.SeriesID,
 		arg.IncludeResumable,

@@ -46,7 +46,10 @@ func (a *api) folders(r *http.Request, user *uuid.UUID) ([]folderView, error) {
 	out := make([]folderView, len(rows))
 	ids := make([]uuid.UUID, len(rows))
 	for i, row := range rows {
-		n, err := a.Queries.CountVisibleChildren(ctx, &row.ID)
+		// Counting a large library's children cost about 15 ms (TASKS P4.5).
+		n, err := cachedQuery(ctx, a, "children", row.ID.String(), func() (int64, error) {
+			return a.Queries.CountVisibleChildren(ctx, &row.ID)
+		})
 		if err != nil {
 			return nil, err
 		}

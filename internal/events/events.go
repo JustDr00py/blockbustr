@@ -54,6 +54,12 @@ func (b *Bus) Publish(ctx context.Context, e Event) {
 	if err != nil && b.Log != nil {
 		b.Log.WarnContext(ctx, "publishing event failed", "kind", e.Kind, "err", err)
 	}
+	// Items or user data changed: cached query results are stale now.
+	if e.Kind == LibraryChanged || e.Kind == UserDataChanged {
+		if _, err := b.Cache.Incr(context.WithoutCancel(ctx), cache.QueryGenKey()); err != nil && b.Log != nil {
+			b.Log.WarnContext(ctx, "retiring cached queries failed", "err", err)
+		}
+	}
 }
 
 // Subscribe delivers events until ctx ends.

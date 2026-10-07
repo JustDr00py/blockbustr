@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"math"
 	"net/http"
 	"slices"
@@ -70,7 +71,12 @@ func (a *api) getNextUp(w http.ResponseWriter, r *http.Request, s auth.Session) 
 	if n, ok := q.Int("startIndex"); ok && n > 0 {
 		p.StartIdx = int32(n)
 	}
-	rows, err := a.Queries.NextUpEpisodeIDs(r.Context(), p)
+	// Next Up is a whole-library query (about 60 ms at 19.5k episodes,
+	// TASKS P4.5); its ids are kept until the next library or user-data event.
+	key, _ := json.Marshal(p) // pointers are encoded by value
+	rows, err := cachedQuery(r.Context(), a, "nextup", string(key), func() ([]db.NextUpEpisodeIDsRow, error) {
+		return a.Queries.NextUpEpisodeIDs(r.Context(), p)
+	})
 	if err != nil {
 		a.internalError(w, r, err)
 		return
@@ -109,7 +115,7 @@ func (a *api) getSeasons(w http.ResponseWriter, r *http.Request, s auth.Session)
 		SortBy: []pg.SortKey{{By: "IndexNumber"}}, Count: true,
 	}
 	pageParams(jfapi.QueryOf(r), &iq)
-	res, err := pg.QueryItems(r.Context(), a.DB, iq)
+	res, err := a.queryItems(r.Context(), iq)
 	if err != nil {
 		a.internalError(w, r, err)
 		return
@@ -153,7 +159,7 @@ func (a *api) getEpisodes(w http.ResponseWriter, r *http.Request, s auth.Session
 			return
 		}
 	}
-	res, err := pg.QueryItems(r.Context(), a.DB, iq)
+	res, err := a.queryItems(r.Context(), iq)
 	if err != nil {
 		a.internalError(w, r, err)
 		return
@@ -165,7 +171,7 @@ func (a *api) getEpisodes(w http.ResponseWriter, r *http.Request, s auth.Session
 func (a *api) writeAdjacentEpisodes(w http.ResponseWriter, r *http.Request, user uuid.UUID, iq pg.ItemQuery, adjacent uuid.UUID, o dtoOptions) {
 	limit := iq.Limit
 	iq.Limit, iq.StartIndex, iq.Count = 0, 0, false
-	res, err := pg.QueryItems(r.Context(), a.DB, iq)
+	res, err := a.queryItems(r.Context(), iq)
 	if err != nil {
 		a.internalError(w, r, err)
 		return

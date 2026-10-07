@@ -192,7 +192,7 @@ func (a *api) getSearchHints(w http.ResponseWriter, r *http.Request, s auth.Sess
 	if on, ok := q.Bool("includeMedia"); (!ok || on) && (len(iq.IncludeTypes) == 0 || len(scope.IncludeTypes) > 0) {
 		mq := scope
 		mq.SearchTerm, mq.Limit, mq.Count = term, want, true
-		res, err := pg.QueryItems(r.Context(), a.DB, mq)
+		res, err := a.queryItems(r.Context(), mq)
 		if err != nil {
 			a.internalError(w, r, err)
 			return

@@ -2,6 +2,7 @@ package cache
 
 import (
 	"encoding/hex"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,7 +21,7 @@ const (
 	StremioStreamsTTL = 30 * time.Minute
 	StremioMetaTTL    = 24 * time.Hour
 	StremioSubsTTL    = 6 * time.Hour
-	QueryTTL          = 5 * time.Minute // Latest / NextUp results, purged on events
+	QueryTTL          = 5 * time.Minute // cached query results (q:*), retired by events
 	TranscodeLockTTL  = 30 * time.Second
 	ScanLockTTL       = 10 * time.Minute
 	QuickConnectTTL   = 10 * time.Minute
@@ -80,13 +81,15 @@ func StremioMetaKey(addon, typ, id string) Key {
 	return Key("stremio:meta:" + addon + ":" + typ + ":" + id)
 }
 
-// LatestKey caches /Items/Latest for a user and parent.
-func LatestKey(userID, parentID uuid.UUID) Key {
-	return Key("q:latest:" + userID.String() + ":" + parentID.String())
-}
+// QueryGenKey counts library and user-data events (events.Bus.Publish). The
+// q:* result keys embed it, so an event retires every cached result at once.
+func QueryGenKey() Key { return Key("q:gen") }
 
-// NextUpKey caches /Shows/NextUp for a user.
-func NextUpKey(userID uuid.UUID) Key { return Key("q:nextup:" + userID.String()) }
+// QueryKey holds one query result (kind: count, nextup…) for one
+// generation; hash identifies the query and its arguments, user included.
+func QueryKey(kind string, gen int64, hash string) Key {
+	return Key("q:" + kind + ":" + strconv.FormatInt(gen, 10) + ":" + hash)
+}
 
 // PlaySessionKey holds the decisions PlaybackInfo made for a play session.
 func PlaySessionKey(playSessionID string) Key { return Key("play:" + playSessionID) }

@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/sysadmin/blockbustr/internal/cache"
 )
 
 // Home-screen and TV endpoints (TASKS P1.21): /Items/Latest,
@@ -158,6 +160,15 @@ func TestNextUpRules(t *testing.T) {
 		}
 		return id
 	}
+	// Raw writes skip the handlers' events, so retire cached results the
+	// way an event would (Bus.Publish).
+	write := func(sql string, args ...any) {
+		t.Helper()
+		execSQL(t, sql, args...)
+		if _, err := d.Cache.Incr(t.Context(), cache.QueryGenKey()); err != nil {
+			t.Fatal(err)
+		}
+	}
 	names := func(query string) []string {
 		t.Helper()
 		var res struct {
@@ -176,7 +187,7 @@ func TestNextUpRules(t *testing.T) {
 		t.Errorf("begun series: %v", got)
 	}
 	// Fully played episode 1: the next one is up.
-	execSQL(t, `UPDATE user_data SET played = true WHERE item_id = $1`, episode(1))
+	write(`UPDATE user_data SET played = true WHERE item_id = $1`, episode(1))
 	if got := names("/Shows/NextUp"); len(got) != 1 || got[0] != "The Shocking New MFG Generation" {
 		t.Errorf("after episode 1: %v", got)
 	}
@@ -189,8 +200,8 @@ func TestNextUpRules(t *testing.T) {
 	}
 	// A half-watched episode counts once enableResumable is set; without it
 	// the next fresh one is up.
-	execSQL(t, `DELETE FROM user_data WHERE item_id IN (SELECT id FROM items WHERE type = 'Episode')`)
-	execSQL(t, `INSERT INTO user_data (user_id, item_id, playback_position_ticks, last_played_at)
+	write(`DELETE FROM user_data WHERE item_id IN (SELECT id FROM items WHERE type = 'Episode')`)
+	write(`INSERT INTO user_data (user_id, item_id, playback_position_ticks, last_played_at)
 		VALUES ($1, $2, 500000000, now())`, captureUserID, episode(2))
 	if got := names("/Shows/NextUp"); len(got) != 1 || got[0] != "The Challenger from England" {
 		t.Errorf("resumable skipped by default: %v", got)
@@ -199,12 +210,12 @@ func TestNextUpRules(t *testing.T) {
 		t.Errorf("resumable included on request: %v", got)
 	}
 	// Nothing started: no next up (an unstarted series isn't "next").
-	execSQL(t, `DELETE FROM user_data WHERE item_id IN (SELECT id FROM items WHERE type = 'Episode')`)
+	write(`DELETE FROM user_data WHERE item_id IN (SELECT id FROM items WHERE type = 'Episode')`)
 	if got := names("/Shows/NextUp"); len(got) != 0 {
 		t.Errorf("unstarted series: %v", got)
 	}
 	// Everything played: no next up either.
-	execSQL(t, `INSERT INTO user_data (user_id, item_id, played, play_count, last_played_at)
+	write(`INSERT INTO user_data (user_id, item_id, played, play_count, last_played_at)
 		SELECT $1, id, true, 1, now() FROM items WHERE type = 'Episode'`, captureUserID)
 	if got := names("/Shows/NextUp"); len(got) != 0 {
 		t.Errorf("finished series: %v", got)

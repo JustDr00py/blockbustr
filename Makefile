@@ -5,7 +5,7 @@ VERSION       ?= $(shell git describe --tags --always --dirty 2>/dev/null || ech
 SQLC ?= $(shell command -v sqlc 2>/dev/null || echo $$(go env GOPATH)/bin/sqlc)
 GOLANGCI_LINT ?= $(shell command -v golangci-lint 2>/dev/null || echo $$(go env GOPATH)/bin/golangci-lint)
 
-.PHONY: build run test test-integration vet lint generate sqlc-check dto dto-check fmt check test-scripts clean ui ui-check
+.PHONY: build run test test-integration vet lint generate sqlc-check dto dto-check fmt check test-scripts clean ui ui-check loadtest
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/$(BINARY) $(CMD)
@@ -63,6 +63,11 @@ ui-check:
 	cd web/admin && npm ci --no-audit --no-fund && npm run check
 
 # Python tooling for recon fixtures (runs in the mitmproxy image).
+# Seeds a 50k-item database and load-tests it with vegeta (DESIGN §9.6);
+# needs the dev stack's Postgres/Redis and a blockbustr_perf database.
+loadtest:
+	scripts/loadtest/run.sh
+
 test-scripts:
 	scripts/capture/convert.sh --test
 

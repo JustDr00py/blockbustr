@@ -108,7 +108,7 @@ const effectiveRating = `coalesce(i.official_rating,
 // and seasons are never hidden by rating: their content is.
 func (a Access) apply(b *sqlBuilder) {
 	if a.Folders != nil {
-		b.and("l.id IN (SELECT f.library_id FROM items f WHERE f.type = 'CollectionFolder' AND f.id = ANY(" + b.arg(a.Folders) + "))")
+		b.and("i.library_id IN (SELECT f.library_id FROM items f WHERE f.type = 'CollectionFolder' AND f.id = ANY(" + b.arg(a.Folders) + "))")
 	}
 	if a.MaxRating == nil && len(a.BlockUnrated) == 0 {
 		return

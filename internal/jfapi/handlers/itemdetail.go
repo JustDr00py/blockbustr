@@ -44,7 +44,7 @@ func (a *api) registerItemDetail(rt *jfapi.Router) {
 // visibleItem loads an item the user may see: in an enabled library and not
 // missing. ok is false otherwise.
 func (a *api) visibleItem(r *http.Request, user, id uuid.UUID) (db.Item, bool, error) {
-	res, err := pg.QueryItems(r.Context(), a.DB, pg.ItemQuery{UserID: user, IDs: []uuid.UUID{id}})
+	res, err := a.queryItems(r.Context(), pg.ItemQuery{UserID: user, IDs: []uuid.UUID{id}})
 	if err != nil || len(res.Items) == 0 {
 		return db.Item{}, false, err
 	}

@@ -1,0 +1,35 @@
+# Load-test server (TASKS P4.5, DESIGN §9.6), started by scripts/loadtest/run.sh
+# against the database scripts/seed fills. It uses its own database and Redis
+# DB 1, listens on loopback, and turns off everything that would reach out
+# (scans, search, discovery) so only the request path is measured.
+server:
+  listen: 127.0.0.1:8199
+  discovery: false
+database:
+  url: postgres://blockbustr:blockbustr@127.0.0.1:5432/blockbustr_perf?sslmode=disable
+redis:
+  url: redis://127.0.0.1:6379/1
+paths:
+  cache: /tmp/blockbustr-perf
+transcode:
+  hwaccel: none
+log:
+  level: warn
+metrics:
+  enabled: true
+search:
+  enabled: false
+stremio:
+  sync_interval: 0s
+scan:
+  on_start: false
+  interval: 0s
+  watch: false
+# The libraries scripts/seed makes; the paths don't exist and are never scanned.
+libraries:
+  - name: Perf Movies
+    kind: movies
+    paths: [/perf/movies]
+  - name: Perf Shows
+    kind: tvshows
+    paths: [/perf/shows]

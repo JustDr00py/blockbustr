@@ -67,7 +67,7 @@ func (a *api) getSuggestions(w http.ResponseWriter, r *http.Request, s auth.Sess
 		SortBy: []pg.SortKey{{By: "Random"}}, Count: true,
 	}
 	pageParams(q, &iq)
-	res, err := pg.QueryItems(r.Context(), a.DB, iq)
+	res, err := a.queryItems(r.Context(), iq)
 	if err != nil {
 		a.internalError(w, r, err)
 		return
@@ -213,7 +213,7 @@ func (a *api) itemsInIDOrder(ctx context.Context, ids []uuid.UUID) ([]db.Item, e
 	var rows []db.Item
 	if pg.AccessFrom(ctx).Restricted() {
 		// Through the item query, which leaves out what the user may not see.
-		res, err := pg.QueryItems(ctx, a.DB, pg.ItemQuery{IDs: ids, Recursive: true})
+		res, err := a.queryItems(ctx, pg.ItemQuery{IDs: ids, Recursive: true})
 		if err != nil {
 			return nil, err
 		}
@@ -276,7 +276,7 @@ func (a *api) getItems(w http.ResponseWriter, r *http.Request, s auth.Session) {
 			a.ensureEpisodes(r, parent)
 		}
 	}
-	res, err := pg.QueryItems(r.Context(), a.DB, iq)
+	res, err := a.queryItems(r.Context(), iq)
 	if err != nil {
 		a.internalError(w, r, err)
 		return
@@ -358,7 +358,7 @@ func (a *api) getResume(w http.ResponseWriter, r *http.Request, s auth.Session) 
 		SortBy: []pg.SortKey{{By: "DatePlayed", Descending: true}},
 	}
 	pageParams(q, &iq)
-	res, err := pg.QueryItems(r.Context(), a.DB, iq)
+	res, err := a.queryItems(r.Context(), iq)
 	if err != nil {
 		a.internalError(w, r, err)
 		return
@@ -426,7 +426,7 @@ func (a *api) getLatestMedia(w http.ResponseWriter, r *http.Request, s auth.Sess
 		if limit > 0 {
 			room = limit - len(out)
 		}
-		res, err := pg.QueryItems(r.Context(), a.DB, pg.ItemQuery{
+		res, err := a.queryItems(r.Context(), pg.ItemQuery{
 			UserID: user, ParentID: &f.row.ID, Recursive: true, IncludeTypes: types,
 			SortBy: []pg.SortKey{{By: "DateCreated", Descending: true}}, Limit: room,
 		})

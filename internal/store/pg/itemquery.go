@@ -44,6 +44,9 @@ type ItemQuery struct {
 	StartIndex int
 	Limit      int // 0 = no limit
 	Count      bool
+	// Counts, when set, supplies the total from a cache (search totals
+	// are always counted: found titles join the discover library).
+	Counts Counter
 
 	// Access limits the result to what a user may see; QueryItems takes it
 	// from the context (WithAccess) when it's unset.
@@ -58,6 +61,10 @@ type SortKey struct {
 
 // ItemQueryResult is a page of items and the total match count (the page
 // length when the query didn't ask for a count, as Jellyfin reports it).
+// Counter returns the total of the count query identified by key, calling
+// count when it doesn't have it.
+type Counter func(ctx context.Context, key string, count func() (int, error)) (int, error)
+
 type ItemQueryResult struct {
 	Items []db.Item
 	Total int
@@ -144,6 +151,28 @@ func likeEscape(s string) string {
 	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }
 
+// canonicalTypes maps a lower-cased item type to its stored spelling.
+var canonicalTypes = map[string]string{
+	"collectionfolder": "CollectionFolder", "folder": "Folder", "movie": "Movie", "series": "Series",
+	"season": "Season", "episode": "Episode", "boxset": "BoxSet",
+}
+
+// itemTypes spells client item types as stored, so a filter compares i.type
+// itself: lower(i.type) hid the type's row count from the planner, which
+// then picked plans for a few hundred rows instead of tens of thousands
+// (TASKS P4.5). Types items never have (LiveTvProgram…) are kept and match
+// nothing.
+func itemTypes(in []string) []string {
+	out := make([]string, len(in))
+	for i, s := range in {
+		if c, ok := canonicalTypes[strings.ToLower(s)]; ok {
+			s = c
+		}
+		out[i] = s
+	}
+	return out
+}
+
 func lowerAll(in []string) []string {
 	out := make([]string, len(in))
 	for i, s := range in {
@@ -181,11 +210,15 @@ const folderTypes = "('CollectionFolder','Folder','Series','Season','BoxSet')"
 // the user argument. Other queries reuse it to range over the same items.
 func (q ItemQuery) from(b *sqlBuilder) (from, user string) {
 	user = b.arg(q.UserID)
-	b.and("l.enabled")
-	b.and("i.missing_since IS NULL")
+	// Libraries are a filter (an array of ids), not a join: the join
+	// halved the planner's row estimates, so deep pages sorted every row
+	// instead of reading the sort index (TASKS P4.5).
+	libs := "l.enabled"
 	if !q.reachesDiscover() {
-		b.and("l.kind <> 'discover'")
+		libs += " AND l.kind <> 'discover'"
 	}
+	b.and("i.library_id = ANY(ARRAY(SELECT l.id FROM libraries l WHERE " + libs + "))")
+	b.and("i.missing_since IS NULL")
 	q.Access.apply(b)
 
 	switch {
@@ -193,19 +226,21 @@ func (q ItemQuery) from(b *sqlBuilder) (from, user string) {
 		p := b.arg(*q.ParentID)
 		// top_parent_id is the library folder for every descendant; below a
 		// library the hierarchy is at most Series → Season → Episode.
-		b.and(fmt.Sprintf("(i.top_parent_id = %[1]s OR i.parent_id = %[1]s OR i.parent_id IN (SELECT s.id FROM items s WHERE s.parent_id = %[1]s))", p))
+		// The seasons' ids are an array (= ANY), not a hashed subplan, so
+		// every branch can use an index (TASKS P4.5).
+		b.and(fmt.Sprintf("(i.top_parent_id = %[1]s OR i.parent_id = %[1]s OR i.parent_id = ANY(ARRAY(SELECT s.id FROM items s WHERE s.parent_id = %[1]s)))", p))
 	case q.ParentID != nil:
 		b.and("i.parent_id = " + b.arg(*q.ParentID))
 	case !q.Recursive && len(q.IDs) == 0:
 		b.and("i.type = 'CollectionFolder'") // the user root's children are the libraries
 	}
 	if len(q.IncludeTypes) > 0 {
-		b.and("lower(i.type) = ANY(" + b.arg(lowerAll(q.IncludeTypes)) + ")")
+		b.and("i.type = ANY(" + b.arg(itemTypes(q.IncludeTypes)) + ")")
 	} else if q.Recursive {
 		b.and("i.type <> 'CollectionFolder'")
 	}
 	if len(q.ExcludeTypes) > 0 {
-		b.and("NOT (lower(i.type) = ANY(" + b.arg(lowerAll(q.ExcludeTypes)) + "))")
+		b.and("NOT (i.type = ANY(" + b.arg(itemTypes(q.ExcludeTypes)) + "))")
 	}
 	if len(q.MediaTypes) > 0 {
 		types := []string{}
@@ -280,7 +315,7 @@ func (q ItemQuery) from(b *sqlBuilder) (from, user string) {
 	if q.MinCommunityRating != nil {
 		b.and("i.community_rating >= " + b.arg(*q.MinCommunityRating))
 	}
-	return ` FROM items i JOIN libraries l ON l.id = i.library_id
+	return ` FROM items i
  LEFT JOIN user_data ud ON ud.item_id = i.id AND ud.user_id = ` + user + `
  WHERE ` + strings.Join(b.where, "\n AND "), user
 }
@@ -328,13 +363,18 @@ func (q ItemQuery) build() (sql string, args []any, countSQL string, countArgs [
 	}
 	order = append(order, "i.id")
 
-	sql = "SELECT " + itemColumns + from + "\n ORDER BY " + strings.Join(order, ", ")
+	// The page's ids are picked first and only those rows read: sorting
+	// ids is cheap, while sorting whole rows to skip a deep offset spilled
+	// to disk (TASKS P4.5).
+	page := "SELECT i.id" + from + "\n ORDER BY " + strings.Join(order, ", ")
 	if q.Limit > 0 {
-		sql += " LIMIT " + strconv.Itoa(q.Limit)
+		page += " LIMIT " + strconv.Itoa(q.Limit)
 	}
 	if q.StartIndex > 0 {
-		sql += " OFFSET " + strconv.Itoa(q.StartIndex)
+		page += " OFFSET " + strconv.Itoa(q.StartIndex)
 	}
+	sql = "SELECT " + itemColumns + " FROM unnest(ARRAY(" + page + ")) WITH ORDINALITY AS page(id, n)" +
+		"\n JOIN items i ON i.id = page.id ORDER BY page.n"
 	return sql, b.args, "SELECT count(*)" + from, b.args[:whereArgs]
 }
 
@@ -377,7 +417,17 @@ func QueryItems(ctx context.Context, conn db.DBTX, q ItemQuery) (ItemQueryResult
 		return res, nil
 	}
 	if (q.Limit > 0 && len(items) == q.Limit) || (len(items) == 0 && q.StartIndex > 0) {
-		if err := conn.QueryRow(ctx, countSQL, countArgs...).Scan(&res.Total); err != nil {
+		count := func() (n int, err error) {
+			err = conn.QueryRow(ctx, countSQL, countArgs...).Scan(&n)
+			return n, err
+		}
+		var err error
+		if q.Counts != nil && strings.TrimSpace(q.SearchTerm) == "" {
+			res.Total, err = q.Counts(ctx, countSQL+"\x00"+fmt.Sprint(countArgs...), count)
+		} else {
+			res.Total, err = count()
+		}
+		if err != nil {
 			return ItemQueryResult{}, fmt.Errorf("count items: %w", err)
 		}
 	}

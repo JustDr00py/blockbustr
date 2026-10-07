@@ -361,7 +361,8 @@ Queries live in `internal/store/pg/queries/*.sql` and are compiled with sqlc (`s
 | `probe:{sourceHash}` | ffprobe JSON (also persisted in PG) | 30 d |
 | `stremio:streams:{addon}:{type}:{id}` | addon stream list | 30 min |
 | `stremio:meta:{addon}:{type}:{id}` | addon meta | 24h |
-| `q:latest:{userId}:{parentId}` / `q:nextup:{userId}` | cached query result | 5 min, purged on events |
+| `q:gen` | counter bumped by every `LibraryChanged` / `UserDataChanged` event (`events.Bus.Publish`) | — |
+| `q:{kind}:{gen}:{hash}` | cached query result for one generation: `count` (item query totals), `nextup` (Next Up ids), `children` (library child counts); hash = SHA-256 of the SQL/parameters, user included | 5 min; the next event retires it |
 | `play:{playSessionId}` | PlaybackInfo decisions per media source + chosen tracks, user, device (P2.2) | 24h |
 | `lock:transcode:{playSessionId}` | owner | 30s, renewed |
 | `lock:scan:{libraryId}` | owner | 10 min, renewed |
@@ -779,6 +780,16 @@ Publish `UserDataChanged`.
 4. **Integration:** testcontainers (PG+Redis) for login → views → items → playbackinfo → stream (302 / range), using a generated Jellyfin SDK client where practical.
 5. **Manual client matrix:** run each phase's checklist in TASKS.md on real apps.
 6. **Perf:** synthetic 50k-item seed (`scripts/seed`), `vegeta` against `/Items` and `/Shows/NextUp`.
+   - **Implemented (P4.5, 2026-10-07):** `scripts/seed` bulk-loads (COPY) 30k movies and 300 shows × 5 seasons × 13 episodes (51,302 items) with genres, people, probed media sources, image rows and a user `perf` with a watch history, into its own database (`blockbustr_perf`; it refuses one holding other libraries). `scripts/loadtest/run.sh` (`make loadtest`) starts the server from `scripts/loadtest/config.yaml` (Redis DB 1, scans/search/discovery off), warms it, and sends 12 client-shaped queries (from `testdata/jellyfin`) at 50 req/s each, failing any p95 ≥ 50 ms.
+   - **First run:** NextUp 9 s per request (quadratic CTE), `/Items` pages 80–200 ms, deep pages and genre filters timing out under load.
+   - **Fixes:**
+     - NextUp finds the started series first and picks one episode per series with `DISTINCT ON`.
+     - Item types are compared as stored (`i.type = ANY`, not `lower(i.type)`), and libraries are an id-array filter instead of a join; both had wrecked the planner's row estimates.
+     - The recursive parent filter and the season branch of the episode counts take the child ids as an array (`= ANY(ARRAY(…))`), which an index can serve.
+     - Pages select their ids first (`unnest(ARRAY(…)) WITH ORDINALITY`) and read only those rows.
+     - Migration 00016 adds covering partial indexes for name order and newest-first order.
+     - Totals, Next Up ids and library child counts are cached per event generation (§5 `q:*`).
+   - **Result (laptop, Postgres/Redis in podman):** every endpoint p95 13–44 ms at 50 req/s with Redis warm. A cold Next Up (first after an event) still takes about 60 ms.
 
 ## 10. Configuration
 Implemented in `internal/config`. Annotated example: `config.example.yaml`. Precedence is defaults < YAML < `BLOCKBUSTR_*` env vars (an empty env var doesn't override). Unknown YAML keys are an error, so typos fail fast, and `Validate` reports every problem at once.

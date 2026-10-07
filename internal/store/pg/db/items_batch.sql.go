@@ -434,8 +434,11 @@ FROM (
     SELECT e.id, e.parent_id AS ancestor, e.date_created, e.runtime_ticks FROM items e
     WHERE e.type = 'Episode' AND e.missing_since IS NULL AND e.parent_id = ANY($1::uuid[])
     UNION ALL
+    -- the seasons' ids as an array, so episodes are found by parent_id
+    -- instead of scanning every episode (TASKS P4.5)
     SELECT e.id, s.parent_id, e.date_created, e.runtime_ticks FROM items e JOIN items s ON s.id = e.parent_id
-    WHERE e.type = 'Episode' AND e.missing_since IS NULL AND s.parent_id = ANY($1::uuid[])
+    WHERE e.type = 'Episode' AND e.missing_since IS NULL
+      AND e.parent_id = ANY(ARRAY(SELECT s2.id FROM items s2 WHERE s2.parent_id = ANY($1::uuid[]) AND s2.type = 'Season'))
 ) a
 LEFT JOIN user_data ud ON ud.item_id = a.id AND ud.user_id = $2
 GROUP BY a.ancestor
