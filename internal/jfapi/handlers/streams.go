@@ -154,7 +154,7 @@ func choiceSources(it db.Item, choices []StreamChoice, subs []SubtitleChoice) ([
 		for i, sub := range subs {
 			streams[c.ID] = append(streams[c.ID], db.MediaStream{
 				MediaSourceID: c.ID, Idx: int32(firstAddonSubtitle + i), Type: "Subtitle", Codec: ptr("subrip"),
-				Language: ptr(sub.Language), Title: ptr(sub.Addon), IsExternal: true, ExternalPath: ptr(sub.URL),
+				Language: ptr(sub.Language), IsExternal: true, ExternalPath: ptr(sub.URL), // untitled: apps show the language
 			})
 		}
 		src := db.MediaSource{
@@ -530,8 +530,8 @@ func streamContainer(s stremio.Stream) string {
 }
 
 // streamLabel is a choice's name, e.g. "2160p DV HEVC Remux • 29.2 GB •
-// Torrentio • cached": the picture, the size, the addon and, when known,
-// whether a debrid account has the torrent.
+// cached": the picture, the size and, when known, whether a debrid account
+// has it.
 func streamLabel(r stremio.Ranked) string {
 	in := r.Info
 	var pic []string
@@ -557,9 +557,7 @@ func streamLabel(r stremio.Ranked) string {
 	if in.Size > 0 {
 		parts = append(parts, fmt.Sprintf("%.1f GB", float64(in.Size)/(1<<30)))
 	}
-	if r.Addon != "" {
-		parts = append(parts, r.Addon)
-	}
+	// No addon name: users found "AIOStreams | name" noise in the picker.
 	switch {
 	case in.Debrid:
 		parts = append(parts, "cached")

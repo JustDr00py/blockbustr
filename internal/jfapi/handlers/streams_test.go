@@ -180,9 +180,9 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		names = append(names, s.Name)
 	}
 	want := []string{
-		"1080p H.264 • 1.5 GB • Direct",
-		"2160p HDR HEVC • 35.1 GB • Torrentio",
-		"720p H.264 • 1.1 GB • Torrentio",
+		"1080p H.264 • 1.5 GB",
+		"2160p HDR HEVC • 35.1 GB",
+		"720p H.264 • 1.1 GB",
 	}
 	if strings.Join(names, " | ") != strings.Join(want, " | ") {
 		t.Fatalf("sources:\n %q\nwant\n %q", names, want)
@@ -349,7 +349,7 @@ func TestDetailsPrefetchStreamChoices(t *testing.T) {
 	for _, s := range detail.MediaSources {
 		names = append(names, s.Name)
 	}
-	want := "1080p • AIOStreams • cached | 2160p • AIOStreams • not cached"
+	want := "1080p • cached | 2160p • not cached"
 	if strings.Join(names, " | ") != want {
 		t.Errorf("versions:\n %q\nwant\n %q", names, want)
 	}
@@ -452,7 +452,7 @@ func TestCatalogVersionsQuotas(t *testing.T) {
 	if len(names) != 7 || counted(names, "2160p") != 3 || counted(names, "1080p") != 3 || counted(names, "720p") != 1 {
 		t.Errorf("versions (%d): %v", len(names), names)
 	}
-	if names[0] != "2160p • A" {
+	if names[0] != "2160p" {
 		t.Errorf("first version: %q", names[0])
 	}
 }
@@ -473,7 +473,7 @@ func TestCatalogVersionsSpillToBest(t *testing.T) {
 	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	auth := `MediaBrowser Token="` + captureToken + `"`
 	names := versionNames(t, sf.h, matrix.Id, auth, `{}`)
-	if len(names) != 6 || counted(names, "2160p") != 1 || counted(names, "1080p") != 5 || names[0] != "2160p • A" {
+	if len(names) != 6 || counted(names, "2160p") != 1 || counted(names, "1080p") != 5 || names[0] != "2160p" {
 		t.Errorf("versions (%d): %v", len(names), names)
 	}
 }
@@ -621,11 +621,11 @@ func TestStreamLabel(t *testing.T) {
 	}{
 		{stremio.Ranked{Offer: stremio.Offer{Addon: "Torrentio", Stream: stremio.Stream{InfoHash: "a"}},
 			Info: stremio.Info{Height: 2160, DV: true, HDR: true, Codec: "hevc", Remux: true, Size: 29 << 30, Cached: true, Debrid: true}},
-			"2160p DV HEVC Remux • 29.0 GB • Torrentio • cached"},
+			"2160p DV HEVC Remux • 29.0 GB • cached"},
 		{stremio.Ranked{Offer: stremio.Offer{Addon: "Torrentio", Stream: stremio.Stream{InfoHash: "a"}}, Info: stremio.Info{Height: 1080, Uncached: true}},
-			"1080p • Torrentio • not cached"},
+			"1080p • not cached"},
 		{stremio.Ranked{Offer: stremio.Offer{Addon: "Direct", Stream: stremio.Stream{URL: "https://x"}}, Info: stremio.Info{Cached: true}},
-			"Stream • Direct"},
+			"Stream"},
 	}
 	for _, c := range cases {
 		if got := streamLabel(c.r); got != c.want {
@@ -836,11 +836,11 @@ func TestAddonIDsPreferIMDb(t *testing.T) {
 	}
 	cases := map[string]string{
 		// IMDb known: asked by it, which answers; subtitles by it too.
-		movies["The Matrix"]: "1080p • A | streams movie/tt0133093 | subtitles movie/tt0133093",
+		movies["The Matrix"]: "1080p | streams movie/tt0133093 | subtitles movie/tt0133093",
 		// No IMDb id: the catalog's own.
-		movies["The Matrix Reloaded"]: "720p • A | streams movie/tmdb:604 | subtitles movie/tmdb:604",
+		movies["The Matrix Reloaded"]: "720p | streams movie/tmdb:604 | subtitles movie/tmdb:604",
 		// Episode of a series with an IMDb id.
-		episode: "1080p • A | streams series/tt0944947:1:1 | subtitles series/tt0944947:1:1",
+		episode: "1080p | streams series/tt0944947:1:1 | subtitles series/tt0944947:1:1",
 	}
 	for id, want := range cases {
 		if got := strings.Join(play(id), " | "); got != want {
@@ -868,7 +868,7 @@ func TestAddonIDsFallBackToCatalogID(t *testing.T) {
 	rec := call(t, sf.h, "POST", "/Items/"+id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`)
 	var out playbackSources
 	_ = json.Unmarshal(rec.Body.Bytes(), &out)
-	if len(out.MediaSources) != 1 || out.MediaSources[0].Name != "2160p • A" {
+	if len(out.MediaSources) != 1 || out.MediaSources[0].Name != "2160p" {
 		t.Errorf("sources: %+v", out.MediaSources)
 	}
 	fs.mu.Lock()
@@ -1024,7 +1024,7 @@ func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
 	}
 
 	// Uncapped: the 4K direct-plays and keeps its ranked place.
-	if got := playback(h264Profile); got[0].Name != "2160p H.264 • Torrentio" || !got[0].SupportsDirectPlay {
+	if got := playback(h264Profile); got[0].Name != "2160p H.264" || !got[0].SupportsDirectPlay {
 		t.Errorf("uncapped first = %+v", got[0])
 	}
 	// Capped at 8 Mb/s: the 4K is transcode-only, so the 720p that fits
@@ -1034,7 +1034,7 @@ func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("sources = %+v", got)
 	}
-	if got[0].Name != "720p H.264 • 2.0 GB • Torrentio" || !got[0].SupportsDirectPlay {
+	if got[0].Name != "720p H.264 • 2.0 GB" || !got[0].SupportsDirectPlay {
 		t.Errorf("capped first = %+v", got[0])
 	}
 	if got[1].SupportsDirectPlay {
@@ -1097,7 +1097,7 @@ func TestDetailsSlowCollectionAnnounced(t *testing.T) {
 		case e := <-evs:
 			if e.Kind == events.LibraryChanged && len(e.Updated) == 1 && e.Updated[0] == id.UUID() {
 				getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
-				if len(detail.MediaSources) != 1 || detail.MediaSources[0].Name != "1080p • Slow" {
+				if len(detail.MediaSources) != 1 || detail.MediaSources[0].Name != "1080p" {
 					t.Errorf("after the event: %+v", detail.MediaSources)
 				}
 				return
