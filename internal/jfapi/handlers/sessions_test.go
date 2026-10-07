@@ -150,6 +150,21 @@ func TestPlaybackReporting(t *testing.T) {
 	if len(resume.Items) == 0 || resume.Items[0].Name != "Mortal Kombat II" {
 		t.Errorf("Continue Watching: %+v", resume.Items)
 	}
+	// Infuse's legacy forms of the home rows answer the same.
+	var me struct{ Id string }
+	getJSON(t, h, "/Users/Me", &me)
+	var legacy struct{ Items []struct{ Name string } }
+	getJSON(t, h, "/Users/"+me.Id+"/Items/Resume", &legacy)
+	if len(legacy.Items) != len(resume.Items) || legacy.Items[0].Name != "Mortal Kombat II" {
+		t.Errorf("legacy Resume: %+v", legacy.Items)
+	}
+	var latest []struct{ Name string }
+	getJSON(t, h, "/Users/"+me.Id+"/Items/Latest?limit=5", &latest)
+	var current []struct{ Name string }
+	getJSON(t, h, "/Items/Latest?limit=5", &current)
+	if len(latest) != len(current) {
+		t.Errorf("legacy Latest: %d items, current %d", len(latest), len(current))
+	}
 
 	// A failed stop changes nothing; a stop past 90% marks it played.
 	report("/Sessions/Playing/Stopped", `{"ItemId":"`+mkii+`","PositionTicks":`+itoa(runtime-1)+`,"Failed":true}`)

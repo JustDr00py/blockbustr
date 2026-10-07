@@ -3,10 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [x] P3.17 Manual: in Findroid, Streamyfin and Jellyfin Android, search "the matrix" (not in library) → open → play via debrid; search a show → season → episode → play
-  - Passed 2026-10-07 (user): all six checks below pass (search, details + Play + "Not in your library", versions, OpenSubtitles, favourite + navigation, show → season → episode → play)
-  - Known issue: 4K HEVC 10-bit / Dolby Vision stutters on a budget Android phone (Moto G Power 5G 2023) while the iPhone plays the same files; server throughput 375–450 Mbit/s, Tailscale direct on LAN. Findroid/Streamyfin send no resolution caps (Findroid reports a 1 Gbit/s max bitrate), so 4K ranks first and direct-plays. Workaround: set the app's max bitrate to 10–20 Mbit/s (ranks 1080p first, transcodes single-version titles with QSV). Offered: per-device max height in config
-  - Check per client: found titles appear in search; the details page shows the Play button and the "Not in your library" line; versions appear (after first play) and switch; subtitles from OpenSubtitles load; favouriting a found title keeps it; navigation from a found title (back, "more like this") doesn't break (no ParentId)
+- [ ] P4.1 User policy: library access, parental ratings, admin vs user, disable user
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -151,7 +148,10 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
   - Done 2026-10-06 (DESIGN §6, §8.2), scoped by user decision ("never redirect + signed URLs"): debrid-bound links (resolved through an account, or on a debrid download host) are always proxied, never redirected, whatever `compat.redirect_clients` says; remote sources' `Path` carries `Expires` + HMAC `Signature` (`internal/urlsign`, key in `server_settings`, `server.stream_url_ttl` 48 h); a bad or expired signature is 403, unsigned requests still play (Findroid streams anonymously, as Jellyfin allows).
   - Trade-off: debrid playback always flows through the server (bandwidth), as the safety rule requires
 - [x] Live-test fixes 2026-10-07 (DESIGN §7.3 "Hardening"): `[RD download]` URLs ranked uncached; Torrentio notice videos (`failed_access_v3.mp4`…) detected as failures; `User-Agent: blockbustr` (Torrentio's Cloudflare 403s Go's); addon links always proxied; default-source fallback through the ranked versions with failed ones remembered 6 h; next debrid account tried when one refuses; debrid keys checked at start.
-- [ ] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources
+- [x] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources
+  - Passed 2026-10-07 (user): Infuse 8.5.6 (iPhone) plays The Mummy (DirectStream), resume, seeking and OpenSubtitles work; Findroid covered by P3.17
+  - Infuse shows versions only after its metadata refresh: it caches item details at library sync, and a catalog title's versions exist only after its first PlaybackInfo. Possible improvement: look up versions in the background when a title's details are opened
+  - Fixed on the way: Infuse's legacy home rows `/Users/{id}/Items/Resume` and `/Users/{id}/Items/Latest` answered 404 (taken for an item id); now routed
   - In progress 2026-10-07 (user testing): dev server has Cinemeta (Popular movies + series), Torrentio RD and OpenSubtitles v3; Avengers, Paddington and others play through the API
 
 - Reference for P3.12–P3.13: lostb1t/remux (Rust, Jellyfin-compatible, Stremio addons, search in the Jellyfin UI)
@@ -169,7 +169,7 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 - [x] P3.16 Remote item presentation: placeholder MediaSource, `LocationType`, source line in Overview; verify Play button and visibility in every MVP client (R6)
   - Done 2026-10-07 (DESIGN §7.4 item 8): found titles already report FileSystem/Full/Video, a remote placeholder source, TMDB runtime/genres/cast; added the "Not in your library · streams from your addons" line to their overview. Client verification moves to P3.17's checklist.
   - Open: found titles have no `ParentId` (Jellyfin always sets the library folder); watch for broken navigation in clients
-- [ ] P3.17 Manual: in Findroid, Streamyfin and Jellyfin Android, search "the matrix" (not in library) → open → play via debrid; search a show → season → episode → play
+- [x] P3.17 Manual: in Findroid, Streamyfin and Jellyfin Android, search "the matrix" (not in library) → open → play via debrid; search a show → season → episode → play
 
 **Exit:** Stremio catalogs show up as libraries and play through debrid on MVP clients, **and searching inside each MVP client finds and plays titles that aren't in the library.**
 

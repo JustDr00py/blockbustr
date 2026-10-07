@@ -43,6 +43,10 @@ func (a *api) registerItems(rt *jfapi.Router) {
 	rt.Get("/Users/{userId}/Items", a.requireUser(a.getItems)) // legacy route
 	rt.Get("/Items/Latest", a.requireUser(a.getLatestMedia))
 	rt.Get("/UserItems/Resume", a.requireUser(a.getResume))
+	// Legacy forms Infuse uses for its home rows; without them the legacy
+	// item route takes "Latest"/"Resume" for an item id and answers 404.
+	rt.Get("/Users/{userId}/Items/Latest", a.requireUser(a.getLatestMedia))
+	rt.Get("/Users/{userId}/Items/Resume", a.requireUser(a.getResume))
 	rt.Get("/Items/Suggestions", a.requireUser(a.getSuggestions))
 	rt.Get("/Users/{userId}/Suggestions", a.requireUser(a.getSuggestions)) // legacy route
 }
