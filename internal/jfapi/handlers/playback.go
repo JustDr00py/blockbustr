@@ -143,6 +143,10 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		errorText(w, http.StatusForbidden)
 		return
 	}
+	if s.NoPlayback { // the policy's EnableMediaPlayback is off
+		errorText(w, http.StatusForbidden)
+		return
+	}
 	id, err := dto.ParseID(jfapi.URLParam(r, "itemId"))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

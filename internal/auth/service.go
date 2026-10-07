@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -16,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
+	"github.com/sysadmin/blockbustr/internal/store/pg"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 )
 
@@ -43,6 +45,20 @@ type Session struct {
 	DeviceName string
 	AppName    string
 	AppVersion string
+	// Access and NoPlayback come from the user's policy (P4.1): what they
+	// may see, and whether they may play anything.
+	Access     pg.Access `json:",omitempty"`
+	NoPlayback bool      `json:",omitempty"`
+}
+
+// policySession fills s's policy fields from a stored users.policy.
+func policySession(s Session, policy []byte) Session {
+	s.Access = pg.AccessFromPolicy(policy)
+	var p struct{ EnableMediaPlayback *bool }
+	if json.Unmarshal(policy, &p) == nil && p.EnableMediaPlayback != nil {
+		s.NoPlayback = !*p.EnableMediaPlayback
+	}
+	return s
 }
 
 // Service implements login and token handling over Postgres and Redis.
@@ -99,10 +115,10 @@ func (s *Service) IssueToken(ctx context.Context, u db.User, dev Device) (string
 	if err := s.q.CreateAccessToken(ctx, db.CreateAccessTokenParams{TokenSha: sum, UserID: u.ID, DeviceID: dev.ID}); err != nil {
 		return "", fmt.Errorf("auth: token: %w", err)
 	}
-	s.cacheSession(ctx, sum, Session{
+	s.cacheSession(ctx, sum, policySession(Session{
 		UserID: u.ID, UserName: u.Name, IsAdmin: u.IsAdmin,
 		DeviceID: dev.ID, DeviceName: dev.Name, AppName: dev.AppName, AppVersion: dev.AppVersion,
-	})
+	}, u.Policy))
 	return token, nil
 }
 
@@ -129,10 +145,10 @@ func (s *Service) Resolve(ctx context.Context, token string) (Session, error) {
 	if err := s.q.TouchAccessToken(ctx, sum); err != nil {
 		return Session{}, err
 	}
-	sess = Session{
+	sess = policySession(Session{
 		UserID: row.UserID, UserName: row.UserName, IsAdmin: row.IsAdmin,
 		DeviceID: row.DeviceID, DeviceName: row.DeviceName, AppName: row.AppName, AppVersion: row.AppVersion,
-	}
+	}, row.Policy)
 	s.cacheSession(ctx, sum, sess)
 	return sess, nil
 }
@@ -152,6 +168,41 @@ func (s *Service) revokeDevice(ctx context.Context, deviceID string) error {
 	if _, err := s.q.RevokeDeviceTokens(ctx, deviceID); err != nil {
 		return fmt.Errorf("auth: revoke device: %w", err)
 	}
+	return s.dropCached(ctx, deviceID)
+}
+
+// InvalidateUser drops the user's cached sessions, so the next request
+// reads their changed name, admin flag or policy (tokens stay valid).
+func (s *Service) InvalidateUser(ctx context.Context, userID uuid.UUID) error {
+	devices, err := s.q.ActiveUserDevices(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("auth: user devices: %w", err)
+	}
+	for _, d := range devices {
+		if err := s.dropCached(ctx, d); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RevokeUser signs the user out on every device (disabled or deleted).
+func (s *Service) RevokeUser(ctx context.Context, userID uuid.UUID) error {
+	devices, err := s.q.RevokeUserTokens(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("auth: revoke user: %w", err)
+	}
+	for _, d := range devices {
+		if err := s.dropCached(ctx, d); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// dropCached deletes a device's cached sessions (via its set of cached
+// token hashes).
+func (s *Service) dropCached(ctx context.Context, deviceID string) error {
 	hashes, err := s.cache.SetMembers(ctx, cache.DeviceTokensKey(deviceID))
 	if err != nil {
 		return fmt.Errorf("auth: revoke device cache: %w", err)

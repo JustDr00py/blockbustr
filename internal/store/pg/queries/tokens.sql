@@ -15,7 +15,7 @@ INSERT INTO access_tokens (token_sha, user_id, device_id) VALUES ($1, $2, $3);
 -- name: GetTokenSession :one
 -- Resolves a token (sha256) to its user and device. Revoked tokens and
 -- disabled users don't resolve.
-SELECT t.user_id, t.device_id, u.name AS user_name, u.is_admin,
+SELECT t.user_id, t.device_id, u.name AS user_name, u.is_admin, u.policy,
        d.name AS device_name, d.app_name, d.app_version
 FROM access_tokens t
 JOIN users   u ON u.id = t.user_id
@@ -33,3 +33,14 @@ UPDATE access_tokens SET revoked_at = now() WHERE token_sha = $1 AND revoked_at 
 -- name: RevokeDeviceTokens :execrows
 -- Jellyfin signs a device out of older sessions when it logs in again.
 UPDATE access_tokens SET revoked_at = now() WHERE device_id = $1 AND revoked_at IS NULL;
+
+-- name: RevokeUserTokens :many
+-- Signs a user out everywhere (disabled, deleted): returns the devices, so
+-- their cached sessions can be dropped too.
+UPDATE access_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL
+RETURNING device_id;
+
+-- name: ActiveUserDevices :many
+-- Devices with a live token of the user: their cached sessions are dropped
+-- when the user's policy changes, so the change applies at once.
+SELECT DISTINCT device_id FROM access_tokens WHERE user_id = $1 AND revoked_at IS NULL;

@@ -7,9 +7,36 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 )
+
+const activeUserDevices = `-- name: ActiveUserDevices :many
+SELECT DISTINCT device_id FROM access_tokens WHERE user_id = $1 AND revoked_at IS NULL
+`
+
+// Devices with a live token of the user: their cached sessions are dropped
+// when the user's policy changes, so the change applies at once.
+func (q *Queries) ActiveUserDevices(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	rows, err := q.db.Query(ctx, activeUserDevices, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var device_id string
+		if err := rows.Scan(&device_id); err != nil {
+			return nil, err
+		}
+		items = append(items, device_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const createAccessToken = `-- name: CreateAccessToken :exec
 INSERT INTO access_tokens (token_sha, user_id, device_id) VALUES ($1, $2, $3)
@@ -27,7 +54,7 @@ func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenPa
 }
 
 const getTokenSession = `-- name: GetTokenSession :one
-SELECT t.user_id, t.device_id, u.name AS user_name, u.is_admin,
+SELECT t.user_id, t.device_id, u.name AS user_name, u.is_admin, u.policy,
        d.name AS device_name, d.app_name, d.app_version
 FROM access_tokens t
 JOIN users   u ON u.id = t.user_id
@@ -42,6 +69,7 @@ type GetTokenSessionRow struct {
 	DeviceID   string
 	UserName   string
 	IsAdmin    bool
+	Policy     json.RawMessage
 	DeviceName string
 	AppName    string
 	AppVersion string
@@ -57,6 +85,7 @@ func (q *Queries) GetTokenSession(ctx context.Context, tokenSha []byte) (GetToke
 		&i.DeviceID,
 		&i.UserName,
 		&i.IsAdmin,
+		&i.Policy,
 		&i.DeviceName,
 		&i.AppName,
 		&i.AppVersion,
@@ -87,6 +116,33 @@ func (q *Queries) RevokeDeviceTokens(ctx context.Context, deviceID string) (int6
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const revokeUserTokens = `-- name: RevokeUserTokens :many
+UPDATE access_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL
+RETURNING device_id
+`
+
+// Signs a user out everywhere (disabled, deleted): returns the devices, so
+// their cached sessions can be dropped too.
+func (q *Queries) RevokeUserTokens(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	rows, err := q.db.Query(ctx, revokeUserTokens, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var device_id string
+		if err := rows.Scan(&device_id); err != nil {
+			return nil, err
+		}
+		items = append(items, device_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const touchAccessToken = `-- name: TouchAccessToken :exec

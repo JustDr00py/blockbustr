@@ -92,6 +92,7 @@ func Register(rt *jfapi.Router, d Deps) {
 	a.registerSystem(rt)
 	registerBranding(rt)
 	a.registerUsers(rt)
+	a.registerUserAdmin(rt)
 	a.registerQuickConnect(rt)
 	a.registerLibrary(rt)
 	a.registerImages(rt)

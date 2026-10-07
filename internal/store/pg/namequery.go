@@ -58,6 +58,7 @@ type NameQueryResult struct {
 
 // QueryNames runs q.
 func QueryNames(ctx context.Context, conn db.DBTX, q NameQuery) (NameQueryResult, error) {
+	q.Items = q.Items.withAccess(ctx)
 	b := &sqlBuilder{}
 	from, _ := q.Items.from(b)
 	table, link, fk, image := "genres", "item_genres", "genre_id", "NULL::text"
@@ -163,6 +164,7 @@ type ItemFilterValues struct {
 // languages of the items q matches, in one round trip (q's sort and paging
 // are ignored).
 func ItemFilters(ctx context.Context, conn db.DBTX, q ItemQuery) (ItemFilterValues, error) {
+	q = q.withAccess(ctx)
 	b := &sqlBuilder{}
 	from, _ := q.from(b)
 	// Each row is (kind, text, genre id, year), sorted within each kind.

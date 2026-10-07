@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P4.1 User policy: library access, parental ratings, admin vs user, disable user
+- [ ] P4.3 Admin web UI (React + Vite, embedded): libraries, users, addons, debrid, scans, sessions
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -174,8 +174,11 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 **Exit:** Stremio catalogs show up as libraries and play through debrid on MVP clients, **and searching inside each MVP client finds and plays titles that aren't in the library.**
 
 ## Phase 4 — Hardening
-- [ ] P4.1 User policy: library access, parental ratings, admin vs user, disable user
+- [x] P4.1 User policy: library access, parental ratings, admin vs user, disable user
+  - Done 2026-10-07 (DESIGN §3.2): policy enforced in every item query (`pg.Access` on the request: library folders, parental rating with series-inherited episode ratings, unrated blocking), `/UserViews` and Next Up filtered, remote search off for restricted users, `EnableMediaPlayback` honoured; admin routes `/Users/New`, `DELETE /Users/{id}`, `/Users/{id}/Policy`, `/Password`, rename; policy changes apply immediately, disable/delete revoke all tokens, last-admin and self-demotion guards
+  - Open: non-admin default policy values vs a Jellyfin-created non-admin; the stream endpoint is anonymous (as Jellyfin), so policy can't limit a URL already handed out; no admin UI until P4.3
 - [ ] P4.2 Kodi Sync Queue endpoints backed by `library_events` [§3.5]
+  - Skipped 2026-10-07 by user decision (not needed now)
 - [ ] P4.3 Admin web UI (React + Vite, embedded): libraries, users, addons, debrid, scans, sessions
 - [ ] P4.4 Prometheus `/metrics`; pprof behind admin
 - [ ] P4.5 `scripts/seed` 50k items + vegeta load test; hit p95 targets [§1, §9.6]

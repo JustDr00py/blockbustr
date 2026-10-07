@@ -210,9 +210,19 @@ func (a *api) itemsInIDOrder(ctx context.Context, ids []uuid.UUID) ([]db.Item, e
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	rows, err := a.Queries.GetItemsByIDs(ctx, ids)
-	if err != nil {
-		return nil, err
+	var rows []db.Item
+	if pg.AccessFrom(ctx).Restricted() {
+		// Through the item query, which leaves out what the user may not see.
+		res, err := pg.QueryItems(ctx, a.DB, pg.ItemQuery{IDs: ids, Recursive: true})
+		if err != nil {
+			return nil, err
+		}
+		rows = res.Items
+	} else {
+		var err error
+		if rows, err = a.Queries.GetItemsByIDs(ctx, ids); err != nil {
+			return nil, err
+		}
 	}
 	byID := make(map[uuid.UUID]db.Item, len(rows))
 	for _, it := range rows {
@@ -289,7 +299,10 @@ func (a *api) getItems(w http.ResponseWriter, r *http.Request, s auth.Session) {
 // search's first page (DESIGN §7.4). A failing source never fails the search.
 func (a *api) withRemoteMatches(r *http.Request, iq pg.ItemQuery, local []db.Item) []db.Item {
 	term := strings.TrimSpace(iq.SearchTerm)
-	if a.RemoteSearch == nil || term == "" || iq.StartIndex > 0 || len(iq.IDs) > 0 || iq.ParentID != nil {
+	// Titles found remotely aren't in any library, so users limited to some
+	// libraries or ratings don't get them.
+	if a.RemoteSearch == nil || term == "" || iq.StartIndex > 0 || len(iq.IDs) > 0 || iq.ParentID != nil ||
+		pg.AccessFrom(r.Context()).Restricted() {
 		return local
 	}
 	types := remoteTypes(iq)

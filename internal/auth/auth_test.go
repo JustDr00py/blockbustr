@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -115,7 +116,7 @@ func TestTokens(t *testing.T) {
 
 	sess, err := s.Resolve(ctx, tok)
 	want := Session{UserID: u.ID, UserName: "alice", IsAdmin: true, DeviceID: "dev-1", DeviceName: "Pixel", AppName: "Findroid", AppVersion: "1.1.0"}
-	if err != nil || sess != want {
+	if err != nil || !reflect.DeepEqual(sess, want) {
 		t.Fatalf("Resolve = %+v %v", sess, err)
 	}
 	for _, bad := range []string{"", "0123456789abcdef0123456789abcdef"} {
@@ -129,7 +130,7 @@ func TestTokens(t *testing.T) {
 			t.Fatal(err)
 		}
 		got, err := s.Resolve(ctx, tok)
-		if err != nil || got != want {
+		if err != nil || !reflect.DeepEqual(got, want) {
 			t.Fatalf("cold Resolve = %+v %v", got, err)
 		}
 	})

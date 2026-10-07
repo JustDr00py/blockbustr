@@ -7,6 +7,7 @@ import (
 
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
+	"github.com/sysadmin/blockbustr/internal/store/pg"
 )
 
 // sessionHandler is a handler that runs for a signed-in user.
@@ -28,6 +29,9 @@ func (a *api) requireUser(h sessionHandler) http.HandlerFunc {
 		}
 		// Media sources point remote items at this server's own stream URL.
 		r = r.WithContext(context.WithValue(r.Context(), baseURLKey{}, localAddress(a.Config.Server.ExternalURL, r)))
+		// Every item query of the request sees only what the user's policy
+		// allows (P4.1).
+		r = r.WithContext(pg.WithAccess(r.Context(), s.Access))
 		a.touchSession(r, s) // GET /Sessions lists recently active devices
 		h(w, r, s)
 	}

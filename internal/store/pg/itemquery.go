@@ -44,6 +44,10 @@ type ItemQuery struct {
 	StartIndex int
 	Limit      int // 0 = no limit
 	Count      bool
+
+	// Access limits the result to what a user may see; QueryItems takes it
+	// from the context (WithAccess) when it's unset.
+	Access Access
 }
 
 // SortKey is one Jellyfin ItemSortBy value and its direction.
@@ -148,6 +152,14 @@ func lowerAll(in []string) []string {
 	return out
 }
 
+// withAccess fills q's Access from ctx unless it was set.
+func (q ItemQuery) withAccess(ctx context.Context) ItemQuery {
+	if !q.Access.Restricted() {
+		q.Access = AccessFrom(ctx)
+	}
+	return q
+}
+
 // reachesDiscover reports whether q may return items of the hidden
 // discover library (search results, DESIGN §7.4): by id, as a parent's
 // children, or by the user's own state (played, favourite, resumable).
@@ -174,6 +186,7 @@ func (q ItemQuery) from(b *sqlBuilder) (from, user string) {
 	if !q.reachesDiscover() {
 		b.and("l.kind <> 'discover'")
 	}
+	q.Access.apply(b)
 
 	switch {
 	case q.ParentID != nil && q.Recursive:
@@ -348,6 +361,7 @@ func splitTopLevel(s string) []string {
 // QueryItems runs q. The count query only runs when the page can't tell the
 // total by itself (a full page, or a page past the end).
 func QueryItems(ctx context.Context, conn db.DBTX, q ItemQuery) (ItemQueryResult, error) {
+	q = q.withAccess(ctx)
 	sql, args, countSQL, countArgs := q.build()
 	rows, err := conn.Query(ctx, sql, args...)
 	if err != nil {

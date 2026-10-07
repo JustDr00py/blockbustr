@@ -7,9 +7,21 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 )
+
+const countEnabledAdmins = `-- name: CountEnabledAdmins :one
+SELECT count(*) FROM users WHERE is_admin AND NOT is_disabled
+`
+
+func (q *Queries) CountEnabledAdmins(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countEnabledAdmins)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const countUsers = `-- name: CountUsers :one
 SELECT count(*) FROM users
@@ -49,6 +61,19 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.LastLoginAt,
 	)
 	return i, err
+}
+
+const deleteUser = `-- name: DeleteUser :execrows
+DELETE FROM users WHERE id = $1
+`
+
+// Tokens, devices and user data go with the user (ON DELETE CASCADE).
+func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUser, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const getUserByID = `-- name: GetUserByID :one
@@ -128,6 +153,32 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const renameUser = `-- name: RenameUser :one
+UPDATE users SET name = $2 WHERE id = $1 RETURNING id, name, password_hash, is_admin, is_disabled, policy, configuration, created_at, last_login_at
+`
+
+type RenameUserParams struct {
+	ID   uuid.UUID
+	Name string
+}
+
+func (q *Queries) RenameUser(ctx context.Context, arg RenameUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, renameUser, arg.ID, arg.Name)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PasswordHash,
+		&i.IsAdmin,
+		&i.IsDisabled,
+		&i.Policy,
+		&i.Configuration,
+		&i.CreatedAt,
+		&i.LastLoginAt,
+	)
+	return i, err
+}
+
 const resetAdminCredentials = `-- name: ResetAdminCredentials :exec
 UPDATE users SET password_hash = $2, is_admin = true, is_disabled = false WHERE id = $1
 `
@@ -151,4 +202,55 @@ UPDATE users SET last_login_at = now() WHERE id = $1
 func (q *Queries) SetUserLastLogin(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, setUserLastLogin, id)
 	return err
+}
+
+const setUserPassword = `-- name: SetUserPassword :exec
+UPDATE users SET password_hash = $2 WHERE id = $1
+`
+
+type SetUserPasswordParams struct {
+	ID           uuid.UUID
+	PasswordHash *string
+}
+
+func (q *Queries) SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error {
+	_, err := q.db.Exec(ctx, setUserPassword, arg.ID, arg.PasswordHash)
+	return err
+}
+
+const updateUserPolicy = `-- name: UpdateUserPolicy :one
+UPDATE users SET is_admin = $1, is_disabled = $2, policy = $3
+WHERE id = $4
+RETURNING id, name, password_hash, is_admin, is_disabled, policy, configuration, created_at, last_login_at
+`
+
+type UpdateUserPolicyParams struct {
+	IsAdmin    bool
+	IsDisabled bool
+	Policy     json.RawMessage
+	ID         uuid.UUID
+}
+
+// An admin's policy change (P4.1): the flags the database owns, and the
+// rest of the UserPolicy as stored overrides.
+func (q *Queries) UpdateUserPolicy(ctx context.Context, arg UpdateUserPolicyParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserPolicy,
+		arg.IsAdmin,
+		arg.IsDisabled,
+		arg.Policy,
+		arg.ID,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PasswordHash,
+		&i.IsAdmin,
+		&i.IsDisabled,
+		&i.Policy,
+		&i.Configuration,
+		&i.CreatedAt,
+		&i.LastLoginAt,
+	)
+	return i, err
 }

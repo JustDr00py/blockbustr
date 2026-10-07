@@ -23,3 +23,23 @@ UPDATE users SET last_login_at = now() WHERE id = $1;
 -- Bootstrap/recovery: (re)set the configured admin's password and make sure
 -- it is an enabled administrator.
 UPDATE users SET password_hash = $2, is_admin = true, is_disabled = false WHERE id = $1;
+
+-- name: UpdateUserPolicy :one
+-- An admin's policy change (P4.1): the flags the database owns, and the
+-- rest of the UserPolicy as stored overrides.
+UPDATE users SET is_admin = @is_admin, is_disabled = @is_disabled, policy = @policy
+WHERE id = @id
+RETURNING *;
+
+-- name: SetUserPassword :exec
+UPDATE users SET password_hash = $2 WHERE id = $1;
+
+-- name: RenameUser :one
+UPDATE users SET name = $2 WHERE id = $1 RETURNING *;
+
+-- name: CountEnabledAdmins :one
+SELECT count(*) FROM users WHERE is_admin AND NOT is_disabled;
+
+-- name: DeleteUser :execrows
+-- Tokens, devices and user data go with the user (ON DELETE CASCADE).
+DELETE FROM users WHERE id = $1;

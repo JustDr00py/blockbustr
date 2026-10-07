@@ -4,12 +4,14 @@ import (
 	_ "embed"
 	"encoding/json"
 	"net/http"
+	"slices"
 
 	"github.com/google/uuid"
 
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
+	"github.com/sysadmin/blockbustr/internal/store/pg"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 )
 
@@ -37,6 +39,9 @@ func (a *api) folders(r *http.Request, user *uuid.UUID) ([]folderView, error) {
 	rows, err := a.Queries.ListCollectionFolders(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if allowed := pg.AccessFrom(ctx).Folders; allowed != nil {
+		rows = slices.DeleteFunc(rows, func(row db.ListCollectionFoldersRow) bool { return !slices.Contains(allowed, row.ID) })
 	}
 	out := make([]folderView, len(rows))
 	ids := make([]uuid.UUID, len(rows))

@@ -96,6 +96,17 @@ Rule: `jfapi` depends on the domain packages, never the other way round. Domain 
   - Usernames are case-insensitive. A passwordless user signs in with an empty `Pw`.
   - **Logging in again on a device revokes that device's earlier tokens**, in Postgres and in the Redis token cache. A `devtok:{deviceId}` set records which cached token hashes belong to the device, so a revoked token never survives in cache.
   - `UserDto.Configuration`/`Policy` = Jellyfin's defaults (embedded from a real response, `handlers/defaults/*.json`), then `users.configuration`/`users.policy` overrides, then `is_admin`/`is_disabled` from the row. Default `IsHidden: true` means `/Users/Public` is `[]`, as in 12.1.0. *Open:* verify non-admin default policy values against a non-admin created on Jellyfin (P4.1).
+  - **Policy enforcement (P4.1, `pg.Access`):**
+    - A session carries what its user's stored policy allows, read when the token resolves (cached with it): `EnableAllFolders`/`EnabledFolders` (library folder ids), `MaxParentalRating`, `BlockUnratedItems` and `EnableMediaPlayback`.
+    - `requireUser` puts that access on the request, and every `pg.QueryItems`/`QueryNames`/`ItemFilters` applies it. Browsing, details (`visibleItem`, hence 404), search, Latest, Resume, Suggestions, Seasons/Episodes and PlaybackInfo agree. `/UserViews` filters its folders; Next Up and other by-id loads go through the item query when restricted.
+    - **Ratings** use Jellyfin's scores (G/TV-Y/TV-G 0, TV-Y7 7, PG/TV-PG 10, PG-13 13, TV-14 14, R/TV-MA 17, NC-17 18). Seasons and episodes take their series' rating, since TMDB rates series. Unknown or missing ratings count as unrated: allowed unless their type is in `BlockUnratedItems`, where Series also covers episodes. Libraries and seasons are never hidden by rating; their content is.
+    - **Remote search** is off for restricted users, because found titles aren't in any library.
+    - `EnableMediaPlayback: false` makes PlaybackInfo 403. The stream endpoint stays anonymous, as in Jellyfin.
+  - **User management (P4.1, `handlers/useradmin.go`), Jellyfin's routes:**
+    - Admin: `POST /Users/New` (`{Name, Password}`; a name taken in any case is 400), `DELETE /Users/{id}`, and `POST /Users/{id}/Policy`. A policy update stores the body's keys as overrides, with `IsAdministrator`/`IsDisabled` going to their columns.
+    - Self or admin: `POST /Users/{id}/Password` (`CurrentPw` must match unless an admin sets someone else's; `ResetPassword` clears it, admin only) and `POST /Users/{id}` (rename).
+    - A policy change or rename drops the user's cached sessions, so it applies at once. Disabling or deleting revokes every token.
+    - An admin can't demote, disable or delete themselves, and the last enabled admin can't be demoted, disabled or deleted.
   - The admin is bootstrapped from `server.admin_username/admin_password` (env `BLOCKBUSTR_ADMIN_*`): created if missing, otherwise password reset and made an enabled admin (recovery). bcrypt hashes; >72-byte passwords are rejected.
   - Endpoints: `/Users/Me`, `/Users/{id}` (self or admin, otherwise 403), `/Users` (admin), `/Users/Public`, `POST /Sessions/Logout` (204), `/System/Info`, `/System/Endpoint` (IsLocal = loopback/private/link-local/CGNAT), `/QuickConnect/Enabled` → `false` until P2.12.
   - SessionInfo has a stable per-device `Id` (UUIDv5 of the DeviceId); live session state is P2.9.
