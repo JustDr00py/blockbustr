@@ -126,6 +126,7 @@ func (a *api) hlsRequest(w http.ResponseWriter, r *http.Request, s auth.Session)
 		a.internalError(w, r, err)
 		return j, false
 	}
+	b.sources[it.ID] = a.inPlayOrder(r.Context(), it, j.playSession, b.sources[it.ID])
 	src, ok := streamSource(it, b.sources[it.ID], j.q.Get("MediaSourceId"))
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)

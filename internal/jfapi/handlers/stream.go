@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -108,6 +109,7 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
+	b.sources[it.ID] = a.inPlayOrder(r.Context(), it, q.Get("PlaySessionId"), b.sources[it.ID])
 	src, ok := streamSource(it, b.sources[it.ID], q.Get("mediaSourceId"))
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
@@ -358,4 +360,41 @@ func (a *api) mayRedirect(r *http.Request, link string) bool {
 		scheme = "https"
 	}
 	return strings.EqualFold(u.Scheme, scheme)
+}
+
+// inPlayOrder puts an addon title's sources in the order PlaybackInfo
+// offered them to playSession (playable first), so the item id, which
+// clients send for the default, names the same version here as there, and
+// the fallback tries them in that order. Without the session (or for other
+// items) they stay in rank order.
+func (a *api) inPlayOrder(ctx context.Context, it db.Item, playSession string, sources []db.MediaSource) []db.MediaSource {
+	if playSession == "" || a.Cache == nil {
+		return sources
+	}
+	if _, _, ok := stremioRef(it); !ok {
+		return sources
+	}
+	var ps PlaySession
+	if ok, err := a.Cache.GetJSON(ctx, cache.PlaySessionKey(playSession), &ps); err != nil || !ok || ps.ItemID != it.ID || len(ps.Order) == 0 {
+		return sources
+	}
+	pos := make(map[uuid.UUID]int, len(ps.Order))
+	for i, id := range ps.Order {
+		pos[id] = i
+	}
+	out := slices.Clone(sources)
+	slices.SortStableFunc(out, func(a, b db.MediaSource) int {
+		pa, oka := pos[a.ID]
+		pb, okb := pos[b.ID]
+		switch {
+		case oka && okb:
+			return cmp.Compare(pa, pb)
+		case oka:
+			return -1
+		case okb:
+			return 1
+		}
+		return 0
+	})
+	return out
 }

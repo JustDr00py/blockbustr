@@ -39,6 +39,9 @@ type PlaySession struct {
 	AudioStreamIndex    *int
 	SubtitleStreamIndex *int
 	StartTimeTicks      int64
+	// Order is an addon title's sources as offered, first (the item id,
+	// the default) first; stream and HLS requests of the session use it.
+	Order []uuid.UUID `json:",omitempty"`
 }
 
 // playbackRequest merges the PlaybackInfoDto body with the query string
@@ -177,16 +180,6 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	if req.MaxStreamingBitrate != nil {
 		maxBitrate = int64(*req.MaxStreamingBitrate)
 	}
-	rows := b.sources[it.ID]
-	allSources := false
-	if _, _, ok := stremioRef(it); ok && len(rows) == 0 {
-		rows = a.offerStreams(r, b, it, streamPrefs(profile, maxBitrate), req.MediaSourceId)
-		// The item id stands for the best choice: a client asking for it
-		// (from the details' placeholder) gets every choice.
-		allSources = req.MediaSourceId != nil && sameID(*req.MediaSourceId, dto.IDFromUUID(it.ID).String())
-	}
-	dtos := mediaSourceDtos(it, rows, b.streams, baseURL(r.Context()), a.StreamSigner)
-
 	session := PlaySession{
 		UserID: user, DeviceID: s.DeviceID, ItemID: it.ID, Sources: map[string]media.Decision{},
 		AudioStreamIndex: optInt(req.AudioStreamIndex), SubtitleStreamIndex: optInt(req.SubtitleStreamIndex),
@@ -202,6 +195,24 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		DisableTranscoding:  req.EnableTranscoding != nil && !*req.EnableTranscoding,
 	}
 	opts.MaxBitrate = maxBitrate
+
+	rows := b.sources[it.ID]
+	allSources := false
+	if _, _, ok := stremioRef(it); ok && len(rows) == 0 {
+		rows = a.offerStreams(r, b, it, streamPrefs(profile, maxBitrate), req.MediaSourceId)
+		// The item id stands for the best choice: a client asking for it
+		// (from the details' placeholder) gets every choice.
+		allSources = req.MediaSourceId != nil && sameID(*req.MediaSourceId, dto.IDFromUUID(it.ID).String())
+		// Sorted before ids are given out, so the item id (what clients
+		// send for "the default") names the first version offered: one
+		// that plays as is when there is one. Stream and HLS requests of
+		// this session read the same order (inPlayOrder).
+		rows = playableFirst(rows, b.streams, profile, opts)
+		for _, row := range rows {
+			session.Order = append(session.Order, row.ID)
+		}
+	}
+	dtos := mediaSourceDtos(it, rows, b.streams, baseURL(r.Context()), a.StreamSigner)
 	u := urlParams{playSession: playSessionID, device: s.DeviceID, token: jfapi.AuthFrom(r.Context()).Token,
 		audio: session.AudioStreamIndex, subtitle: session.SubtitleStreamIndex}
 
@@ -445,4 +456,29 @@ func transcodingURL(dashedItem, msID, etag string, d media.Decision, u urlParams
 	}
 	add("TranscodeReasons", strings.Join(d.Reasons, ","))
 	return "/videos/" + dashedItem + "/master.m3u8?" + strings.Join(p, "&")
+}
+
+// playableFirst puts the sources that play as is for this client (direct
+// play or remux, judged from their probe) ahead of the rest, keeping rank
+// order within each group. Unprobed sources can't be judged and stay
+// behind.
+func playableFirst(rows []db.MediaSource, streams map[uuid.UUID][]db.MediaStream, p media.DeviceProfile, opts media.PlayOptions) []db.MediaSource {
+	asIs := map[uuid.UUID]bool{}
+	for _, row := range rows {
+		if hasVideo(streams[row.ID]) {
+			d := media.Decide(p, decisionSource(row, streams[row.ID]), opts)
+			asIs[row.ID] = d.Mode == media.ModeDirect || d.Mode == media.ModeRemux
+		}
+	}
+	out := slices.Clone(rows)
+	slices.SortStableFunc(out, func(a, b db.MediaSource) int {
+		switch {
+		case asIs[a.ID] && !asIs[b.ID]:
+			return -1
+		case asIs[b.ID] && !asIs[a.ID]:
+			return 1
+		}
+		return 0
+	})
+	return out
 }

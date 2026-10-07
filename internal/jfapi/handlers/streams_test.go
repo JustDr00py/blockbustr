@@ -980,7 +980,8 @@ func (f targetProber) Probe(_ context.Context, target string, _ media.Options) (
 // (no size hint, nothing to penalise) still ranks first; its probe says
 // 60 Mb/s, and the probe is what the offered order listens to.
 func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	// The CDN answers with the path asked for, so a stream shows which version it got.
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(r.URL.Path)) }))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
 		{Addon: "Torrentio", Stream: stremio.Stream{Name: "4k", Title: "The.Matrix.1999.2160p.BluRay.x264-GRP", URL: cdn.URL + "/uhd.mkv"}},
@@ -1003,21 +1004,22 @@ func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
 	})
 	sf.syncAll(t)
 	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
-	playback := func(body string) []struct {
-		Name               string
+	type source struct {
+		Id, Name           string
 		SupportsDirectPlay bool
-	} {
+	}
+	var playSession string
+	playback := func(body string) []source {
 		t.Helper()
 		rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, body)
 		var out struct {
-			MediaSources []struct {
-				Name               string
-				SupportsDirectPlay bool
-			}
+			MediaSources  []source
+			PlaySessionId string
 		}
 		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil || rec.Code != 200 {
 			t.Fatalf("PlaybackInfo: %d %v", rec.Code, err)
 		}
+		playSession = out.PlaySessionId
 		return out.MediaSources
 	}
 
@@ -1037,6 +1039,15 @@ func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
 	}
 	if got[1].SupportsDirectPlay {
 		t.Errorf("4k over the cap still direct-plays: %+v", got[1])
+	}
+	// The default (the item id) is that first version, here and when the
+	// client streams it: Streamyfin asks for the item id, not a version.
+	if !sameID(got[0].Id, matrix.Id) || sameID(got[1].Id, matrix.Id) {
+		t.Errorf("item id on %q, want the first offered (%q)", got[0].Id, got[0].Name)
+	}
+	rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&mediaSourceId="+matrix.Id+"&PlaySessionId="+playSession, "", "")
+	if rec.Code != 200 || rec.Body.String() != "/sd.mkv" {
+		t.Errorf("default stream of the session = %d %q, want the 720p (/sd.mkv)", rec.Code, rec.Body)
 	}
 }
 
