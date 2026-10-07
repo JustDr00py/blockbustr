@@ -569,3 +569,12 @@ func TestSessionSideLayoutAudioDecodesPerSegment(t *testing.T) {
 		}
 	}
 }
+
+// Logged ffmpeg messages lose their URLs: addon and debrid links carry keys.
+func TestURLRedaction(t *testing.T) {
+	in := "[http @ 0x1] Stream ends prematurely at 1, should be 2\n[tls] https://x.example/api/v1/proxy/e.eyJ9/Movie.mkv: I/O error"
+	got := urlRE.ReplaceAllString(in, "<url>")
+	if strings.Contains(got, "https") || strings.Contains(got, "eyJ9") || !strings.Contains(got, "<url>: I/O error") {
+		t.Errorf("redacted = %q", got)
+	}
+}

@@ -337,6 +337,9 @@ var runFFmpegSession = func(ctx context.Context, args []string, stderr *bytes.Bu
 	return cmd, nil
 }
 
+// urlRE finds URLs in ffmpeg's messages, to keep them out of logs.
+var urlRE = regexp.MustCompile(`https?://\S+`)
+
 // pollInterval is a var so tests can shrink it.
 var pollInterval = 100 * time.Millisecond
 
@@ -454,8 +457,9 @@ type Manager struct {
 	// IdleTimeout closes sessions nobody fetched a segment from for this
 	// long (Run). Set before Run.
 	IdleTimeout time.Duration
-	// Log warns when a hardware-decode session falls back to software.
-	// Optional; nil logs nothing.
+	// Log records each session's start and end, and warns when a
+	// hardware-decode session falls back to software. Optional; nil logs
+	// nothing.
 	Log *slog.Logger
 
 	mu       sync.Mutex
@@ -562,15 +566,33 @@ func (m *Manager) start(ctx context.Context, id string, opts StartOptions, start
 	m.mu.Lock()
 	m.sessions[id] = s
 	m.mu.Unlock()
+	if m.Log != nil {
+		m.Log.Info("transcode started", "session", id, "segment", opts.StartSegment, "remote", opts.Remote,
+			"encoder", opts.Encoder, "hw_decode", opts.hwDecode(), "copy_video", opts.CopyVideo, "copy_audio", opts.CopyAudio,
+			"source_codec", opts.SourceCodec, "video_codec", opts.VideoCodec, "audio_codec", opts.AudioCodec,
+			"tonemap", opts.Tonemap, "burn_in", opts.BurnText != "" || opts.BurnImage != nil)
+	}
 	go func() {
 		defer close(s.done)
 		err := cmd.Wait()
+		ended := "done"
 		switch {
 		case sctx.Err() != nil: // stopped by us
+			ended = "stopped"
 		case err != nil:
+			ended = "failed"
 			s.setState(StateFailed, fmt.Errorf("ffmpeg: %w: %s", err, bytes.TrimSpace(stderr.Bytes())))
 		default:
 			s.setState(StateDone, nil)
+		}
+		// How it ended, so an early stop (input closed, link expired) can
+		// be told apart afterwards. Addon and debrid URLs carry keys.
+		if m.Log != nil && ended != "stopped" {
+			msg := urlRE.ReplaceAllString(string(bytes.TrimSpace(stderr.Bytes())), "<url>")
+			if len(msg) > 600 {
+				msg = msg[len(msg)-600:]
+			}
+			m.Log.Info("transcode ended", "session", id, "how", ended, "last_segment", s.Next()-1, "stderr", msg)
 		}
 	}()
 
