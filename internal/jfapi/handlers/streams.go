@@ -527,9 +527,6 @@ func streamLabel(r stremio.Ranked) string {
 	if in.Remux {
 		pic = append(pic, "Remux")
 	}
-	if in.Cam {
-		pic = append(pic, "CAM")
-	}
 	parts := []string{strings.Join(pic, " ")}
 	if parts[0] == "" {
 		parts[0] = "Stream"

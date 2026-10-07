@@ -193,7 +193,6 @@ type Prefs struct {
 // then the picture; then how well it fits the client.
 const (
 	scoreCached     = 1000
-	scoreCam        = -2000
 	scoreAllowGroup = 100
 	scoreLangMatch  = 80
 	scoreLangMulti  = 40
@@ -209,16 +208,14 @@ const (
 var heightScore = map[int]int{2160: 400, 1080: 300, 720: 200, 576: 120, 480: 100, 0: 150}
 
 // Score rates one stream for p; higher is better. ok is false when the
-// stream must not be offered at all (a denied release group).
+// stream must not be offered at all: a denied release group, or a CAM /
+// telesync / screener rip (never offered, by user decision 2026-10-07).
 func Score(in Info, p Prefs) (score int, ok bool) {
-	if in.Group != "" && containsFold(p.Deny, in.Group) {
+	if in.Cam || (in.Group != "" && containsFold(p.Deny, in.Group)) {
 		return 0, false
 	}
 	if in.Cached {
 		score += scoreCached
-	}
-	if in.Cam {
-		score += scoreCam
 	}
 	score += heightScore[in.Height]
 	if p.MaxHeight > 0 && in.Height > p.MaxHeight {

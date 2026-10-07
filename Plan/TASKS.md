@@ -3,8 +3,8 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [x] AIOStreams fixes 2026-10-07 (user report): TMDB-keyed catalogs asked by IMDb id first (AIOStreams returned 0 streams for `tmdb:` ids; OpenSubtitles only knows IMDb); "FHD" read as 1080p; ready stream choices probed (tracks, audio switching, default audio in the preferred language, real play decisions); preferred language defaults to metadata.language. Follow-ups: rank by probed audio languages, not just the addon's flags; `TestCatalogStreamsAsMediaSources` fails since the quota commit (a CAM rip fills the 4th HD slot) — decision pending
-- [ ] First release tag (v0.1.0): needs the user's go-ahead (it publishes the image) and the `TestCatalogStreamsAsMediaSources` decision (CI fails on it until then)
+- [x] AIOStreams fixes 2026-10-07 (user report): TMDB-keyed catalogs asked by IMDb id first (AIOStreams returned 0 streams for `tmdb:` ids; OpenSubtitles only knows IMDb); "FHD" read as 1080p; ready stream choices probed (tracks, audio switching, default audio in the preferred language, real play decisions); preferred language defaults to metadata.language. Follow-ups: rank by probed audio languages, not just the addon's flags; CAM rips filling an empty HD slot: decided 2026-10-07, CAM/TS/screener rips are never offered
+- [ ] First release tag (v0.1.0): needs the user's go-ahead (it publishes the image)
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)

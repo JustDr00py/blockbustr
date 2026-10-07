@@ -565,7 +565,6 @@ func TestStreamLabel(t *testing.T) {
 			"1080p • Torrentio • not cached"},
 		{stremio.Ranked{Offer: stremio.Offer{Addon: "Direct", Stream: stremio.Stream{URL: "https://x"}}, Info: stremio.Info{Cached: true}},
 			"Stream • Direct"},
-		{stremio.Ranked{Info: stremio.Info{Height: 720, Cam: true}}, "720p CAM"},
 	}
 	for _, c := range cases {
 		if got := streamLabel(c.r); got != c.want {

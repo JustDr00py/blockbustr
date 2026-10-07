@@ -140,7 +140,6 @@ func TestScore(t *testing.T) {
 		{"…but not a resolution step", Info{Height: 2160, Languages: []string{"en", "it"}}, Info{Height: 1080, Languages: []string{"en"}}, Prefs{Languages: []string{"en"}, HEVC: true, HDR: true}, ""},
 		{"multi beats wrong language", Info{Height: 1080, Languages: []string{"multi", "it"}}, Info{Height: 1080, Languages: []string{"fr"}}, Prefs{Languages: []string{"de"}}, ""},
 		{"unflagged counts as English", Info{Height: 720}, Info{Height: 2160, Languages: []string{"ru"}}, Prefs{Languages: []string{"en"}}, ""},
-		{"cam sinks below everything", Info{Height: 480}, Info{Height: 2160, Cached: true, Cam: true}, all, ""},
 		{"seeders break ties", Info{Height: 1080, Seeders: 200}, Info{Height: 1080, Seeders: 3}, all, ""},
 	}
 	for _, c := range better {
@@ -161,6 +160,11 @@ func TestScore(t *testing.T) {
 		b, _ := Score(Info{Height: 2160}, all)
 		if a >= b {
 			t.Errorf("%d >= %d", a, b)
+		}
+	})
+	t.Run("CAM rips are never offered, even cached", func(t *testing.T) {
+		if _, ok := Score(Info{Height: 2160, Cached: true, Cam: true}, all); ok {
+			t.Error("ok = true")
 		}
 	})
 	t.Run("denied group is dropped, case-insensitively", func(t *testing.T) {

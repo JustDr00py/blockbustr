@@ -503,9 +503,8 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
     - −200 when size ÷ runtime is over the bitrate cap;
     - +100 for an allowed group;
     - language +80 for a match, +40 for multi, −300 for a miss (an unflagged release counts as English; no preference is neutral);
-    - −2000 for CAM;
     - up to +10 for seeders, so they only break ties.
-    - A denied group is never offered.
+    - A denied group is never offered, and neither is a CAM / telesync / screener rip, even a cached one (user decision 2026-10-07; it used to score −2000 and could fill an empty HD slot).
   - **Rank:** only playable streams (`url` or `infoHash`). Duplicates by infoHash+fileIdx or URL keep the first copy, from the higher-priority addon. The sort is stable, so equal scores keep addon order.
   - **Config:** `stremio.streams: { timeout: 6s, uhd_slots: 3, hd_slots: 4, languages: [], allow_groups: [], deny_groups: [] }` (0–10 each, sum ≥ 1; `uhd_slots` counts 2160p-and-up, `hd_slots` the rest, with spill). The client side (`Prefs`: height and bitrate caps, HEVC/AV1/HDR support, runtime) comes from the DeviceProfile in P3.7.
 - **Implemented (P3.7, `handlers/streams.go`):**
