@@ -549,6 +549,11 @@ Every captured client searches through `GET /Items?searchTerm=…&recursive=true
      - `pg.ItemQuery` leaves discover items out unless the query is by ids, by parent, or by the user's state (played, favourite, resumable). Browsing, Latest and the library part of a search never show them.
    - **Series on demand:** opening a discover series (`/Shows/{id}/Seasons|Episodes`, or `/Items?ParentId=`) fetches its `meta.videos`, from an addon serving `meta` or else Cinemeta, through the catalog sync's episode writer. This happens once per 12 h (`discover:eps:{id}`). Season and episode ids are stable while the series exists (keyed by path), not UUIDv5.
    - **Cleanup:** hourly, titles not found by a search for `search.retention` (7 days) are dropped, together with their seasons and episodes. A title stays while anyone has played, favourited or started it or one of its episodes. Found again later, it gets the same id.
+   - **Presentation (P3.16):**
+     - What found titles report: `LocationType: FileSystem`, `PlayAccess: Full`, `MediaType: Video`, the TMDB runtime, genres and cast.
+     - Sources: a remote placeholder MediaSource before the first PlaybackInfo, and the stream choices after.
+     - Overview: ends with "Not in your library · streams from your addons", added at DTO time only, for top-level addon titles with no library folder (`foundBySearch`).
+     - **Open question for the client checks:** they have no `ParentId`, where Jellyfin always reports the library folder.
    - **Live (2026-10-07):** "paddington" and "breaking bad" in 1.0–1.4 s, with titles not in any library. *Paddington in Peru* plays through Torrentio RD; *Breaking Bad* shows 6 seasons when opened.
 
 ## 8. Playback

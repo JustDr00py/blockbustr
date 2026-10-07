@@ -598,6 +598,9 @@ func applyItemFields(d *dto.BaseItemDto, b *itemBatch, it db.Item, series *db.It
 	}
 	if o.has("overview") {
 		d.Overview = it.Overview
+		if foundBySearch(it) {
+			d.Overview = ptr(strings.TrimSpace(deref(it.Overview) + "\n\n" + notInLibrary))
+		}
 	}
 	if o.has("parentid") && it.ParentID != nil {
 		d.ParentId = ptr(dto.IDFromUUID(*it.ParentID))
@@ -671,4 +674,15 @@ func aspectRatio(im db.Image, typ string) float64 {
 		return 16.0 / 9
 	}
 	return 2.0 / 3
+}
+
+// notInLibrary ends a search-found title's overview (DESIGN §7.4 step 6),
+// so it's clear it plays from the addons, not the library.
+const notInLibrary = "Not in your library · streams from your addons"
+
+// foundBySearch reports whether it is a title of the hidden discover
+// library: an addon title with no library folder above it (catalog titles
+// sit under their library's CollectionFolder).
+func foundBySearch(it db.Item) bool {
+	return it.SourceKind == "stremio" && it.ParentID == nil && (it.Type == "Movie" || it.Type == "Series")
 }

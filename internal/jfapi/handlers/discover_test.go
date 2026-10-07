@@ -114,6 +114,12 @@ func TestSearchBeyondLibrary(t *testing.T) {
 		t.Errorf("series: %+v", series)
 	}
 
+	var libDetail struct{ Overview string }
+	getJSON(t, sf.h, "/Items/"+hits[0].Id, &libDetail)
+	if strings.Contains(libDetail.Overview, notInLibrary) {
+		t.Errorf("a library title says it isn't in the library: %q", libDetail.Overview)
+	}
+
 	// The same search again: the same ids, and the addon isn't asked again.
 	before := searches.Load()
 	again := search("Matrix", "Movie,Series")
@@ -132,7 +138,7 @@ func TestSearchBeyondLibrary(t *testing.T) {
 	// the discover library isn't a view.
 	var detail struct{ Name, Overview string }
 	getJSON(t, sf.h, "/Items/"+fan.Id, &detail)
-	if detail.Name != "Matrix Fan Film" || detail.Overview != "Not in any library." {
+	if detail.Name != "Matrix Fan Film" || detail.Overview != "Not in any library.\n\n"+notInLibrary {
 		t.Errorf("detail: %+v", detail)
 	}
 	var browse struct{ Items []searchHit }
@@ -269,7 +275,7 @@ func TestSearchTMDBFirst(t *testing.T) {
 	}
 	var detail struct{ Overview string }
 	getJSON(t, sf.h, "/Items/"+show.Id, &detail)
-	if detail.Overview != "Only on TMDB." {
+	if detail.Overview != "Only on TMDB.\n\n"+notInLibrary {
 		t.Errorf("overview %q", detail.Overview)
 	}
 	// IMDb lookups are cached: searching again asks TMDB for none.

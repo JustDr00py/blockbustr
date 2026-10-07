@@ -3,7 +3,10 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P3.16 Remote item presentation: placeholder MediaSource, `LocationType`, source line in Overview; verify Play button and visibility in every MVP client (R6)
+- [x] P3.17 Manual: in Findroid, Streamyfin and Jellyfin Android, search "the matrix" (not in library) → open → play via debrid; search a show → season → episode → play
+  - Passed 2026-10-07 (user): all six checks below pass (search, details + Play + "Not in your library", versions, OpenSubtitles, favourite + navigation, show → season → episode → play)
+  - Known issue: 4K HEVC 10-bit / Dolby Vision stutters on a budget Android phone (Moto G Power 5G 2023) while the iPhone plays the same files; server throughput 375–450 Mbit/s, Tailscale direct on LAN. Findroid/Streamyfin send no resolution caps (Findroid reports a 1 Gbit/s max bitrate), so 4K ranks first and direct-plays. Workaround: set the app's max bitrate to 10–20 Mbit/s (ranks 1080p first, transcodes single-version titles with QSV). Offered: per-device max height in config
+  - Check per client: found titles appear in search; the details page shows the Play button and the "Not in your library" line; versions appear (after first play) and switch; subtitles from OpenSubtitles load; favouriting a found title keeps it; navigation from a found title (back, "more like this") doesn't break (no ParentId)
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -163,7 +166,9 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 - [x] P3.15 Remote series on demand: Seasons/Episodes from addon `meta.videos` or TMDB with deterministic IDs
   - Done 2026-10-07: on first open (`/Shows/{id}/Seasons|Episodes`, `/Items?ParentId=`), at most every 12 h. Live: Breaking Bad, 6 seasons.
   - Deviation: season/episode ids are stable while the series exists (keyed by path), not UUIDv5; a cleaned-up series' episodes get new ids when found again
-- [ ] P3.16 Remote item presentation: placeholder MediaSource, `LocationType`, source line in Overview; verify Play button and visibility in every MVP client (R6)
+- [x] P3.16 Remote item presentation: placeholder MediaSource, `LocationType`, source line in Overview; verify Play button and visibility in every MVP client (R6)
+  - Done 2026-10-07 (DESIGN §7.4 item 8): found titles already report FileSystem/Full/Video, a remote placeholder source, TMDB runtime/genres/cast; added the "Not in your library · streams from your addons" line to their overview. Client verification moves to P3.17's checklist.
+  - Open: found titles have no `ParentId` (Jellyfin always sets the library folder); watch for broken navigation in clients
 - [ ] P3.17 Manual: in Findroid, Streamyfin and Jellyfin Android, search "the matrix" (not in library) → open → play via debrid; search a show → season → episode → play
 
 **Exit:** Stremio catalogs show up as libraries and play through debrid on MVP clients, **and searching inside each MVP client finds and plays titles that aren't in the library.**
