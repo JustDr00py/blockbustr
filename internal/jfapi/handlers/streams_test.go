@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
+	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/provider"
@@ -341,20 +342,9 @@ func TestDetailsPrefetchStreamChoices(t *testing.T) {
 	moviesID := sf.views(t)["Cinemeta Popular"].Id
 	matrix := sf.children(t, moviesID)[0]
 
+	// A quick addon: the first details view waits for it and lists them.
 	var detail struct{ MediaSources []struct{ Name string } }
 	getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
-	if len(detail.MediaSources) != 1 {
-		t.Fatalf("first details answered the versions itself: %+v", detail.MediaSources)
-	}
-	// The collection lands in the background; details read it once it's there.
-	for range 200 {
-		detail.MediaSources = nil
-		getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
-		if len(detail.MediaSources) == 2 {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
 	var names []string
 	for _, s := range detail.MediaSources {
 		names = append(names, s.Name)
@@ -909,5 +899,99 @@ func TestChoiceProbes(t *testing.T) {
 	playback()
 	if pr.calls.Load() != 1 {
 		t.Errorf("probed again: %d", pr.calls.Load())
+	}
+}
+
+// slowStreams answers after delay.
+type slowStreams struct {
+	*fakeStreams
+	delay time.Duration
+}
+
+func (s slowStreams) Collect(ctx context.Context, typ, id string) ([]stremio.Offer, error) {
+	time.Sleep(s.delay)
+	return s.fakeStreams.Collect(ctx, typ, id)
+}
+
+// An addon slower than detailsWait: the first view keeps the placeholder,
+// and clients are told (ItemsUpdated) once the versions are in.
+func TestDetailsSlowCollectionAnnounced(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "Slow", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/m.mkv"}},
+	}}}
+	var bus *events.Bus
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = slowStreams{fs, detailsWait + time.Second}
+		bus = &events.Bus{Cache: d.Cache}
+		d.Events = bus
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	id, err := dto.ParseID(matrix.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	evs, err := bus.Subscribe(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	start := time.Now()
+	var detail struct{ MediaSources []struct{ Name string } }
+	getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
+	if took := time.Since(start); len(detail.MediaSources) != 1 || took < detailsWait || took > detailsWait+time.Second {
+		t.Fatalf("first view: %+v after %s (want the placeholder after ~%s)", detail.MediaSources, took, detailsWait)
+	}
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case e := <-evs:
+			if e.Kind == events.LibraryChanged && len(e.Updated) == 1 && e.Updated[0] == id.UUID() {
+				getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
+				if len(detail.MediaSources) != 1 || detail.MediaSources[0].Name != "1080p • Slow" {
+					t.Errorf("after the event: %+v", detail.MediaSources)
+				}
+				return
+			}
+		case <-deadline:
+			t.Fatal("no ItemsUpdated after the versions came in")
+		}
+	}
+}
+
+// slowProber takes a while, like a probe through an addon's proxy.
+type slowProber struct{ multiAudioProber }
+
+func (p *slowProber) Probe(ctx context.Context, target string, o media.Options) (*media.Info, error) {
+	time.Sleep(2 * time.Second)
+	return p.multiAudioProber.Probe(ctx, target, o)
+}
+
+// Background collections release their slot once the versions are picked:
+// slow probes running afterwards don't stop the next titles opened from
+// collecting (they once held both slots, so a third title got none).
+func TestDetailsCollectWhileProbing(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	t.Cleanup(cdn.Close)
+	offers := map[string][]stremio.Offer{}
+	for _, id := range []string{"tt0133093", "tt0234215", "tt10838180"} {
+		offers["movie/"+id] = []stremio.Offer{{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 1080p", URL: cdn.URL + "/" + id + ".mkv"}}}
+	}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = &fakeStreams{offers: offers}
+		d.ChoiceProber = &slowProber{}
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+	})
+	sf.syncAll(t)
+	movies := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)
+	if len(movies) != 3 {
+		t.Fatalf("movies: %d", len(movies))
+	}
+	for _, m := range movies {
+		var detail struct{ MediaSources []struct{ Name string } }
+		getJSON(t, sf.h, "/Items/"+m.Id, &detail)
+		if len(detail.MediaSources) != 1 || detail.MediaSources[0].Name == m.Name {
+			t.Errorf("%s: first view %+v, want its version", m.Name, detail.MediaSources)
+		}
 	}
 }

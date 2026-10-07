@@ -10,12 +10,14 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/text/language"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
+	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
@@ -192,44 +194,109 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 	return nil
 }
 
+// detailsWait is how long a title's details wait for its versions the
+// first time it's opened (AIOStreams answers a new title in 3.5–4 s); a
+// slower collection finishes in the background and tells the clients.
+const detailsWait = 5 * time.Second
+
+// prefetch is a background collection a details request may wait on.
+type prefetch struct {
+	done chan struct{} // closed when the versions are remembered
+	mu   sync.Mutex
+	// finished, or notify: whoever comes second publishes ItemsUpdated, so
+	// a details answer that missed the versions is followed by an event.
+	finished, notify bool
+}
+
 // prefetchStreamChoices collects a title's streams in the background when
 // its details are opened with no set remembered (TASKS P3.7 follow-up), so
-// the version picker fills after a refresh without playing first. This
-// answer keeps the placeholder; PlaybackInfo still re-picks with the
-// client's profile when played. The lock keeps one collection per title (a
-// client syncing a library opens many details) and throttles retries while
-// an addon fails; the semaphore bounds them across titles.
-func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) {
+// the version picker fills without playing first; the details request waits
+// up to detailsWait for it (waitPrefetch). PlaybackInfo still re-picks with
+// the client's profile when played. The lock keeps one collection per
+// title (a client syncing a library opens many details) and throttles
+// retries while an addon fails; the semaphore bounds them across titles.
+// The versions are then probed in the background, and clients are told
+// when their tracks are known.
+func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) *prefetch {
 	if a.Streams == nil || a.Cache == nil {
-		return
+		return nil
 	}
 	if _, _, ok := stremioRef(it); !ok {
-		return
+		return nil
 	}
 	if _, ok := a.loadStreamSet(ctx, it.ID); ok {
-		return
+		return nil
 	}
 	select {
 	case a.prefetch <- struct{}{}:
 	default:
-		return // enough collections in flight; the next details view retries
+		return nil // enough collections in flight; the next details view retries
 	}
 	lock, ok, err := a.Cache.TryLock(ctx, cache.StreamPrefetchKey(it.ID.String()), cache.StreamPrefetchTTL)
 	if err != nil || !ok {
 		<-a.prefetch
-		return
+		return nil
 	}
+	pf := &prefetch{done: make(chan struct{})}
 	go func() {
-		defer func() { <-a.prefetch }()
-		defer func() { _ = lock.Unlock(context.WithoutCancel(ctx)) }() // the request is answered already
-		pctx := context.WithoutCancel(ctx)
+		pctx := context.WithoutCancel(ctx) // the request may be answered already
 		pick, err := a.pickStreams(pctx, it, streamPrefs(media.DeviceProfile{}, 0))
+		// The slot and lock cover the collection only: probing has its own
+		// bounds, and holding them through it made quickly opened titles
+		// skip their collection.
+		_ = lock.Unlock(pctx)
+		<-a.prefetch
+		pf.mu.Lock()
+		pf.finished = true
+		notify := pf.notify
+		pf.mu.Unlock()
+		close(pf.done)
 		if err != nil {
 			a.Log.WarnContext(pctx, "background stream collection failed", "item", it.ID, "err", err)
 			return
 		}
-		a.probeChoices(pctx, pick.Choices, 0) // tracks ready by the time it's played
+		if len(pick.Choices) == 0 {
+			return
+		}
+		if notify {
+			a.itemUpdated(pctx, it.ID) // the details answer went out without them
+		}
+		// Tracks ready by the time it's played; then tell the clients again.
+		<-a.probeChoices(pctx, pick.Choices, 0)
+		a.itemUpdated(pctx, it.ID)
 	}()
+	return pf
+}
+
+// waitPrefetch waits up to detailsWait for pf. It reports whether the
+// versions are in; if not, the collection notifies clients when they are.
+func (a *api) waitPrefetch(ctx context.Context, pf *prefetch) bool {
+	if pf == nil {
+		return false
+	}
+	t := time.NewTimer(detailsWait)
+	defer t.Stop()
+	select {
+	case <-pf.done:
+		return true
+	case <-t.C:
+	case <-ctx.Done():
+	}
+	pf.mu.Lock()
+	defer pf.mu.Unlock()
+	if pf.finished {
+		return true
+	}
+	pf.notify = true
+	return false
+}
+
+// itemUpdated tells clients (WebSocket LibraryChanged, ItemsUpdated) that
+// an item changed, so apps that listen refresh it.
+func (a *api) itemUpdated(ctx context.Context, item uuid.UUID) {
+	if a.Events != nil {
+		a.Events.Publish(ctx, events.Event{Kind: events.LibraryChanged, Updated: []uuid.UUID{item}})
+	}
 }
 
 // loadPlaySources loads the sources a stream request picks from: the

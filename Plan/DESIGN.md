@@ -528,6 +528,12 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
     - A probed choice reports its container, bitrate, runtime and every track (addon subtitles stay at 100+), so clients can switch audio and subtitles, and PlaybackInfo decides direct play or transcode as for any probed source. Its default audio is the first track in the preferred language.
     - **Preferred language:** `stremio.streams.languages`, else `metadata.language`'s ("en-US" → en). A release in the wanted language only ranks slightly (−20) above one that mixes it with others.
     - Live: Conclave and Dune: Part Two (AIOStreams) list up to 18 audio tracks; Russian- or Italian-first releases start in English; probes take 4–13 s each, so a title's first PlaybackInfo may not have them yet.
+    - **Speed (2026-10-07):**
+      - Probes mostly wait on round trips through the addon's proxy, not on data (2 MB vs 10 MB probe size made no difference). So **8 run at once**, slots are taken in rank order (the likely pick first), and chapters aren't read. A title's versions now finish together in about 8 s instead of about 20 s.
+      - Turning off AIOStreams' own proxy (MediaFlow/StremThru) for debrid streams would cut a hop for probes and playback. Links stay private either way, since blockbustr proxies addon links.
+    - **First open shows versions:** a title's details wait up to **5 s** for its first collection (AIOStreams answers a new title in 3.5–4 s); live, six new titles each showed 7 versions on first open in 2.8–4.5 s.
+      - A slower collection finishes in the background and publishes `LibraryChanged`/`ItemsUpdated` for the item, so apps that listen refresh it. Another event follows once its versions are probed.
+      - A background collection now frees its slot as soon as the versions are picked. Holding it through probing had made titles opened in quick succession skip their collection.
   - **Targets:** a `url` stream keeps its URL. An infoHash stream is stored as `magnet:?xt=urn:btih:{hash}&bb.file={fileIdx}&bb.name={filename}`, which `resolve.FromURL` reads back as a Torrent source.
 - **Implemented (P3.8, `resolve/torrent.go`):** a Torrent source resolves through a debrid account.
   1. **Find:** a torrent already on an account (`debrid_torrents`, accounts in priority order) is used if the account still has it.

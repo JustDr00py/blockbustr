@@ -168,16 +168,18 @@ func (a *api) loadItemBatch(ctx context.Context, user *uuid.UUID, items []db.Ite
 			if err := a.loadSources(ctx, b, playable); err != nil {
 				return nil, err
 			}
-			// One title's details list its remembered stream choices as
-			// versions; lists never ask the addons. A title with none
-			// remembered collects them in the background, so the picker
-			// fills without playing first.
+			// One title's details list its stream choices as versions; lists
+			// never ask the addons.
 			if len(items) == 1 {
 				if err := a.addStreamChoices(ctx, b, items[0], false, stremio.Prefs{}); err != nil {
 					return nil, err
 				}
-				if len(b.sources[items[0].ID]) == 0 {
-					a.prefetchStreamChoices(ctx, items[0])
+				// None remembered: collect now, waiting a little so the first
+				// view usually lists them; a slower addon is announced later.
+				if len(b.sources[items[0].ID]) == 0 && a.waitPrefetch(ctx, a.prefetchStreamChoices(ctx, items[0])) {
+					if err := a.addStreamChoices(ctx, b, items[0], false, stremio.Prefs{}); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}

@@ -110,6 +110,8 @@ type Options struct {
 	// Remote marks network targets (.strm URLs): probe less data, as remote
 	// reads are slow (DESIGN §6). Bound the time with ctx.
 	Remote bool
+	// SkipChapters leaves chapters out (one read less on a slow remote).
+	SkipChapters bool
 }
 
 // Prober runs ffprobe.
@@ -122,7 +124,10 @@ type Prober struct {
 
 // Probe runs ffprobe on target (a local path or URL).
 func (p Prober) Probe(ctx context.Context, target string, opts Options) (*Info, error) {
-	args := []string{"-v", "error", "-print_format", "json", "-show_format", "-show_streams", "-show_chapters"}
+	args := []string{"-v", "error", "-print_format", "json", "-show_format", "-show_streams"}
+	if !opts.SkipChapters {
+		args = append(args, "-show_chapters")
+	}
 	if opts.Remote {
 		args = append(args, "-probesize", "10000000", "-analyzeduration", "5000000")
 	}

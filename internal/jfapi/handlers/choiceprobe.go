@@ -41,8 +41,10 @@ const (
 	probeWait = 5 * time.Second
 	// probeTimeout bounds one probe (resolve + ffprobe).
 	probeTimeout = 45 * time.Second
-	// probeParallel bounds probes across all requests.
-	probeParallel = 3
+	// probeParallel bounds probes across all requests. Probes mostly wait
+	// on round trips (header reads through the addon's proxy), so many can
+	// run at once: a title's versions finish in about the slowest's time.
+	probeParallel = 8
 )
 
 func choiceProbeKey(id uuid.UUID) cache.Key { return cache.ProbeKey("choice:" + id.String()) }
@@ -62,46 +64,66 @@ func (a *api) loadChoiceProbes(ctx context.Context, choices []StreamChoice) map[
 	return out
 }
 
-// probeChoices probes the ready, unprobed choices in the background and
-// waits up to wait for them (0: doesn't wait).
-func (a *api) probeChoices(ctx context.Context, choices []StreamChoice, wait time.Duration) {
+// probeChoices probes the ready, unprobed choices in the background, the
+// best-ranked first (it takes a slot first), and waits up to wait for them
+// (0: doesn't wait). The channel closes when every probe it started ended.
+func (a *api) probeChoices(ctx context.Context, choices []StreamChoice, wait time.Duration) <-chan struct{} {
+	done := make(chan struct{})
 	if a.ChoiceProber == nil || a.Resolver == nil || a.Cache == nil {
-		return
+		close(done)
+		return done
 	}
 	have := a.loadChoiceProbes(ctx, choices)
-	var wg sync.WaitGroup
+	var todo []StreamChoice
 	for _, c := range choices {
-		if _, ok := have[c.ID]; ok || !c.Ready || strings.HasPrefix(c.Target, "magnet:") {
-			continue
+		if _, ok := have[c.ID]; !ok && c.Ready && !strings.HasPrefix(c.Target, "magnet:") {
+			todo = append(todo, c)
 		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			a.probeChoice(context.WithoutCancel(ctx), c)
-		}()
 	}
-	if wait <= 0 {
-		return
+	if len(todo) == 0 {
+		close(done)
+		return done
 	}
-	done := make(chan struct{})
-	go func() { wg.Wait(); close(done) }()
-	select {
-	case <-done:
-	case <-time.After(wait):
-	case <-ctx.Done():
+	bg := context.WithoutCancel(ctx)
+	go func() {
+		var wg sync.WaitGroup
+		for _, c := range todo {
+			a.probeSem <- struct{}{} // in rank order: the likely pick goes first
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer func() { <-a.probeSem }()
+				a.probeHeld(bg, c)
+			}()
+		}
+		wg.Wait()
+		close(done)
+	}()
+	if wait > 0 {
+		select {
+		case <-done:
+		case <-time.After(wait):
+		case <-ctx.Done():
+		}
 	}
+	return done
 }
 
-// probeChoice resolves and probes one choice and caches the result. One
-// probe per choice at a time, at most probeParallel overall.
+// probeChoice probes one choice, taking a slot first.
 func (a *api) probeChoice(ctx context.Context, c StreamChoice) {
+	select {
+	case a.probeSem <- struct{}{}:
+	case <-ctx.Done():
+		return
+	}
+	defer func() { <-a.probeSem }()
+	a.probeHeld(ctx, c)
+}
+
+// probeHeld resolves and probes one choice (holding a slot) and caches the
+// result; concurrent probes of one choice share the work.
+func (a *api) probeHeld(ctx context.Context, c StreamChoice) {
 	_, _, _ = a.probeFlight.Do(c.ID.String(), func() (any, error) {
-		select {
-		case a.probeSem <- struct{}{}:
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-		defer func() { <-a.probeSem }()
 		ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 		defer cancel()
 		start := time.Now()
@@ -110,7 +132,7 @@ func (a *api) probeChoice(ctx context.Context, c StreamChoice) {
 			a.Log.DebugContext(ctx, "choice probe: not resolvable", "choice", c.ID, "err", err)
 			return nil, err
 		}
-		info, err := a.ChoiceProber.Probe(ctx, link.URL, media.Options{Remote: true})
+		info, err := a.ChoiceProber.Probe(ctx, link.URL, media.Options{Remote: true, SkipChapters: true})
 		if err != nil {
 			a.Log.InfoContext(ctx, "choice probe failed", "choice", c.ID, "err", err)
 			return nil, err
