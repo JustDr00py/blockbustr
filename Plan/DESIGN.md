@@ -365,6 +365,7 @@ Queries live in `internal/store/pg/queries/*.sql` and are compiled with sqlc (`s
 | `play:{playSessionId}` | PlaybackInfo decisions per media source + chosen tracks, user, device (P2.2) | 24h |
 | `lock:transcode:{playSessionId}` | owner | 30s, renewed |
 | `lock:scan:{libraryId}` | owner | 10 min, renewed |
+| `lock:streamprefetch:{item}` | owner | 1 min |
 | `rl:{provider}` | token bucket | — |
 | `qc:{secret}` | QuickConnect state | 10 min |
 | `search:{source}:{kind}:{term}` | remote search results for one source (normalised lower-case term) | 1h |
@@ -504,7 +505,7 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
   - **Rank:** only playable streams (`url` or `infoHash`). Duplicates by infoHash+fileIdx or URL keep the first copy, from the higher-priority addon. The sort is stable, so equal scores keep addon order.
   - **Config:** `stremio.streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] }`. The client side (`Prefs`: height and bitrate caps, HEVC/AV1/HDR support, runtime) comes from the DeviceProfile in P3.7.
 - **Implemented (P3.7, `handlers/streams.go`):**
-  - **When:** PlaybackInfo on a catalog title (`source_kind='stremio'`, `path` = `stremio:{type}:{id}`) that has no stored sources collects and ranks its streams, and returns the top `stremio.streams.top` as MediaSources, best first. If collection fails or finds nothing, the placeholder stays.
+  - **When:** PlaybackInfo on a catalog title (`source_kind='stremio'`, `path` = `stremio:{type}:{id}`) that has no stored sources collects and ranks its streams, and returns the top `stremio.streams.top` as MediaSources, best first. If collection fails or finds nothing, the placeholder stays. **Opening a title's details with no set remembered also collects in the background** (P3.7 follow-up, 2026-10-06): the details answer itself keeps the placeholder, and the next refresh lists the versions without playing first (Infuse only shows them after its metadata refresh either way). One collection per title at a time (`lock:streamprefetch:{item}`, 1 min — which also throttles retries while an addon fails), at most 2 across titles, so a client syncing a whole catalog library can't flood the addons; PlaybackInfo still re-picks with the client's profile on every play, so the prefetch never changes what a play offers.
   - **Client preferences** (`streamPrefs`), read from the DeviceProfile:
     - HEVC/AV1: a Video DirectPlayProfile lists the codec, or lists no codecs at all.
     - HDR: a Video CodecProfile `VideoRangeType` condition names HDR or DOVI (no such condition means HDR is fine).

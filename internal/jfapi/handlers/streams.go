@@ -186,6 +186,43 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 	return nil
 }
 
+// prefetchStreamChoices collects a title's streams in the background when
+// its details are opened with no set remembered (TASKS P3.7 follow-up), so
+// the version picker fills after a refresh without playing first. This
+// answer keeps the placeholder; PlaybackInfo still re-picks with the
+// client's profile when played. The lock keeps one collection per title (a
+// client syncing a library opens many details) and throttles retries while
+// an addon fails; the semaphore bounds them across titles.
+func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) {
+	if a.Streams == nil || a.Cache == nil {
+		return
+	}
+	if _, _, ok := stremioRef(it); !ok {
+		return
+	}
+	if _, ok := a.loadStreamSet(ctx, it.ID); ok {
+		return
+	}
+	select {
+	case a.prefetch <- struct{}{}:
+	default:
+		return // enough collections in flight; the next details view retries
+	}
+	lock, ok, err := a.Cache.TryLock(ctx, cache.StreamPrefetchKey(it.ID.String()), cache.StreamPrefetchTTL)
+	if err != nil || !ok {
+		<-a.prefetch
+		return
+	}
+	go func() {
+		defer func() { <-a.prefetch }()
+		defer lock.Unlock(context.WithoutCancel(ctx)) // the request is answered already
+		pctx := context.WithoutCancel(ctx)
+		if _, err := a.pickStreams(pctx, it, streamPrefs(media.DeviceProfile{}, 0)); err != nil {
+			a.Log.WarnContext(pctx, "background stream collection failed", "item", it.ID, "err", err)
+		}
+	}()
+}
+
 // loadPlaySources loads the sources a stream request picks from: the
 // stored ones, or a catalog item's stream choices. Choices that expired
 // (the client resumed long after PlaybackInfo) are collected again, for a

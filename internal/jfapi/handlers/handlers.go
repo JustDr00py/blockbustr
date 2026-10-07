@@ -86,6 +86,9 @@ type RemoteProber interface {
 type api struct {
 	Deps
 	lastTouch sync.Map // device id → last session write (touchSession)
+	// prefetch bounds the background stream collections that opening a
+	// title's details starts (prefetchStreamChoices).
+	prefetch chan struct{}
 }
 
 // Register mounts every implemented endpoint on rt.
@@ -93,7 +96,7 @@ func Register(rt *jfapi.Router, d Deps) {
 	if d.Log == nil {
 		d.Log = slog.Default()
 	}
-	a := &api{Deps: d}
+	a := &api{Deps: d, prefetch: make(chan struct{}, 2)}
 	a.registerSystem(rt)
 	registerBranding(rt)
 	a.registerUsers(rt)

@@ -169,10 +169,15 @@ func (a *api) loadItemBatch(ctx context.Context, user *uuid.UUID, items []db.Ite
 				return nil, err
 			}
 			// One title's details list its remembered stream choices as
-			// versions; lists never ask the addons.
+			// versions; lists never ask the addons. A title with none
+			// remembered collects them in the background, so the picker
+			// fills without playing first.
 			if len(items) == 1 {
 				if err := a.addStreamChoices(ctx, b, items[0], false, stremio.Prefs{}); err != nil {
 					return nil, err
+				}
+				if len(b.sources[items[0].ID]) == 0 {
+					a.prefetchStreamChoices(ctx, items[0])
 				}
 			}
 		}

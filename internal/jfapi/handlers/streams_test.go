@@ -321,6 +321,89 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	}
 }
 
+// Opening a title's details with no remembered choices collects them in
+// the background (TASKS P3.7 follow-up): this answer keeps the placeholder,
+// and a later one lists the versions without playing first. A cached
+// version ranks first, and lists never collect.
+func TestDetailsPrefetchStreamChoices(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "AIOStreams", Stream: stremio.Stream{Name: "🚀 FHD", Description: "The Matrix (1999)\n⚡Ready (RD)", URL: "https://cdn.example/m.mkv"}},
+		{Addon: "AIOStreams", Stream: stremio.Stream{Name: "🚀 4k", Description: "The Matrix (1999)\n[RD download]", URL: "https://cdn.example/m4.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
+	sf.syncAll(t)
+	moviesID := sf.views(t)["Cinemeta Popular"].Id
+	matrix := sf.children(t, moviesID)[0]
+
+	var detail struct{ MediaSources []struct{ Name string } }
+	getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
+	if len(detail.MediaSources) != 1 {
+		t.Fatalf("first details answered the versions itself: %+v", detail.MediaSources)
+	}
+	// The collection lands in the background; details read it once it's there.
+	for range 200 {
+		detail.MediaSources = nil
+		getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
+		if len(detail.MediaSources) == 2 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	var names []string
+	for _, s := range detail.MediaSources {
+		names = append(names, s.Name)
+	}
+	want := "1080p • AIOStreams • cached | 2160p • AIOStreams • not cached"
+	if strings.Join(names, " | ") != want {
+		t.Errorf("versions:\n %q\nwant\n %q", names, want)
+	}
+	// The set is remembered, so a list collects nothing.
+	calls := fs.calls.Load()
+	var list struct{ Items []struct{ Name string } }
+	getJSON(t, sf.h, "/Items?ParentId="+moviesID+"&Fields=MediaSources", &list)
+	if fs.calls.Load() != calls {
+		t.Errorf("collections after the set: %d", fs.calls.Load()-calls)
+	}
+}
+
+// The prefetch lock keeps one collection per title: while one is in flight,
+// opening details again doesn't start another.
+func TestDetailsPrefetchLockGuarded(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/m.mkv"}},
+	}}}
+	var rc *cache.Cache
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs; rc = d.Cache })
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	id, err := dto.ParseID(matrix.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lock, ok, err := rc.TryLock(t.Context(), cache.StreamPrefetchKey(id.UUID().String()), time.Minute)
+	if err != nil || !ok {
+		t.Fatalf("hold the prefetch lock: %v, %v", ok, err)
+	}
+	var detail struct{ MediaSources []struct{ Name string } }
+	getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
+	time.Sleep(100 * time.Millisecond)
+	if n := fs.calls.Load(); n != 0 {
+		t.Fatalf("collected with the lock held: %d", n)
+	}
+	lock.Unlock(t.Context())
+	getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
+	for range 200 {
+		if fs.calls.Load() > 0 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if n := fs.calls.Load(); n != 1 {
+		t.Errorf("collections after unlock: %d, want 1", n)
+	}
+}
+
 func TestCatalogWithoutStreamsKeepsPlaceholder(t *testing.T) {
 	fs := &fakeStreams{}
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })

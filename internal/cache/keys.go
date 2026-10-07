@@ -28,6 +28,7 @@ const (
 	PlaySessionTTL    = 24 * time.Hour // a PlaybackInfo decision, read by stream/HLS requests
 	StreamSetTTL      = 12 * time.Hour // addon streams offered for a title, refreshed on PlaybackInfo
 	StreamBadTTL      = 6 * time.Hour  // a stream choice that failed to play isn't offered again for this long
+	StreamPrefetchTTL = time.Minute    // one background collection per title while its details are opened
 )
 
 // SessionsKey is the set of active device IDs.
@@ -69,6 +70,10 @@ func StremioSubtitlesKey(addon, typ, id string) Key {
 // StreamBadKey holds the stream choices (media source ids) of an item that
 // failed to play: blocked by the debrid service, refused by every account.
 func StreamBadKey(item string) Key { return Key("streambad:" + item) }
+
+// StreamPrefetchKey guards one title's background stream collection, started
+// by opening its details without a remembered set (TASKS P3.7 follow-up).
+func StreamPrefetchKey(item string) Key { return Key("lock:streamprefetch:" + item) }
 
 // StremioMetaKey caches an addon's meta for one title.
 func StremioMetaKey(addon, typ, id string) Key {
