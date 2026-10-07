@@ -152,7 +152,7 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		rc = d.Cache
 	})
 	sf.syncAll(t)
-	moviesID := sf.views(t)["Cinemeta Popular"].Id
+	moviesID := sf.views(t)["Popular Movies"].Id
 	matrix := sf.children(t, moviesID)[0]
 	if matrix.Name != "The Matrix" {
 		t.Fatalf("first movie: %+v", matrix)
@@ -339,7 +339,7 @@ func TestDetailsPrefetchStreamChoices(t *testing.T) {
 	}}}
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
 	sf.syncAll(t)
-	moviesID := sf.views(t)["Cinemeta Popular"].Id
+	moviesID := sf.views(t)["Popular Movies"].Id
 	matrix := sf.children(t, moviesID)[0]
 
 	// A quick addon: the first details view waits for it and lists them.
@@ -371,7 +371,7 @@ func TestDetailsPrefetchLockGuarded(t *testing.T) {
 	var rc *cache.Cache
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs; rc = d.Cache })
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	id, err := dto.ParseID(matrix.Id)
 	if err != nil {
 		t.Fatal(err)
@@ -446,7 +446,7 @@ func TestCatalogVersionsQuotas(t *testing.T) {
 	}}}
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	auth := `MediaBrowser Token="` + captureToken + `"`
 	names := versionNames(t, sf.h, matrix.Id, auth, `{}`)
 	if len(names) != 7 || counted(names, "2160p") != 3 || counted(names, "1080p") != 3 || counted(names, "720p") != 1 {
@@ -470,7 +470,7 @@ func TestCatalogVersionsSpillToBest(t *testing.T) {
 	}}}
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	auth := `MediaBrowser Token="` + captureToken + `"`
 	names := versionNames(t, sf.h, matrix.Id, auth, `{}`)
 	if len(names) != 6 || counted(names, "2160p") != 1 || counted(names, "1080p") != 5 || names[0] != "2160p • A" {
@@ -489,7 +489,7 @@ func TestCatalogVersionsHeightCapped(t *testing.T) {
 	}}}
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	auth := `MediaBrowser Token="` + captureToken + `"`
 	if names := versionNames(t, sf.h, matrix.Id, auth, `{}`); len(names) != 4 || counted(names, "2160p") != 2 {
 		t.Errorf("uncapped versions (%d): %v", len(names), names)
@@ -515,7 +515,7 @@ func TestStreamSetTwoPicksDeep(t *testing.T) {
 	}}}
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	auth := `MediaBrowser Token="` + captureToken + `"`
 	type src struct{ Id, Name string }
 	playback := func(body string) []src {
@@ -565,7 +565,7 @@ func TestCatalogWithoutStreamsKeepsPlaceholder(t *testing.T) {
 	fs := &fakeStreams{}
 	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, h264Profile)
 	var out playbackSources
 	_ = json.Unmarshal(rec.Body.Bytes(), &out)
@@ -715,7 +715,7 @@ func TestCatalogStreamFallback(t *testing.T) {
 		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
 	})
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	itemID, err := dto.ParseID(matrix.Id)
 	if err != nil {
 		t.Fatal(err)
@@ -778,7 +778,7 @@ func TestCatalogStreamFallsBack(t *testing.T) {
 		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
 	})
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	if rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`); rec.Code != 200 {
 		t.Fatal(rec.Code)
 	}
@@ -809,7 +809,7 @@ func TestAddonIDsPreferIMDb(t *testing.T) {
 		}
 	}
 	movies := map[string]string{}
-	for _, it := range sf.children(t, sf.views(t)["Cinemeta Popular"].Id) {
+	for _, it := range sf.children(t, sf.views(t)["Popular Movies"].Id) {
 		movies[it.Name] = it.Id
 	}
 	var episode string
@@ -860,7 +860,7 @@ func TestAddonIDsFallBackToCatalogID(t *testing.T) {
 		t.Fatal(err)
 	}
 	var id string
-	for _, it := range sf.children(t, sf.views(t)["Cinemeta Popular"].Id) {
+	for _, it := range sf.children(t, sf.views(t)["Popular Movies"].Id) {
 		if it.Name == "The Matrix" {
 			id = it.Id
 		}
@@ -911,7 +911,7 @@ func TestChoiceProbes(t *testing.T) {
 		d.Config.Metadata.Language = "en-US"
 	})
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	type source struct {
 		Name                    string
 		Container               string
@@ -1003,7 +1003,7 @@ func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
 		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
 	})
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	type source struct {
 		Id, Name           string
 		SupportsDirectPlay bool
@@ -1075,7 +1075,7 @@ func TestDetailsSlowCollectionAnnounced(t *testing.T) {
 		d.Events = bus
 	})
 	sf.syncAll(t)
-	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	id, err := dto.ParseID(matrix.Id)
 	if err != nil {
 		t.Fatal(err)
@@ -1132,7 +1132,7 @@ func TestDetailsCollectWhileProbing(t *testing.T) {
 		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
 	})
 	sf.syncAll(t)
-	movies := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)
+	movies := sf.children(t, sf.views(t)["Popular Movies"].Id)
 	if len(movies) != 3 {
 		t.Fatalf("movies: %d", len(movies))
 	}

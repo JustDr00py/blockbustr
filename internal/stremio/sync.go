@@ -181,7 +181,7 @@ func (s *Syncer) ensureLibrary(ctx context.Context, ad addonInfo, row db.ListSyn
 	if label == "" {
 		label = row.CatalogID
 	}
-	name := strings.TrimSpace(ad.manifest.Name + " " + label)
+	name := LibraryName(row.CatalogType, label)
 	var lib db.Library
 	var err error
 	for i := 1; ; i++ {
@@ -525,4 +525,29 @@ func (w *catalogWriter) seriesEpisodes(ctx context.Context, seriesID uuid.UUID, 
 		n++
 	}
 	return n, nil
+}
+
+// LibraryName is a new catalog library's name: the catalog's own, which is
+// what clients show as the library ("Popular Movies"), with the kind added
+// when it doesn't say ("Popular" → "Popular Shows"). The addon's name is
+// left out ("AIOStreams | name Popular" read badly); a clash gets a number,
+// and admins can rename (POST /blockbustr/libraries/{id}).
+func LibraryName(catalogType, label string) string {
+	label = strings.TrimSpace(label)
+	l := strings.ToLower(label)
+	has := func(words ...string) bool {
+		for _, w := range words {
+			if strings.Contains(l, w) {
+				return true
+			}
+		}
+		return false
+	}
+	switch {
+	case catalogType == "movie" && !has("movie", "film", "cinema"):
+		return label + " Movies"
+	case catalogType == "series" && !has("show", "series", "tv"):
+		return label + " Shows"
+	}
+	return label
 }

@@ -376,6 +376,34 @@ func (q *Queries) ListSyncCatalogs(ctx context.Context) ([]ListSyncCatalogsRow, 
 	return items, nil
 }
 
+const renameCatalogLibrary = `-- name: RenameCatalogLibrary :one
+WITH lib AS (
+    UPDATE libraries SET name = $1
+    WHERE kind = 'stremio'
+      AND id = (SELECT f.library_id FROM items f WHERE f.id = $3 AND f.type = 'CollectionFolder')
+    RETURNING id
+)
+UPDATE items SET name = $1, sort_name = $2
+WHERE type = 'CollectionFolder' AND library_id = (SELECT id FROM lib)
+RETURNING library_id
+`
+
+type RenameCatalogLibraryParams struct {
+	Name     string
+	SortName string
+	FolderID uuid.UUID
+}
+
+// Renames a Stremio catalog library and its folder, found by the folder's
+// item id (what clients and the admin UI know). Libraries from config.yaml
+// are named there, so they don't match: no row.
+func (q *Queries) RenameCatalogLibrary(ctx context.Context, arg RenameCatalogLibraryParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, renameCatalogLibrary, arg.Name, arg.SortName, arg.FolderID)
+	var library_id uuid.UUID
+	err := row.Scan(&library_id)
+	return library_id, err
+}
+
 const setLibraryEnabled = `-- name: SetLibraryEnabled :exec
 UPDATE libraries SET enabled = $1 WHERE id = $2 AND enabled IS DISTINCT FROM $1
 `

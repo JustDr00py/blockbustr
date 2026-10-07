@@ -174,7 +174,7 @@ func TestCatalogSyncBuildsLibraries(t *testing.T) {
 	sf.syncAll(t)
 
 	views := sf.views(t)
-	movies, shows := views["Cinemeta Popular"], views["Cinemeta Popular (2)"]
+	movies, shows := views["Popular Movies"], views["Popular Shows"]
 	if movies.Id == "" || shows.Id == "" {
 		t.Fatalf("views: %v", views)
 	}
@@ -248,7 +248,7 @@ func TestCatalogSyncBuildsLibraries(t *testing.T) {
 	if _, err := sc.SyncLibraries(t.Context(), nil); err != nil {
 		t.Fatal(err)
 	}
-	if v := sf.views(t); v["Cinemeta Popular"].Id == "" || v["Cinemeta Popular (2)"].Id == "" {
+	if v := sf.views(t); v["Popular Movies"].Id == "" || v["Popular Shows"].Id == "" {
 		t.Errorf("config sync disabled catalog libraries: %v", v)
 	}
 
@@ -262,7 +262,7 @@ func TestCatalogSyncBuildsLibraries(t *testing.T) {
 func TestCatalogSyncChanges(t *testing.T) {
 	sf := newSyncFixture(t)
 	sf.syncAll(t)
-	movies := sf.views(t)["Cinemeta Popular"]
+	movies := sf.views(t)["Popular Movies"]
 
 	// A title leaves the catalog: hidden now, deleted after the grace.
 	sf.f.mu.Lock()
@@ -275,7 +275,7 @@ func TestCatalogSyncChanges(t *testing.T) {
 
 	// A series' meta failing keeps its episodes; the addon failing keeps
 	// the whole library as it was.
-	shows := sf.views(t)["Cinemeta Popular (2)"]
+	shows := sf.views(t)["Popular Shows"]
 	series := sf.children(t, shows.Id)[0].Id
 	var before struct{ Items []viewItem }
 	getJSON(t, sf.h, "/Shows/"+series+"/Episodes", &before)
@@ -305,12 +305,12 @@ func TestCatalogSyncChanges(t *testing.T) {
 	authz := `MediaBrowser Token="` + captureToken + `"`
 	call(t, sf.h, "POST", "/blockbustr/addons/"+sf.id+"/catalogs/movie/top", authz, `{"Enabled":false}`)
 	sf.syncAll(t)
-	if _, ok := sf.views(t)["Cinemeta Popular"]; ok {
+	if _, ok := sf.views(t)["Popular Movies"]; ok {
 		t.Error("disabled catalog still listed")
 	}
 	call(t, sf.h, "POST", "/blockbustr/addons/"+sf.id+"/catalogs/movie/top", authz, `{"Enabled":true}`)
 	sf.syncAll(t)
-	if v := sf.views(t)["Cinemeta Popular"]; v.Id != movies.Id {
+	if v := sf.views(t)["Popular Movies"]; v.Id != movies.Id {
 		t.Errorf("re-enabled library: %q, want %q", v.Id, movies.Id)
 	}
 
@@ -348,11 +348,52 @@ func TestCatalogSyncLive(t *testing.T) {
 	start := time.Now()
 	sf.syncAll(t)
 	views := sf.views(t)
-	movies, shows := sf.children(t, views["Cinemeta Popular"].Id), sf.children(t, views["Cinemeta Popular (2)"].Id)
+	movies, shows := sf.children(t, views["Popular Movies"].Id), sf.children(t, views["Popular Shows"].Id)
 	var eps int
 	_ = testPool.QueryRow(t.Context(), `SELECT count(*) FROM items WHERE type = 'Episode' AND missing_since IS NULL`).Scan(&eps)
 	t.Logf("synced in %v: %d movies, %d series, %d episodes; first: %s, %s", time.Since(start).Round(time.Millisecond), len(movies), len(shows), eps, movies[0].Name, shows[0].Name)
 	if len(movies) < 60 || len(shows) < 60 || eps < 1000 {
 		t.Errorf("too little synced")
+	}
+}
+
+// An admin renames a catalog library; clients see the new name, and the
+// next sync keeps it. Config libraries are named in config.yaml (404), a
+// taken name is refused (409), and only admins may rename.
+func TestRenameCatalogLibrary(t *testing.T) {
+	sf := newSyncFixture(t)
+	sf.syncAll(t)
+	admin := `MediaBrowser Token="` + captureToken + `"`
+	movies := sf.views(t)["Popular Movies"].Id
+	rename := func(folder, body, authz string) int {
+		t.Helper()
+		return call(t, sf.h, "POST", "/blockbustr/libraries/"+folder, authz, body).Code
+	}
+	if code := rename(movies, `{"Name":"  Films  "}`, admin); code != 204 {
+		t.Fatalf("rename = %d", code)
+	}
+	sf.syncAll(t)
+	v := sf.views(t)
+	if _, ok := v["Films"]; !ok || len(sf.children(t, v["Films"].Id)) == 0 {
+		t.Errorf("after rename and sync: %v", v)
+	}
+	if code := rename(movies, `{"Name":"Popular Shows"}`, admin); code != 409 {
+		t.Errorf("taken name = %d, want 409", code)
+	}
+	if code := rename(movies, `{"Name":" "}`, admin); code != 400 {
+		t.Errorf("blank name = %d, want 400", code)
+	}
+	if code := rename(movies, `{"Name":"x"}`, ""); code != 401 {
+		t.Errorf("anonymous = %d, want 401", code)
+	}
+	// A file library from config.yaml isn't renamed here.
+	execSQL(t, `INSERT INTO libraries (name, kind) VALUES ('Home Movies', 'movies')`)
+	var folder string
+	if err := testPool.QueryRow(t.Context(), `INSERT INTO items (library_id, type, name, sort_name)
+		SELECT id, 'CollectionFolder', name, name FROM libraries WHERE name = 'Home Movies' RETURNING replace(id::text, '-', '')`).Scan(&folder); err != nil {
+		t.Fatal(err)
+	}
+	if code := rename(folder, `{"Name":"Mine"}`, admin); code != 404 {
+		t.Errorf("config library = %d, want 404", code)
 	}
 }

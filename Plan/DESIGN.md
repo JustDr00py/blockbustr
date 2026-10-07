@@ -472,6 +472,7 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
 - `Registry.Base(row)` opens an addon's URL for the sync and stream jobs.
 
 ### 7.2 Catalogs as libraries
+- **Names (2026-10-07):** a new catalog library is named after the catalog alone, with the kind added when the name doesn't say it (`stremio.LibraryName`: "Popular" → "Popular Movies" / "Popular Shows"; AIOStreams' "Popular Movies" stays). The addon's name was dropped ("AIOStreams | name Popular" read badly in the apps); a clash still gets " (2)". Admins rename a catalog library with `POST /blockbustr/libraries/{folderId}` `{"Name"}` (admin UI, Libraries page): library and folder together, 404 for config.yaml libraries (named there), 409 for a taken name, and a `LibraryChanged` event so apps refresh. Syncs keep the name.
 - Each enabled `stremio_catalogs` row maps to a `stremio` library (or a BoxSet inside one).
 - A sync job pages the catalog (default 2 pages / 100 items, configurable) and upserts items with `source_kind='stremio'` and `stremio_ref`. Metadata is enriched from TMDB when the id is IMDb.
 - Series episodes are created from `meta.videos`.

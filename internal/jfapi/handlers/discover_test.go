@@ -89,7 +89,7 @@ func TestSearchBeyondLibrary(t *testing.T) {
 		return out
 	}
 	library := map[string]string{}
-	for _, it := range sf.children(t, sf.views(t)["Cinemeta Popular"].Id) {
+	for _, it := range sf.children(t, sf.views(t)["Popular Movies"].Id) {
 		library[it.Name] = it.Id
 	}
 

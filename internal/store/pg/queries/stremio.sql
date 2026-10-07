@@ -157,3 +157,17 @@ UPDATE stremio_addons
 SET url_enc = @url_enc, url_sha = @url_sha, host = @host, manifest = @manifest, last_fetched_at = now()
 WHERE id = @id
 RETURNING *;
+
+-- name: RenameCatalogLibrary :one
+-- Renames a Stremio catalog library and its folder, found by the folder's
+-- item id (what clients and the admin UI know). Libraries from config.yaml
+-- are named there, so they don't match: no row.
+WITH lib AS (
+    UPDATE libraries SET name = @name
+    WHERE kind = 'stremio'
+      AND id = (SELECT f.library_id FROM items f WHERE f.id = @folder_id AND f.type = 'CollectionFolder')
+    RETURNING id
+)
+UPDATE items SET name = @name, sort_name = @sort_name
+WHERE type = 'CollectionFolder' AND library_id = (SELECT id FROM lib)
+RETURNING library_id;

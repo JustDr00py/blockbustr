@@ -42,7 +42,7 @@ func TestUserPolicy(t *testing.T) {
 	sf.syncAll(t)
 	admin := `MediaBrowser Token="` + captureToken + `"`
 	views := sf.views(t)
-	movies, shows := views["Cinemeta Popular"].Id, views["Cinemeta Popular (2)"].Id
+	movies, shows := views["Popular Movies"].Id, views["Popular Shows"].Id
 	// Ratings as TMDB would set them: The Matrix R, Reloaded PG, Resurrections
 	// unrated; Game of Thrones TV-MA (its episodes inherit it).
 	for name, rating := range map[string]any{"The Matrix": "R", "The Matrix Reloaded": "PG", "The Matrix Resurrections": nil, "Game of Thrones": "TV-MA"} {
@@ -85,7 +85,7 @@ func TestUserPolicy(t *testing.T) {
 	if rec := call(t, sf.h, "POST", "/Users/"+created.Id+"/Policy", admin, policy); rec.Code != 204 {
 		t.Fatalf("policy: %d %s", rec.Code, rec.Body)
 	}
-	if got := itemNamesAs(t, sf, kid, "/UserViews"); strings.Join(got, ",") != "Cinemeta Popular" {
+	if got := itemNamesAs(t, sf, kid, "/UserViews"); strings.Join(got, ",") != "Popular Movies" {
 		t.Errorf("restricted views: %v", got)
 	}
 	if got := itemNamesAs(t, sf, kid, "/Items?ParentId="+movies); strings.Join(got, ",") != "The Matrix Reloaded" {

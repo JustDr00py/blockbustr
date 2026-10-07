@@ -27,6 +27,7 @@ func (a *api) registerAddons(rt *jfapi.Router) {
 	rt.Delete("/blockbustr/addons/{addonId}", a.requireAdmin(a.deleteAddon))
 	rt.Post("/blockbustr/addons/{addonId}/refresh", a.requireAdmin(a.refreshAddon))
 	rt.Post("/blockbustr/addons/{addonId}/catalogs/{type}/{catalogId}", a.requireAdmin(a.setCatalog))
+	rt.Post("/blockbustr/libraries/{folderId}", a.requireAdmin(a.renameLibrary))
 }
 
 // addonDto is an addon as the API shows it.
