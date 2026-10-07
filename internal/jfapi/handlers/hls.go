@@ -388,6 +388,9 @@ func (a *api) hlsSegment(w http.ResponseWriter, r *http.Request, s auth.Session)
 		return
 	}
 	sess, err := a.sessionFor(r, j, n, s.DeviceID)
+	if err == nil {
+		sess.Requested(n) // the throttle measures from here, and resumes ffmpeg for it
+	}
 	if err == nil && !sess.HasSegment(n) {
 		err = sess.WaitSegment(r.Context(), n, hlsWaitTimeout)
 		if err != nil { // restarted under us by another request? wait on the new run

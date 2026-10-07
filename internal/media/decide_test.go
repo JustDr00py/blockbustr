@@ -321,3 +321,34 @@ func TestDecideRemoteBitrate(t *testing.T) {
 		t.Errorf("a local file of unknown bitrate isn't assumed over the limit: %s", d.Mode)
 	}
 }
+
+// An embedded text track of a remote file is offered as a file only once
+// it is selected: extracting it reads the whole file over the network,
+// and some apps fetch every External track at start (Streamyfin did,
+// 2026-10-07, with no subtitle selected).
+func TestDecideRemoteEmbeddedSubtitles(t *testing.T) {
+	src := Source{Container: "mkv", Remote: true, Bitrate: 5_000_000, Streams: []Stream{
+		{Index: 0, Type: StreamVideo, Codec: "h264", Bitrate: 4_800_000},
+		{Index: 1, Type: StreamAudio, Codec: "aac", Channels: 2, IsDefault: true},
+		{Index: 2, Type: StreamSubtitle, Codec: "subrip"},
+		{Index: 3, Type: StreamSubtitle, Codec: "subrip"},
+		{Index: 100, Type: StreamSubtitle, Codec: "subrip", IsExternal: true}, // an addon's file
+	}}
+	p := browser
+	p.SubtitleProfiles = []SubtitleProfile{{Format: "srt", Method: "External"}}
+	idx := func(n int) *int { return &n }
+
+	d := Decide(p, src, PlayOptions{})
+	if d.Subtitles[2] != "Encode" || d.Subtitles[3] != "Encode" || d.Subtitles[100] != "External" {
+		t.Errorf("nothing selected: %v", d.Subtitles)
+	}
+	d = Decide(p, src, PlayOptions{SubtitleStreamIndex: idx(3)})
+	if d.Subtitles[3] != "External" || d.Subtitles[2] != "Encode" {
+		t.Errorf("track 3 selected: %s %v", d.Mode, d.Subtitles)
+	}
+	local := src
+	local.Remote = false
+	if d := Decide(p, local, PlayOptions{}); d.Subtitles[2] != "External" || d.Subtitles[3] != "External" {
+		t.Errorf("a local file's tracks stay files: %v", d.Subtitles)
+	}
+}

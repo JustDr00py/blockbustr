@@ -104,6 +104,14 @@ func TestPlaybackInfoSameAsJellyfin(t *testing.T) {
 			}
 			for j, ws := range w.MediaStreams {
 				gs := g.MediaStreams[j]
+				// Deliberately unlike Jellyfin: an embedded text track of a
+				// remote file is a file (External) only once selected, else
+				// burned in on request, so apps that fetch every External
+				// track at start don't make the server read the whole remote
+				// file (media.Decide).
+				if w.IsRemote && ws.DeliveryMethod == "External" && gs.DeliveryMethod == "Encode" {
+					continue
+				}
 				if gs.DeliveryMethod != ws.DeliveryMethod || gs.DeliveryUrl != ws.DeliveryUrl {
 					t.Errorf("%s: stream %d delivery %q %q, Jellyfin %q %q", c.Name, ws.Index, gs.DeliveryMethod, gs.DeliveryUrl, ws.DeliveryMethod, ws.DeliveryUrl)
 				}

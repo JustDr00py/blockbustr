@@ -345,6 +345,11 @@ type Session struct {
 	state    SessionState
 	err      error
 	lastUsed time.Time
+
+	proc      *os.Process // ffmpeg, for the throttle's pause and resume
+	paused    bool        // held by the throttle (throttle.go)
+	requested int         // the last segment the player asked for
+	scanned   int         // segments below this are known to be written (Next)
 }
 
 // Touch marks the session as in use (resets its idle timer).
@@ -383,12 +388,18 @@ func (s *Session) HasSegment(n int) bool {
 }
 
 // Next is the first segment from StartSegment on that isn't written yet:
-// where ffmpeg currently is.
+// where ffmpeg currently is. Written segments stay, so the scan resumes
+// where the last one stopped.
 func (s *Session) Next() int {
-	n := s.Opts.StartSegment
+	s.mu.Lock()
+	n := max(s.scanned, s.Opts.StartSegment)
+	s.mu.Unlock()
 	for s.HasSegment(n) {
 		n++
 	}
+	s.mu.Lock()
+	s.scanned = max(s.scanned, n)
+	s.mu.Unlock()
 	return n
 }
 
@@ -528,7 +539,8 @@ func (m *Manager) start(ctx context.Context, id string, opts StartOptions, start
 		return nil, fmt.Errorf("transcode: create session dir: %w", err)
 	}
 	sctx, cancel := context.WithCancel(context.Background())
-	s := &Session{ID: id, Dir: dir, Opts: opts, cancel: cancel, done: make(chan struct{}), state: StateStarting}
+	s := &Session{ID: id, Dir: dir, Opts: opts, cancel: cancel, done: make(chan struct{}), state: StateStarting,
+		requested: opts.StartSegment - 1}
 	s.Touch()
 	var stderr bytes.Buffer
 	cmd, err := runFFmpegSession(sctx, buildArgs(opts, dir), &stderr)
@@ -536,6 +548,9 @@ func (m *Manager) start(ctx context.Context, id string, opts StartOptions, start
 		cancel()
 		return nil, fmt.Errorf("transcode: start ffmpeg: %w", err)
 	}
+	s.mu.Lock()
+	s.proc = cmd.Process
+	s.mu.Unlock()
 	m.mu.Lock()
 	m.sessions[id] = s
 	m.mu.Unlock()
@@ -632,10 +647,13 @@ func (m *Manager) CloseAll() {
 	}
 }
 
-// Run closes idle sessions until ctx ends, then closes them all.
+// Run closes idle sessions and throttles running ones until ctx ends,
+// then closes them all.
 func (m *Manager) Run(ctx context.Context) {
 	t := time.NewTicker(max(m.IdleTimeout/4, 10*time.Millisecond))
 	defer t.Stop()
+	th := time.NewTicker(throttleEvery)
+	defer th.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -643,6 +661,8 @@ func (m *Manager) Run(ctx context.Context) {
 			return
 		case now := <-t.C:
 			m.closeIdle(now)
+		case <-th.C:
+			m.throttleAll()
 		}
 	}
 }

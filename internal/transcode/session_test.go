@@ -473,3 +473,66 @@ func TestSessionBurnInRealFFmpeg(t *testing.T) {
 }
 
 func ptrInt(n int) *int { return &n }
+
+// A session racing ahead of the player is paused, writes nothing while
+// held, and resumes when the player catches up (throttle.go).
+func TestThrottle(t *testing.T) {
+	orig := runFFmpegSession
+	t.Cleanup(func() { runFFmpegSession = orig })
+	runFFmpegSession = func(ctx context.Context, args []string, stderr *bytes.Buffer) (*exec.Cmd, error) {
+		dir := filepath.Dir(args[slices.Index(args, "-hls_segment_filename")+1])
+		start := args[slices.Index(args, "-start_number")+1]
+		// A segment every 5 ms: far faster than real time, like a GPU encode.
+		cmd := exec.CommandContext(ctx, "sh", "-c", `n=`+start+`; while :; do printf x > "`+dir+`/$n.ts"; n=$((n+1)); sleep 0.005; done`)
+		cmd.Stderr = stderr
+		return cmd, cmd.Start()
+	}
+	for _, v := range []*time.Duration{&throttleAhead, &throttleResume, &throttleEvery} {
+		old := *v
+		t.Cleanup(func() { *v = old })
+	}
+	throttleAhead, throttleResume, throttleEvery = 30*time.Second, 15*time.Second, 10*time.Millisecond // 10 and 5 three-second segments
+	op := pollInterval
+	pollInterval = 5 * time.Millisecond
+	t.Cleanup(func() { pollInterval = op })
+
+	m := NewManager(t.TempDir(), 0)
+	m.IdleTimeout = time.Minute
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	go m.Run(ctx)
+	s, err := m.Start(t.Context(), "th", StartOptions{Input: "x", CopyVideo: true, AudioStream: -1, StartSegment: 100}, 5*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	waitFor := func(what string, ok func() bool) {
+		t.Helper()
+		for deadline := time.Now().Add(5 * time.Second); !ok(); {
+			if time.Now().After(deadline) {
+				t.Fatalf("timed out waiting: %s", what)
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+	}
+	waitFor("pause", s.Paused)
+	held := s.Next()
+	if held < 100+10 {
+		t.Errorf("paused at segment %d, before 10 segments ahead of the start", held)
+	}
+	time.Sleep(150 * time.Millisecond)
+	if got := s.Next(); got > held+1 { // at most the segment being written when stopped
+		t.Errorf("wrote on while paused: %d → %d", held, got)
+	}
+	// The player gets within 5 segments: ffmpeg runs again, and is held
+	// again once 10 ahead of it.
+	s.Requested(held - 3)
+	if s.Paused() {
+		t.Error("still paused after the player caught up")
+	}
+	waitFor("progress after resume", func() bool { return s.Next() > held+3 })
+	waitFor("pause again", s.Paused)
+	if got := s.Next(); got < held-3+10 {
+		t.Errorf("paused again at %d, before 10 ahead of segment %d", got, held-3)
+	}
+	m.Close("th") // a paused ffmpeg still stops
+}

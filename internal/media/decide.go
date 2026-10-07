@@ -590,6 +590,14 @@ func Decide(p DeviceProfile, src Source, o PlayOptions) Decision {
 	for _, s := range src.Streams {
 		if s.Type == StreamSubtitle {
 			d.Subtitles[s.Index] = subtitleMethod(p, s, direct)
+			// An embedded track of a remote file is extracted (a read of the
+			// whole file over the network) only for the track picked: apps
+			// such as Streamyfin download every External track at start.
+			// The rest are offered for burn-in; picking one asks again with
+			// it selected, and then it is a file.
+			if src.Remote && !s.IsExternal && d.Subtitles[s.Index] == "External" && (sub == nil || sub.Index != s.Index) {
+				d.Subtitles[s.Index] = "Encode"
+			}
 		}
 	}
 	return d
