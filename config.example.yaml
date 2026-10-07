@@ -1,5 +1,5 @@
 # blockbustr configuration. Copy to config.yaml; every key is optional.
-# Environment variables (BLOCKBUSTR_*) override these values; see .env.example.
+# Environment variables (BLOCKBUSTR_*) override these values; see deploy/.env.example.
 server:
   listen: ":8096"              # Jellyfin's port, so clients find it by default
   external_url: ""             # e.g. https://blockbustr.example.ts.net

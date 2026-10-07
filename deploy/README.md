@@ -2,16 +2,22 @@
 
 `docker-compose.yml` runs blockbustr with PostgreSQL 17 and Redis 8.
 
+Everything happens in `deploy/`: compose reads `.env` from the compose file's directory, so the settings live in `deploy/.env` (gitignored).
+
 ```bash
-cp .env.example .env                      # repo root; set POSTGRES_PASSWORD and API keys
-mkdir -p deploy/data/config deploy/data/cache
-podman-compose -f deploy/docker-compose.yml -f deploy/docker-compose.podman.yml up -d --build   # rootless podman
-# docker compose -f deploy/docker-compose.yml up -d --build                                       # docker
-podman-compose -f deploy/docker-compose.yml ps              # all three should be healthy
+cd deploy
+cp .env.example .env                                 # admin user, POSTGRES_PASSWORD, BLOCKBUSTR_SECRET_KEY, MEDIA_DIR…
+mkdir -p data/config data/cache
+cp ../config.example.yaml data/config/config.yaml    # set the libraries (paths under /media)
+docker compose up -d --build                         # docker
+# podman-compose -f docker-compose.yml -f docker-compose.podman.yml up -d --build   # rootless podman
+docker compose ps                                    # all three should be healthy
 curl -s localhost:8096/healthz
 ```
 
-| Variable (in `.env`) | Default | Purpose |
+Running compose from elsewhere, pass the file: `docker compose --env-file deploy/.env -f deploy/docker-compose.yml …`. If the first start logs `no users exist; set BLOCKBUSTR_ADMIN_USERNAME…`, the container didn't get `.env`; check with `docker compose config | grep BLOCKBUSTR_ADMIN`.
+
+| Variable (in `deploy/.env`) | Default | Purpose |
 |---|---|---|
 | `POSTGRES_PASSWORD` | `blockbustr` | Database password (change it) |
 | `BLOCKBUSTR_ADMIN_USERNAME` / `BLOCKBUSTR_ADMIN_PASSWORD` | — | Administrator created on first start. While set, the password is re-applied on every start, which is how you recover a lost password |
@@ -23,7 +29,7 @@ curl -s localhost:8096/healthz
 - Redis has no persistence by design: it only holds caches and session state that can be rebuilt from Postgres (DESIGN §5).
 - The image runs as non-root uid 1000, and the container healthcheck is `blockbustr -healthcheck`.
 - Migrations run automatically on start. Run them by hand with `podman exec blockbustr_blockbustr_1 /app/blockbustr -config /config/config.yaml -migrate status` (or `up`, `down`, `down-all`).
-- **podman-compose:** `up -d --build` does not replace a running container. After code changes run `podman-compose -f deploy/docker-compose.yml build blockbustr && podman-compose -f deploy/docker-compose.yml up -d --force-recreate blockbustr`.
+- **podman-compose:** `up -d --build` does not replace a running container. After code changes run (in `deploy/`) `podman-compose -f docker-compose.yml -f docker-compose.podman.yml build blockbustr && podman-compose -f docker-compose.yml -f docker-compose.podman.yml up -d --force-recreate blockbustr`. podman-compose reads `.env` from the current directory, so run it in `deploy/` too.
 - **Rootless podman needs `docker-compose.podman.yml`** (`userns_mode: keep-id`). Without it the container user can't write `deploy/data/cache` (`mkdir /cache/images: permission denied`). `PODMAN_USERNS=keep-id` in the environment is *not* passed through by podman-compose.
 
 ## Backups
@@ -32,7 +38,7 @@ Postgres holds everything that matters: libraries, items, users, tokens, watch s
 
 Back up three things:
 1. **The database**, with `deploy/backup.sh`. It runs `pg_dump --format=custom` inside the Postgres container and keeps the newest `KEEP` dumps (default 14) in `BACKUP_DIR` (default `deploy/backups/`, gitignored).
-2. **`.env`**, and above all `BLOCKBUSTR_SECRET_KEY`. Addon URLs and debrid API keys are sealed with it in the database, so a restored database without the same key can't use them; they have to be entered again. Keep a copy somewhere other than the backups.
+2. **`deploy/.env`**, and above all `BLOCKBUSTR_SECRET_KEY`. Addon URLs and debrid API keys are sealed with it in the database, so a restored database without the same key can't use them; they have to be entered again. Keep a copy somewhere other than the backups.
 3. **`deploy/data/config/config.yaml`**, if you edited it.
 
 ```bash

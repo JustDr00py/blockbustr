@@ -1,6 +1,8 @@
 # blockbustr dev/prod stack (TASKS P1.2): blockbustr + PostgreSQL + Redis.
-#   podman-compose -f deploy/docker-compose.yml up -d --build   # or: docker compose …
-# Secrets come from ../.env (copy ../.env.example). The recon stack in
+#   cd deploy && docker compose up -d --build
+#   (rootless podman: podman-compose -f docker-compose.yml -f docker-compose.podman.yml up -d --build)
+# Settings and secrets come from .env next to this file (copy .env.example);
+# compose reads it from the compose file's directory. The recon stack in
 # deploy/recon/ also wants port 8096; set BLOCKBUSTR_PORT to run both.
 
 name: blockbustr
@@ -36,7 +38,7 @@ services:
       - ./data/cache:/cache          # transcode segments + image cache
       - ${MEDIA_DIR:-${HOME}/Videos}:/media:ro
     # Intel QSV/VAAPI. If the host's renderD128 is 0660 (most distros), set
-    # RENDER_GID in ../.env to `getent group render | cut -d: -f3`.
+    # RENDER_GID in .env to `getent group render | cut -d: -f3`.
     devices:
       - /dev/dri:/dev/dri
     group_add:

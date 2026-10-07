@@ -17,16 +17,16 @@ What it adds:
 Requires Docker or Podman with compose. The compose file builds from source; tagged releases also publish `linux/amd64` and `linux/arm64` images to `ghcr.io/justdr00py/blockbustr`.
 
 ```bash
-git clone https://github.com/JustDr00py/blockbustr && cd blockbustr
-cp .env.example .env              # admin user, BLOCKBUSTR_SECRET_KEY, API keys
-mkdir -p deploy/data/config deploy/data/cache
-cp config.example.yaml deploy/data/config/config.yaml   # set your libraries
-docker compose -f deploy/docker-compose.yml up -d --build
+git clone https://github.com/JustDr00py/blockbustr && cd blockbustr/deploy
+cp .env.example .env              # admin user, BLOCKBUSTR_SECRET_KEY, MEDIA_DIR, API keys
+mkdir -p data/config data/cache
+cp ../config.example.yaml data/config/config.yaml   # set your libraries
+docker compose up -d --build
 ```
 
-Rootless Podman also needs `-f deploy/docker-compose.podman.yml`. See [`deploy/README.md`](deploy/README.md) for every variable, hardware transcoding, upgrades and [backups](deploy/README.md#backups).
+Compose reads `.env` from `deploy/`, so run it there. Rootless Podman also needs `-f docker-compose.podman.yml`. See [`deploy/README.md`](deploy/README.md) for every variable, hardware transcoding, upgrades and [backups](deploy/README.md#backups).
 
-Then add a server in your Jellyfin app at `http://<host>:8096` and sign in with the administrator from `.env`. The admin UI is at `http://<host>:8096/blockbustr/ui/`.
+Then add a server in your Jellyfin app at `http://<host>:8096` and sign in with the administrator from `deploy/.env`. The admin UI is at `http://<host>:8096/blockbustr/ui/`.
 
 ## Configuration
 

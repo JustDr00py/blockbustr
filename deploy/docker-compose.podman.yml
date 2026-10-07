@@ -1,5 +1,5 @@
 # Rootless podman override (use with docker-compose.yml):
-#   podman-compose -f deploy/docker-compose.yml -f deploy/docker-compose.podman.yml up -d
+#   cd deploy && podman-compose -f docker-compose.yml -f docker-compose.podman.yml up -d
 # Rootless podman maps your host uid to root inside the container, so the
 # image's non-root user (uid 1000) can't write the bind-mounted data/cache
 # directory. keep-id maps your host uid to the same uid inside instead.
