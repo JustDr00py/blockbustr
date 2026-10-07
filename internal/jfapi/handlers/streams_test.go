@@ -109,6 +109,12 @@ const h264Profile = `{"DeviceProfile":{"MaxStreamingBitrate":120000000,
 	"DirectPlayProfiles":[{"Type":"Video","Container":"mkv,mp4","VideoCodec":"h264","AudioCodec":"aac,ac3"}],
 	"TranscodingProfiles":[{"Type":"Video","Container":"ts","VideoCodec":"h264","AudioCodec":"aac","Protocol":"hls"}]}}`
 
+// cappedProfile is h264Profile plus a 1080p height cap (a CodecProfile
+// condition, as clients like Findroid send it).
+const cappedProfile = `{"DeviceProfile":{
+	"DirectPlayProfiles":[{"Type":"Video","Container":"mkv,mp4","VideoCodec":"h264","AudioCodec":"aac,ac3"}],
+	"CodecProfiles":[{"Type":"Video","Conditions":[{"Condition":"LessThanEqual","Property":"Height","Value":"1080"}]}]}}`
+
 func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/subs/") {
@@ -401,6 +407,106 @@ func TestDetailsPrefetchLockGuarded(t *testing.T) {
 	}
 	if n := fs.calls.Load(); n != 1 {
 		t.Errorf("collections after unlock: %d, want 1", n)
+	}
+}
+
+// versionNames plays the title and returns its offered version labels.
+func versionNames(t *testing.T, h http.Handler, item, auth, body string) []string {
+	t.Helper()
+	rec := call(t, h, "POST", "/Items/"+item+"/PlaybackInfo", auth, body)
+	if rec.Code != 200 {
+		t.Fatalf("PlaybackInfo: %d %s", rec.Code, rec.Body)
+	}
+	var out playbackSources
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, s := range out.MediaSources {
+		names = append(names, s.Name)
+	}
+	return names
+}
+
+// counted reports how many of names start with label ("2160p", "1080p"…).
+func counted(names []string, label string) int {
+	n := 0
+	for _, s := range names {
+		if strings.HasPrefix(s, label+" ") || s == label {
+			n++
+		}
+	}
+	return n
+}
+
+// The picker reserves uhd_slots for 2160p-and-up and hd_slots for the rest,
+// so several cached 4K releases can't crowd 1080p out (the quotas are 3/4
+// by default).
+func TestCatalogVersionsQuotas(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4a.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4b.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4c.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4d.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4e.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f1.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f2.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f3.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "720p", URL: "https://cdn.example/s1.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	auth := `MediaBrowser Token="` + captureToken + `"`
+	names := versionNames(t, sf.h, matrix.Id, auth, `{}`)
+	if len(names) != 7 || counted(names, "2160p") != 3 || counted(names, "1080p") != 3 || counted(names, "720p") != 1 {
+		t.Errorf("versions (%d): %v", len(names), names)
+	}
+	if names[0] != "2160p • A" {
+		t.Errorf("first version: %q", names[0])
+	}
+}
+
+// Slots a bucket can't fill spill to the best remaining: one 4K and five
+// 1080p releases offer all six, 4K first.
+func TestCatalogVersionsSpillToBest(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4a.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f1.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f2.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f3.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f4.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f5.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	auth := `MediaBrowser Token="` + captureToken + `"`
+	names := versionNames(t, sf.h, matrix.Id, auth, `{}`)
+	if len(names) != 6 || counted(names, "2160p") != 1 || counted(names, "1080p") != 5 || names[0] != "2160p • A" {
+		t.Errorf("versions (%d): %v", len(names), names)
+	}
+}
+
+// A client that caps its height never sees past it: the versions it's
+// offered all fit, and the 4K slots go to what it can play.
+func TestCatalogVersionsHeightCapped(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4a.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: "https://cdn.example/4b.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f1.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/f2.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	auth := `MediaBrowser Token="` + captureToken + `"`
+	if names := versionNames(t, sf.h, matrix.Id, auth, `{}`); len(names) != 4 || counted(names, "2160p") != 2 {
+		t.Errorf("uncapped versions (%d): %v", len(names), names)
+	}
+	names := versionNames(t, sf.h, matrix.Id, auth, cappedProfile)
+	if len(names) != 2 || counted(names, "2160p") != 0 || counted(names, "1080p") != 2 {
+		t.Errorf("capped versions (%d): %v", len(names), names)
 	}
 }
 

@@ -484,7 +484,7 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
 ### 7.3 Stream resolution (at PlaybackInfo)
 1. Collect streams from every enabled addon that lists `stream` for the type and id prefix, in parallel, with a 6s timeout per addon. Cache the results (§5).
 2. **Rank** with a score: resolution (2160 > 1080 > 720), whether it's cached on debrid (a big bonus; addons often mark `[RD+]`, or we check with the provider), codec preference vs the DeviceProfile (HEVC/AV1 penalised if the client can't decode them), size within the user's bitrate cap, the release-group allow/deny list, and the language.
-3. Take the top N (default 3) → one `MediaSource` each, with `Name` = a short label (`2160p HDR • 18.2 GB • RD+`).
+3. Take the pick → one `MediaSource` each, with `Name` = a short label (`2160p HDR • 18.2 GB • RD+`). **Quotas before rank** (2026-10-06): `uhd_slots` (3) for 2160p-and-up and `hd_slots` (4) for everything below, filled best-first from the device-ranked list; slots a bucket can't fill spill to the best remaining ("best available"), and the final list is best-first. A profile with a height cap never sees past it — over-cap streams are dropped from that PlaybackInfo's pick, so their slots go to versions the client can play.
 4. Resolve when the stream is requested, not at PlaybackInfo: `url` is used directly. `infoHash` goes through `provider.AddMagnet` → select file (`fileIdx`, or the largest video) → unrestrict → CDN URL, cached in `link:*`.
 5. Not cached on any debrid: return the source with `Name` suffixed `• not cached` and start the debrid download in the background. Never block PlaybackInfo for more than ~8s.
 - **Implemented (P3.6, `stremio.Collector` and `stremio.Rank`):**
@@ -503,9 +503,9 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
     - up to +10 for seeders, so they only break ties.
     - A denied group is never offered.
   - **Rank:** only playable streams (`url` or `infoHash`). Duplicates by infoHash+fileIdx or URL keep the first copy, from the higher-priority addon. The sort is stable, so equal scores keep addon order.
-  - **Config:** `stremio.streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] }`. The client side (`Prefs`: height and bitrate caps, HEVC/AV1/HDR support, runtime) comes from the DeviceProfile in P3.7.
+  - **Config:** `stremio.streams: { timeout: 6s, uhd_slots: 3, hd_slots: 4, languages: [], allow_groups: [], deny_groups: [] }` (0–10 each, sum ≥ 1; `uhd_slots` counts 2160p-and-up, `hd_slots` the rest, with spill). The client side (`Prefs`: height and bitrate caps, HEVC/AV1/HDR support, runtime) comes from the DeviceProfile in P3.7.
 - **Implemented (P3.7, `handlers/streams.go`):**
-  - **When:** PlaybackInfo on a catalog title (`source_kind='stremio'`, `path` = `stremio:{type}:{id}`) that has no stored sources collects and ranks its streams, and returns the top `stremio.streams.top` as MediaSources, best first. If collection fails or finds nothing, the placeholder stays. **Opening a title's details with no set remembered also collects in the background** (P3.7 follow-up, 2026-10-06): the details answer itself keeps the placeholder, and the next refresh lists the versions without playing first (Infuse only shows them after its metadata refresh either way). One collection per title at a time (`lock:streamprefetch:{item}`, 1 min — which also throttles retries while an addon fails), at most 2 across titles, so a client syncing a whole catalog library can't flood the addons; PlaybackInfo still re-picks with the client's profile on every play, so the prefetch never changes what a play offers.
+  - **When:** PlaybackInfo on a catalog title (`source_kind='stremio'`, `path` = `stremio:{type}:{id}`) that has no stored sources collects and ranks its streams, and returns the quota pick (`uhd_slots` + `hd_slots` with spill, §7.3 step 3) as MediaSources, best first. If collection fails or finds nothing, the placeholder stays. **Opening a title's details with no set remembered also collects in the background** (P3.7 follow-up, 2026-10-06): the details answer itself keeps the placeholder, and the next refresh lists the versions without playing first (Infuse only shows them after its metadata refresh either way). One collection per title at a time (`lock:streamprefetch:{item}`, 1 min — which also throttles retries while an addon fails), at most 2 across titles, so a client syncing a whole catalog library can't flood the addons; PlaybackInfo still re-picks with the client's profile on every play, so the prefetch never changes what a play offers.
   - **Client preferences** (`streamPrefs`), read from the DeviceProfile:
     - HEVC/AV1: a Video DirectPlayProfile lists the codec, or lists no codecs at all.
     - HDR: a Video CodecProfile `VideoRangeType` condition names HDR or DOVI (no such condition means HDR is fine).
@@ -519,7 +519,7 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
     - `Name` is a label: `2160p DV HEVC Remux • 29.2 GB • Torrentio • cached`. `cached` appears only for torrents known to be cached; `not cached` only when the addon says so.
   - **IDs:** each choice's id is UUIDv5(item id, `url:{url}` or `bt:{magnet}`), so it is stable across calls. The first source in a response also answers to the item id, so the details placeholder's id keeps working.
     - A PlaybackInfo asking for the item id gets every choice.
-    - Asking for a choice's id gets that one, even if it has dropped out of the latest top N.
+    - Asking for a choice's id gets that one, even if it has dropped out of the latest pick.
   - **Remembered choices:** the Redis key `streamset:{item}` (12 h, refreshed by each PlaybackInfo) holds the latest choices first, then earlier ones (up to 12), so a client still playing an older pick finds it.
     - Stream, HLS and subtitle requests look sources up through it (`loadPlaySources`). If it has expired, they collect again with permissive prefs.
     - The details of a single item list the remembered choices as versions. Lists and details never ask the addons themselves.
@@ -783,7 +783,7 @@ debrid:    { realdebrid_api_key: "", torbox_api_key: "" }           # BLOCKBUSTR
 search:    { enabled: true, timeout: 3s, retention: 168h, cinemeta_fallback: true }
 metrics:   { enabled: false, token: "" }                                 # BLOCKBUSTR_METRICS_TOKEN
 stremio:   { sync_interval: 6h, catalog_pages: 2,                  # addons themselves: /blockbustr/addons
-             streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] },
+             streams: { timeout: 6s, uhd_slots: 3, hd_slots: 4, languages: [], allow_groups: [], deny_groups: [] },
              subtitles: { languages: [], per_language: 3 } }
 log:       { level: info, format: text }                            # format: text|json
 ```

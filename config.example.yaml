@@ -49,7 +49,9 @@ stremio:                       # addons themselves are managed through /blockbus
   catalog_pages: 2             # pages fetched per catalog
   streams:
     timeout: 6s                # per addon, when collecting streams for playback
-    top: 3                     # best streams offered as MediaSources
+    uhd_slots: 3               # versions offered at 2160p and up
+    hd_slots: 4                # versions offered below 2160p; unfilled slots of
+                               # either go to the best remaining ("best available")
     languages: []              # preferred audio, ISO 639-1 (e.g. [en, de])
     allow_groups: []           # release groups ranked higher
     deny_groups: []            # release groups never offered

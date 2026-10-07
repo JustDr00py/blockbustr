@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -270,16 +272,47 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 		prefs.Runtime = time.Duration(*it.RuntimeTicks) * 100 // ticks are 100 ns
 	}
 	ranked := stremio.Rank(offers, prefs)
-	top := max(cfg.Top, 1)
-	choices := make([]StreamChoice, 0, top)
+	uhd, hd := max(cfg.UHDSlots, 0), max(cfg.HDSlots, 0)
+	total := uhd + hd
+	// A client that caps its height never sees past it: the slots it would
+	// have wasted on 4K go to versions it can play.
+	avail := make([]stremio.Ranked, 0, len(ranked))
 	bad := a.badChoices(ctx, it.ID)
 	for _, r := range ranked {
-		if len(choices) == top {
+		if bad[streamChoice(it.ID, r).ID] || (prefs.MaxHeight > 0 && r.Info.Height > prefs.MaxHeight) {
+			continue
+		}
+		avail = append(avail, r)
+	}
+	// Quotas before rank: the best uhd_slots at 2160p and up, the best
+	// hd_slots below it, so several 4K releases can't crowd 1080p out of
+	// the picker. Slots a bucket can't fill spill to the best remaining.
+	picked := make([]stremio.Ranked, 0, total)
+	var rest []stremio.Ranked
+	nUHD, nHD := 0, 0
+	for _, r := range avail {
+		switch {
+		case r.Info.Height >= 2160 && nUHD < uhd:
+			nUHD++
+			picked = append(picked, r)
+		case r.Info.Height < 2160 && nHD < hd:
+			nHD++
+			picked = append(picked, r)
+		default:
+			rest = append(rest, r)
+		}
+	}
+	for _, r := range rest {
+		if len(picked) == total {
 			break
 		}
-		if c := streamChoice(it.ID, r); !bad[c.ID] {
-			choices = append(choices, c)
-		}
+		picked = append(picked, r)
+	}
+	// Best first, so the default (first) source is the ranked best.
+	slices.SortStableFunc(picked, func(x, y stremio.Ranked) int { return cmp.Compare(y.Score, x.Score) })
+	choices := make([]StreamChoice, 0, len(picked))
+	for _, r := range picked {
+		choices = append(choices, streamChoice(it.ID, r))
 	}
 	pick := streamSet{Choices: choices, Subtitles: pickSubtitles(subs, a.Config.Stremio.Subtitles.Languages, a.Config.Stremio.Subtitles.PerLanguage)}
 	if len(choices) == 0 || a.Cache == nil {

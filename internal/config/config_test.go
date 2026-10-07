@@ -56,7 +56,8 @@ log:
   format: json
 stremio:
   streams:
-    top: 5
+    uhd_slots: 2
+    hd_slots: 6
     languages: [de, en]
     deny_groups: [YIFY]
 `)
@@ -80,7 +81,7 @@ stremio:
 	if cfg.Metadata.TMDBAPIKey != "tmdb-key" || len(cfg.Compat.ProxyClients) != 1 {
 		t.Errorf("unexpected: %+v", cfg)
 	}
-	if st := cfg.Stremio.Streams; st.Top != 5 || len(st.Languages) != 2 || st.DenyGroups[0] != "YIFY" || st.Timeout != 6*time.Second {
+	if st := cfg.Stremio.Streams; st.UHDSlots != 2 || st.HDSlots != 6 || len(st.Languages) != 2 || st.DenyGroups[0] != "YIFY" || st.Timeout != 6*time.Second {
 		t.Errorf("stremio.streams = %+v", st)
 	}
 	if cfg.Transcode.SegmentSeconds != 3 {
@@ -104,7 +105,7 @@ func TestValidateReportsAllErrors(t *testing.T) {
 	cfg.Server.ExternalURL = "blockbustr.local"
 	cfg.Server.AdminUsername = "admin" // without a password
 	cfg.Stremio.Streams.Timeout = time.Minute
-	cfg.Stremio.Streams.Top = 0
+	cfg.Stremio.Streams.UHDSlots, cfg.Stremio.Streams.HDSlots = 0, 0
 	cfg.Stremio.Streams.Languages = []string{"eng"}
 	cfg.Stremio.Subtitles.PerLanguage = 0
 	cfg.Server.StreamURLTTL = time.Minute
@@ -114,7 +115,7 @@ func TestValidateReportsAllErrors(t *testing.T) {
 		t.Fatal("expected errors")
 	}
 	for _, want := range []string{"database.url", "redis.url", "reported_version", "hwaccel", "external_url", "admin_username",
-		"streams.timeout", "streams.top", "streams.languages", "subtitles.per_language", "stream_url_ttl", "search.timeout"} {
+		"streams.timeout", "streams.uhd_slots", "streams.languages", "subtitles.per_language", "stream_url_ttl", "search.timeout"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("missing %q in %v", want, err)
 		}

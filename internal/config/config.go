@@ -75,7 +75,8 @@ type Subtitles struct {
 // Streams configures stream collection and ranking at playback (DESIGN §7.3).
 type Streams struct {
 	Timeout     time.Duration `yaml:"timeout"`      // per addon
-	Top         int           `yaml:"top"`          // MediaSources offered per title
+	UHDSlots    int           `yaml:"uhd_slots"`    // versions offered at 2160p and up
+	HDSlots     int           `yaml:"hd_slots"`     // versions offered below 2160p
 	Languages   []string      `yaml:"languages"`    // preferred audio, ISO 639-1 ("en", "de")
 	AllowGroups []string      `yaml:"allow_groups"` // release groups ranked higher
 	DenyGroups  []string      `yaml:"deny_groups"`  // release groups never offered
@@ -233,7 +234,7 @@ func Defaults() Config {
 		Log:       Log{Level: "info", Format: "text"},
 		Stremio: Stremio{
 			SyncInterval: 6 * time.Hour, CatalogPages: 2,
-			Streams:   Streams{Timeout: 6 * time.Second, Top: 3},
+			Streams:   Streams{Timeout: 6 * time.Second, UHDSlots: 3, HDSlots: 4},
 			Subtitles: Subtitles{PerLanguage: 3},
 		},
 		Search: Search{Enabled: true, Timeout: 3 * time.Second, Retention: 7 * 24 * time.Hour, CinemetaFallback: true},
@@ -403,8 +404,8 @@ func (c *Config) Validate() error {
 	if c.Stremio.Streams.Timeout < time.Second || c.Stremio.Streams.Timeout > 30*time.Second {
 		add("stremio.streams.timeout must be between 1s and 30s")
 	}
-	if c.Stremio.Streams.Top < 1 || c.Stremio.Streams.Top > 10 {
-		add("stremio.streams.top must be between 1 and 10")
+	if s := c.Stremio.Streams; s.UHDSlots < 0 || s.UHDSlots > 10 || s.HDSlots < 0 || s.HDSlots > 10 || s.UHDSlots+s.HDSlots < 1 {
+		add("stremio.streams.uhd_slots and hd_slots must be 0-10 each, at least one above 0")
 	}
 	for _, l := range c.Stremio.Streams.Languages {
 		if len(l) != 2 {
