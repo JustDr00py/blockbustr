@@ -335,13 +335,22 @@ func (a *api) applyPlayback(r *http.Request, s auth.Session, ev playEvent, rep p
 			cs.NowPlaying = np
 		}
 	})
-	if ev == playStop && a.Transcoding != nil {
+	if a.Transcoding != nil {
 		ps := rep.PlaySessionID
 		if ps == "" && prev != nil {
 			ps = prev.PlaySessionID
 		}
-		if ps != "" {
+		switch {
+		case ps == "":
+		case ev == playStop:
 			a.Transcoding.Sessions.Close(ps)
+		default:
+			// A player still reporting keeps its transcode, though it may
+			// fetch no segment for minutes: Streamyfin buffers ~5 minutes,
+			// and the throttle holds ffmpeg meanwhile. Without this the
+			// idle reaper (1 min without a segment) closed it, and the next
+			// segment restarted ffmpeg from scratch.
+			a.Transcoding.Sessions.Get(ps) // marks it used
 		}
 	}
 	if save {

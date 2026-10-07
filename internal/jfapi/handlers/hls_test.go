@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
@@ -268,6 +269,34 @@ func TestHLSTranscodeRealFFmpeg(t *testing.T) {
 		t.Errorf("one ffmpeg session per play session: %d", n)
 	}
 	q, _ := url.ParseQuery(strings.SplitN(tu, "?", 2)[1])
+
+	// A player still reporting progress keeps its transcode though it
+	// fetches no segment (a long buffer, the throttle holding ffmpeg); once
+	// it goes quiet the idle reaper closes it.
+	m := d.Transcoding.Sessions
+	oldIdle := m.IdleTimeout
+	m.IdleTimeout = 400 * time.Millisecond
+	rctx, stopReaper := context.WithCancel(t.Context())
+	reaped := make(chan struct{})
+	go func() { m.Run(rctx); close(reaped) }()
+	progress := `{"ItemId":"` + mkii + `","PlaySessionId":"` + q.Get("PlaySessionId") + `","PositionTicks":10000000}`
+	for range 8 {
+		if rec := call(t, h, "POST", "/Sessions/Playing/Progress", `MediaBrowser Token="`+captureToken+`"`, progress); rec.Code != 204 {
+			t.Fatalf("progress = %d", rec.Code)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if n := m.Count(); n != 1 {
+		t.Errorf("reporting player's transcode closed: %d sessions", n)
+	}
+	time.Sleep(800 * time.Millisecond)
+	if n := m.Count(); n != 0 {
+		t.Errorf("quiet player's transcode kept: %d sessions", n)
+	}
+	stopReaper()
+	<-reaped // Run closes the rest on the way out
+	m.IdleTimeout = oldIdle
+
 	if rec := get(strings.Replace(segs[9], "/9.ts", "/10.ts", 1)); rec.Code != 404 {
 		t.Errorf("past the end = %d", rec.Code)
 	}
