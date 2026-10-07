@@ -140,6 +140,29 @@ func (q *Queries) ReadyDebridHashes(ctx context.Context, hashes []string) ([]str
 	return items, nil
 }
 
+const setDebridAccount = `-- name: SetDebridAccount :execrows
+UPDATE debrid_accounts
+SET enabled    = coalesce($1, enabled),
+    priority   = coalesce($2, priority),
+    updated_at = now()
+WHERE provider = $3
+`
+
+type SetDebridAccountParams struct {
+	Enabled  *bool
+	Priority *int32
+	Provider string
+}
+
+// An admin turns an account on or off or changes its priority (P4.3).
+func (q *Queries) SetDebridAccount(ctx context.Context, arg SetDebridAccountParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setDebridAccount, arg.Enabled, arg.Priority, arg.Provider)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const upsertDebridAccount = `-- name: UpsertDebridAccount :exec
 INSERT INTO debrid_accounts (provider, api_key_enc)
 VALUES ($1, $2)

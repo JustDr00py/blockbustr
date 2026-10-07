@@ -19,6 +19,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/config"
+	debridpkg "github.com/sysadmin/blockbustr/internal/debrid"
 	"github.com/sysadmin/blockbustr/internal/discovery"
 	"github.com/sysadmin/blockbustr/internal/events"
 	"github.com/sysadmin/blockbustr/internal/images"
@@ -29,6 +30,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/metadata"
 	"github.com/sysadmin/blockbustr/internal/metadata/tmdb"
+	"github.com/sysadmin/blockbustr/internal/metrics"
 	"github.com/sysadmin/blockbustr/internal/provider"
 	"github.com/sysadmin/blockbustr/internal/provider/realdebrid"
 	"github.com/sysadmin/blockbustr/internal/provider/torbox"
@@ -170,13 +172,16 @@ func run() error {
 		MissingGrace: cfg.Scan.MissingGrace, Refresh: refresher.Refresh, Events: bus,
 	}
 	torrents := resolve.PGTorrents{Q: queries}
-	streams := &stremio.Collector{Registry: addons, Timeout: cfg.Stremio.Streams.Timeout, Log: log}
-	for _, name := range debridOrder {
-		streams.Debrid = append(streams.Debrid, debrid[name])
+	// The debrid accounts, live: the admin UI can change them (P4.3).
+	accounts := provider.NewSet(debrid, debridOrder)
+	accountKey, _ := secret.ParseKey(cfg.SecretKey) // nil when unset or invalid (validated at load)
+	debridAdmin := &debridpkg.Manager{
+		Q: queries, Key: accountKey, Set: accounts, Log: log,
+		Load: func(ctx context.Context) (map[provider.Name]provider.Provider, []provider.Name, error) {
+			return loadProviders(ctx, queries, cfg, log)
+		},
 	}
-	if len(debrid) > 0 {
-		streams.Known = torrents.Ready
-	}
+	streams := &stremio.Collector{Registry: addons, Timeout: cfg.Stremio.Streams.Timeout, Log: log, Accounts: accounts, Known: torrents.Ready}
 	var remote handlers.RemoteSearch
 	if cfg.Search.Enabled {
 		discover := &stremio.Discover{
@@ -192,13 +197,18 @@ func run() error {
 		go discover.Run(ctx)
 		remote = discover
 	}
+	metrics.Gauge("blockbustr_transcode_sessions", "HLS transcode sessions running.", func() float64 { return float64(transcoder.Count()) })
+	metrics.Gauge("blockbustr_debrid_accounts_active", "Debrid accounts in use.", func() float64 { return float64(accounts.Len()) })
+	metrics.Gauge("blockbustr_db_connections_in_use", "Postgres connections in use.", func() float64 { return float64(pool.Stat().AcquiredConns()) })
+	metrics.Gauge("blockbustr_db_connections_idle", "Idle Postgres connections.", func() float64 { return float64(pool.Stat().IdleConns()) })
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
-		Resolver: &resolve.Resolver{Cache: rc, Providers: debrid, Order: debridOrder, Torrents: torrents, Log: log}, Probe: scanner,
+		Resolver: &resolve.Resolver{Cache: rc, Accounts: accounts, Torrents: torrents, Log: log}, Probe: scanner,
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
 		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams, RemoteSearch: remote,
 		StreamSigner: &urlsign.Signer{Key: streamKey, TTL: cfg.Server.StreamURLTTL},
+		Debrid:       debridAdmin,
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

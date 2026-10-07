@@ -15,6 +15,7 @@ import (
 
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/library"
+	"github.com/sysadmin/blockbustr/internal/metrics"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 )
 
@@ -152,6 +153,8 @@ func (d *Discover) search(ctx context.Context, term string, kinds []string) []fo
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+	start := time.Now()
+	defer func() { metrics.SearchDuration.Observe(time.Since(start).Seconds()) }()
 	sources := d.sources(ctx, kinds)
 	// per[0] is TMDB's (both kinds, first); then one list per addon source.
 	// Sources run on a context of their own, so one that misses the

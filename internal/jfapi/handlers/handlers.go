@@ -6,10 +6,12 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
 
+	"github.com/sysadmin/blockbustr/internal/adminui"
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/config"
@@ -71,6 +73,9 @@ type Deps struct {
 	// StreamSigner signs remote sources' stream URLs; nil leaves them
 	// unsigned.
 	StreamSigner *urlsign.Signer
+	// Debrid manages the debrid accounts behind /blockbustr/debrid; nil
+	// leaves those routes out.
+	Debrid DebridManager
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.
@@ -93,6 +98,20 @@ func Register(rt *jfapi.Router, d Deps) {
 	registerBranding(rt)
 	a.registerUsers(rt)
 	a.registerUserAdmin(rt)
+	a.registerDebrid(rt)
+	a.registerOps(rt)
+	// The admin web UI (P4.3); it signs in like any client.
+	ui := adminui.Handler()
+	rt.Get("/blockbustr/ui", func(w http.ResponseWriter, r *http.Request) {
+		// Routing trims a trailing slash, so look at what was asked for:
+		// "/blockbustr/ui/" is the app, "/blockbustr/ui" redirects to it.
+		if p, _, _ := strings.Cut(r.RequestURI, "?"); strings.HasSuffix(p, "/") {
+			ui.ServeHTTP(w, r)
+			return
+		}
+		http.Redirect(w, r, adminui.Prefix, http.StatusFound)
+	})
+	rt.Get("/blockbustr/ui/*", ui.ServeHTTP)
 	a.registerQuickConnect(rt)
 	a.registerLibrary(rt)
 	a.registerImages(rt)

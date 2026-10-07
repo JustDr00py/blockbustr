@@ -5,7 +5,7 @@ VERSION       ?= $(shell git describe --tags --always --dirty 2>/dev/null || ech
 SQLC ?= $(shell command -v sqlc 2>/dev/null || echo $$(go env GOPATH)/bin/sqlc)
 GOLANGCI_LINT ?= $(shell command -v golangci-lint 2>/dev/null || echo $$(go env GOPATH)/bin/golangci-lint)
 
-.PHONY: build run test test-integration vet lint generate sqlc-check dto dto-check fmt check test-scripts clean
+.PHONY: build run test test-integration vet lint generate sqlc-check dto dto-check fmt check test-scripts clean ui ui-check
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/$(BINARY) $(CMD)
@@ -52,6 +52,15 @@ test-integration:
 
 # Definition of done (AGENTS.md): vet + generated code current + unit + integration tests + lint.
 check: vet sqlc-check dto-check test test-integration lint
+
+# Admin web UI (P4.3): built into internal/adminui/dist and embedded. Needs
+# Node.js; without it the binary serves a page saying how to build it.
+ui:
+	cd web/admin && npm ci --no-audit --no-fund && npm run build
+	touch internal/adminui/dist/.gitkeep # vite empties dist; go:embed needs it on a fresh clone
+
+ui-check:
+	cd web/admin && npm ci --no-audit --no-fund && npm run check
 
 # Python tooling for recon fixtures (runs in the mitmproxy image).
 test-scripts:

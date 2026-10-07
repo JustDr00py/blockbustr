@@ -95,7 +95,7 @@ func (r *Resolver) torrent(ctx context.Context, src Source) (Link, time.Duration
 		}
 		slices.SortStableFunc(known, func(a, b KnownTorrent) int { return cmp.Compare(r.rank(a.Provider), r.rank(b.Provider)) })
 		for _, k := range known {
-			p := r.Providers[k.Provider]
+			p := r.account(k.Provider)
 			if p == nil {
 				continue
 			}
@@ -131,7 +131,7 @@ func (r *Resolver) torrent(ctx context.Context, src Source) (Link, time.Duration
 		return Link{}, 0, err
 	}
 	k := v.(KnownTorrent)
-	p := r.Providers[k.Provider]
+	p := r.account(k.Provider)
 	t, err := p.Torrent(ctx, k.TorrentID)
 	if err != nil {
 		return Link{}, 0, fmt.Errorf("resolve: %s: %w", k.Provider, err)
@@ -182,6 +182,9 @@ func (r *Resolver) warn(ctx context.Context, msg string, args ...any) {
 
 // order is the accounts in priority order: Order, then any others by name.
 func (r *Resolver) order() []provider.Name {
+	if r.Accounts != nil {
+		return r.Accounts.Names()
+	}
 	out := make([]provider.Name, 0, len(r.Providers))
 	for _, n := range r.Order {
 		if r.Providers[n] != nil && !slices.Contains(out, n) {
@@ -199,10 +202,11 @@ func (r *Resolver) order() []provider.Name {
 }
 
 func (r *Resolver) rank(n provider.Name) int {
-	if i := slices.Index(r.order(), n); i >= 0 {
+	order := r.order()
+	if i := slices.Index(order, n); i >= 0 {
 		return i
 	}
-	return len(r.Providers)
+	return len(order)
 }
 
 // addOrder is the accounts to try adding a torrent to: the first (by
@@ -215,7 +219,7 @@ func (r *Resolver) addOrder(ctx context.Context, hash string) []provider.Provide
 		defer cancel()
 	find:
 		for i, n := range order {
-			res, err := r.Providers[n].InstantCheck(ictx, []string{hash})
+			res, err := r.account(n).InstantCheck(ictx, []string{hash})
 			if err != nil {
 				continue
 			}
@@ -229,11 +233,11 @@ func (r *Resolver) addOrder(ctx context.Context, hash string) []provider.Provide
 	}
 	out := make([]provider.Provider, 0, len(order))
 	if first >= 0 {
-		out = append(out, r.Providers[order[first]])
+		out = append(out, r.account(order[first]))
 	}
 	for i, n := range order {
 		if i != first {
-			out = append(out, r.Providers[n])
+			out = append(out, r.account(n))
 		}
 	}
 	return out

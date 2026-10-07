@@ -404,6 +404,47 @@ func (q *Queries) SetStremioAddonManifest(ctx context.Context, arg SetStremioAdd
 	return err
 }
 
+const setStremioAddonURL = `-- name: SetStremioAddonURL :one
+UPDATE stremio_addons
+SET url_enc = $1, url_sha = $2, host = $3, manifest = $4, last_fetched_at = now()
+WHERE id = $5
+RETURNING id, url_enc, url_sha, host, manifest, enabled, priority, last_fetched_at, created_at
+`
+
+type SetStremioAddonURLParams struct {
+	UrlEnc   []byte
+	UrlSha   []byte
+	Host     string
+	Manifest json.RawMessage
+	ID       uuid.UUID
+}
+
+// A new configuration of the same addon (P4.3): its sealed URL, hash, host
+// and manifest change; its id, priority, flags and catalogs stay. A URL
+// another addon already has violates url_sha's uniqueness.
+func (q *Queries) SetStremioAddonURL(ctx context.Context, arg SetStremioAddonURLParams) (StremioAddon, error) {
+	row := q.db.QueryRow(ctx, setStremioAddonURL,
+		arg.UrlEnc,
+		arg.UrlSha,
+		arg.Host,
+		arg.Manifest,
+		arg.ID,
+	)
+	var i StremioAddon
+	err := row.Scan(
+		&i.ID,
+		&i.UrlEnc,
+		&i.UrlSha,
+		&i.Host,
+		&i.Manifest,
+		&i.Enabled,
+		&i.Priority,
+		&i.LastFetchedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const setStremioCatalogEnabled = `-- name: SetStremioCatalogEnabled :execrows
 UPDATE stremio_catalogs SET enabled = $4
 WHERE addon_id = $1 AND catalog_type = $2 AND catalog_id = $3

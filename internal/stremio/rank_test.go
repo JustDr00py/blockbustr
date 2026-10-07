@@ -96,6 +96,7 @@ func TestParseMarkers(t *testing.T) {
 		{"TELESYNC filename", Stream{Hints: StreamHints{Filename: "Movie 2026 TELESYNC 720p.mkv"}}, func(i Info) bool { return i.Cam && i.Height == 720 }},
 		{"DTS isn't TS", Stream{Title: "Movie.2026.1080p.BluRay.DTS-HD.MA.5.1.x264-GRP"}, func(i Info) bool { return !i.Cam && i.Height == 1080 }},
 		{"4k from the name", Stream{Name: "Torrentio\n4k"}, func(i Info) bool { return i.Height == 2160 }},
+		{"AIOStreams FHD", Stream{Name: "🚀 FHD", Description: "🎬 Conclave (2024)\n🎥 BluRay 🎞️ AVC\n⚡Ready (DG)"}, func(i Info) bool { return i.Height == 1080 && i.Debrid }},
 		{"av1", Stream{Title: "Show.S01E01.1080p.WEB.AV1-GRP"}, func(i Info) bool { return i.Codec == "av1" }},
 		{"videoSize wins", Stream{Title: "x 💾 1.5 GB", Hints: StreamHints{VideoSize: 123}}, func(i Info) bool { return i.Size == 123 }},
 		{"MB size", Stream{Title: "x 💾 700 MB"}, func(i Info) bool { return i.Size == 700<<20 }},

@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -66,14 +68,22 @@ type fakeStreams struct {
 	offers map[string][]stremio.Offer         // by "type/id"
 	subs   map[string][]stremio.SubtitleOffer // by "type/id"
 	calls  atomic.Int32
+	mu     sync.Mutex
+	asked  []string // "streams type/id", "subtitles type/id"
 }
 
 func (f *fakeStreams) Subtitles(_ context.Context, typ, id string) ([]stremio.SubtitleOffer, error) {
+	f.mu.Lock()
+	f.asked = append(f.asked, "subtitles "+typ+"/"+id)
+	f.mu.Unlock()
 	return f.subs[typ+"/"+id], nil
 }
 
 func (f *fakeStreams) Collect(_ context.Context, typ, id string) ([]stremio.Offer, error) {
 	f.calls.Add(1)
+	f.mu.Lock()
+	f.asked = append(f.asked, "streams "+typ+"/"+id)
+	f.mu.Unlock()
 	return f.offers[typ+"/"+id], nil
 }
 
@@ -535,5 +545,96 @@ func TestCatalogStreamFallsBack(t *testing.T) {
 	}
 	if rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+matrix.Id, "", ""); rec.Code != 200 || rec.Body.String() != "matroska bytes" {
 		t.Errorf("default stream: %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+// Catalogs keyed by TMDB (AIOStreams' "tmdb:603"): addons are asked by the
+// IMDb id first (most, and the services behind aggregators, only know
+// that), then by the catalog's own id; episodes as "tt…:season:episode".
+func TestAddonIDsPreferIMDb(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{
+		"movie/tt0133093":      {{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/m.mkv"}}},
+		"series/tt0944947:1:1": {{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/e.mkv"}}},
+		"movie/tmdb:604":       {{Addon: "A", Stream: stremio.Stream{Name: "720p", URL: "https://cdn.example/r.mkv"}}},
+	}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
+	sf.syncAll(t)
+	// Re-key titles the way a TMDB-keyed catalog stores them.
+	for _, q := range []string{
+		`UPDATE items SET path = 'stremio:movie:tmdb:603' WHERE name = 'The Matrix'`,
+		`UPDATE items SET path = 'stremio:movie:tmdb:604', provider_ids = '{}' WHERE name = 'The Matrix Reloaded'`,
+		`UPDATE items SET path = 'stremio:series:tmdb:1399:1:1' WHERE type = 'Episode' AND name = 'Winter Is Coming'`,
+	} {
+		if _, err := testPool.Exec(t.Context(), q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	movies := map[string]string{}
+	for _, it := range sf.children(t, sf.views(t)["Cinemeta Popular"].Id) {
+		movies[it.Name] = it.Id
+	}
+	var episode string
+	if err := testPool.QueryRow(t.Context(), `SELECT replace(id::text, '-', '') FROM items WHERE type = 'Episode' AND name = 'Winter Is Coming'`).Scan(&episode); err != nil {
+		t.Fatal(err)
+	}
+	auth := `MediaBrowser Token="` + captureToken + `"`
+	play := func(id string) []string {
+		t.Helper()
+		fs.mu.Lock()
+		fs.asked = nil
+		fs.mu.Unlock()
+		rec := call(t, sf.h, "POST", "/Items/"+id+"/PlaybackInfo", auth, `{}`)
+		var out playbackSources
+		_ = json.Unmarshal(rec.Body.Bytes(), &out)
+		var names []string
+		for _, s := range out.MediaSources {
+			names = append(names, s.Name)
+		}
+		fs.mu.Lock()
+		defer fs.mu.Unlock()
+		slices.Sort(fs.asked)
+		return append(names, fs.asked...)
+	}
+	cases := map[string]string{
+		// IMDb known: asked by it, which answers; subtitles by it too.
+		movies["The Matrix"]: "1080p • A | streams movie/tt0133093 | subtitles movie/tt0133093",
+		// No IMDb id: the catalog's own.
+		movies["The Matrix Reloaded"]: "720p • A | streams movie/tmdb:604 | subtitles movie/tmdb:604",
+		// Episode of a series with an IMDb id.
+		episode: "1080p • A | streams series/tt0944947:1:1 | subtitles series/tt0944947:1:1",
+	}
+	for id, want := range cases {
+		if got := strings.Join(play(id), " | "); got != want {
+			t.Errorf("got  %s\nwant %s", got, want)
+		}
+	}
+}
+
+// When the IMDb id finds nothing, the catalog's own id is tried.
+func TestAddonIDsFallBackToCatalogID(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{
+		"movie/tmdb:603": {{Addon: "A", Stream: stremio.Stream{Name: "2160p", URL: "https://cdn.example/m.mkv"}}},
+	}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
+	sf.syncAll(t)
+	if _, err := testPool.Exec(t.Context(), `UPDATE items SET path = 'stremio:movie:tmdb:603' WHERE name = 'The Matrix'`); err != nil {
+		t.Fatal(err)
+	}
+	var id string
+	for _, it := range sf.children(t, sf.views(t)["Cinemeta Popular"].Id) {
+		if it.Name == "The Matrix" {
+			id = it.Id
+		}
+	}
+	rec := call(t, sf.h, "POST", "/Items/"+id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`)
+	var out playbackSources
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	if len(out.MediaSources) != 1 || out.MediaSources[0].Name != "2160p • A" {
+		t.Errorf("sources: %+v", out.MediaSources)
+	}
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+	if !slices.Contains(fs.asked, "streams movie/tt0133093") || !slices.Contains(fs.asked, "streams movie/tmdb:603") {
+		t.Errorf("asked %v", fs.asked)
 	}
 }

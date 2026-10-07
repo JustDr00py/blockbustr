@@ -1,13 +1,17 @@
 package jfapi
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 	"runtime/debug"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/sysadmin/blockbustr/internal/metrics"
 )
 
 // recoverer turns a handler panic into a logged 500 instead of a dropped
@@ -38,12 +42,21 @@ func logRequests(log *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor) // keeps Flusher/Hijacker for streams and websockets
+		// chi reuses a route context it finds, so the matched pattern can be
+		// read back for the metrics (bounded labels, unlike raw paths).
+		rctx := chi.NewRouteContext()
+		r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 		next.ServeHTTP(ww, r)
 		path := r.URL.Path // read after routing, so it's the canonical casing
 		status := ww.Status()
 		if status == 0 {
 			status = http.StatusOK
 		}
+		route := rctx.RoutePattern()
+		if route == "" {
+			route = "unmatched"
+		}
+		metrics.ObserveRequest(route, r.Method, status, time.Since(start).Seconds())
 		level := slog.LevelDebug
 		switch {
 		case status >= 500:

@@ -148,3 +148,12 @@ WHERE l.id = i.library_id AND l.kind = 'discover' AND i.parent_id IS NULL
     WHERE (ud.played OR ud.is_favorite OR ud.playback_position_ticks > 0)
       AND (d.id = i.id OR d.parent_id = i.id
            OR d.parent_id IN (SELECT s.id FROM items s WHERE s.parent_id = i.id)));
+
+-- name: SetStremioAddonURL :one
+-- A new configuration of the same addon (P4.3): its sealed URL, hash, host
+-- and manifest change; its id, priority, flags and catalogs stay. A URL
+-- another addon already has violates url_sha's uniqueness.
+UPDATE stremio_addons
+SET url_enc = @url_enc, url_sha = @url_sha, host = @host, manifest = @manifest, last_fetched_at = now()
+WHERE id = @id
+RETURNING *;

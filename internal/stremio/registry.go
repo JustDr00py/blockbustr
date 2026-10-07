@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/sysadmin/blockbustr/internal/secret"
@@ -24,6 +25,7 @@ var (
 	ErrNotFound        = errors.New("stremio: no such addon or catalog")
 	ErrCatalogNeedsArg = errors.New("stremio: catalog needs an extra (search, genre…) and can't be a library")
 	ErrCatalogType     = errors.New("stremio: only movie and series catalogs can be libraries")
+	ErrOtherAddon      = errors.New("stremio: that URL is a different addon; add it instead")
 )
 
 // Registry stores the configured addons and their catalogs (DESIGN §4, §7).
@@ -143,6 +145,57 @@ func (r *Registry) Refresh(ctx context.Context, id uuid.UUID) (Addon, error) {
 		return Addon{}, err
 	}
 	row.Manifest, row.LastFetchedAt = raw, time.Now()
+	return r.view(ctx, row)
+}
+
+// SetURL points an addon at a new URL: another configuration of the same
+// addon (a new debrid key in Torrentio's, say). The new manifest is fetched
+// first, so a broken URL changes nothing; one of a different addon (another
+// manifest id) is refused, as its catalogs and libraries belong to this
+// one. The addon keeps its id, priority, flags and catalog choices.
+func (r *Registry) SetURL(ctx context.Context, id uuid.UUID, rawURL string) (Addon, error) {
+	if r.Key == nil {
+		return Addon{}, ErrNoSecretKey
+	}
+	row, err := r.q().GetStremioAddon(ctx, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Addon{}, ErrNotFound
+	}
+	if err != nil {
+		return Addon{}, err
+	}
+	base, err := BaseURL(rawURL)
+	if err != nil {
+		return Addon{}, err
+	}
+	m, raw, err := r.manifest(ctx, base)
+	if err != nil {
+		return Addon{}, err
+	}
+	var old Manifest
+	if err := json.Unmarshal(row.Manifest, &old); err == nil && old.ID != "" && old.ID != m.ID {
+		return Addon{}, fmt.Errorf("%w (%s, not %s)", ErrOtherAddon, m.ID, old.ID)
+	}
+	enc, err := secret.Seal(r.Key, []byte(base))
+	if err != nil {
+		return Addon{}, err
+	}
+	sum := sha256.Sum256([]byte(base))
+	err = pgx.BeginFunc(ctx, r.Pool, func(tx pgx.Tx) error {
+		q := db.New(tx)
+		row, err = q.SetStremioAddonURL(ctx, db.SetStremioAddonURLParams{ID: id, UrlEnc: enc, UrlSha: sum[:], Host: Redact(base), Manifest: raw})
+		var pe *pgconn.PgError
+		if errors.As(err, &pe) && pe.Code == "23505" {
+			return ErrDuplicate
+		}
+		if err != nil {
+			return err
+		}
+		return syncCatalogs(ctx, q, id, m)
+	})
+	if err != nil {
+		return Addon{}, err
+	}
 	return r.view(ctx, row)
 }
 

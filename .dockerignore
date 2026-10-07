@@ -4,3 +4,5 @@
 !go.sum
 !cmd/
 !internal/
+!web/admin/
+web/admin/node_modules/

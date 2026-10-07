@@ -89,7 +89,7 @@ func (a *api) addonError(w http.ResponseWriter, r *http.Request, err error) {
 		status = http.StatusNotFound
 	case errors.Is(err, stremio.ErrDuplicate):
 		status = http.StatusConflict
-	case errors.Is(err, stremio.ErrBadURL), errors.Is(err, stremio.ErrCatalogNeedsArg), errors.Is(err, stremio.ErrCatalogType):
+	case errors.Is(err, stremio.ErrBadURL), errors.Is(err, stremio.ErrCatalogNeedsArg), errors.Is(err, stremio.ErrCatalogType), errors.Is(err, stremio.ErrOtherAddon):
 		status = http.StatusBadRequest
 	case errors.Is(err, stremio.ErrNoSecretKey):
 		status = http.StatusServiceUnavailable
@@ -173,12 +173,21 @@ func (a *api) updateAddon(w http.ResponseWriter, r *http.Request, _ auth.Session
 		return
 	}
 	var body struct {
+		Url      *string // a new configuration of the same addon
 		Enabled  *bool
 		Priority *int
 	}
 	if err := jfapi.DecodeJSON(w, r, &body); err != nil {
-		badBody(w, r, `{"Enabled": bool, "Priority": int}`)
+		badBody(w, r, `{"Url": "https://…/manifest.json", "Enabled": bool, "Priority": int}`)
 		return
+	}
+	if body.Url != nil {
+		ad, err := a.Addons.SetURL(r.Context(), id.UUID(), *body.Url)
+		if err != nil {
+			a.addonError(w, r, err)
+			return
+		}
+		a.Log.InfoContext(r.Context(), "stremio addon URL changed", "addon", ad.Manifest.ID, "host", ad.Host)
 	}
 	ad, err := a.Addons.Update(r.Context(), id.UUID(), body.Enabled, body.Priority)
 	if err != nil {

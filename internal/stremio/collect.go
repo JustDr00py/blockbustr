@@ -30,7 +30,9 @@ type Collector struct {
 	Timeout time.Duration
 	// Debrid accounts are asked which torrents they have cached, within
 	// DebridTimeout (default 2s). Addon markers ("[RD+]") count too.
-	Debrid        []provider.Provider
+	Debrid []provider.Provider
+	// Accounts, when set, replaces Debrid: the live set of accounts.
+	Accounts      *provider.Set
 	DebridTimeout time.Duration
 	// Known reports torrents already ready on an account (played before),
 	// which count as cached too; nil skips it.
@@ -144,7 +146,11 @@ func (c *Collector) timeout() time.Duration {
 // account already (Known), or reported cached by an account. Unanswered
 // checks just leave offers unmarked.
 func (c *Collector) markCached(ctx context.Context, offers []Offer) {
-	if len(c.Debrid) == 0 && c.Known == nil {
+	accounts := c.Debrid
+	if c.Accounts != nil {
+		accounts = c.Accounts.Ordered()
+	}
+	if len(accounts) == 0 && c.Known == nil {
 		return
 	}
 	var hashes []string
@@ -173,7 +179,7 @@ func (c *Collector) markCached(ctx context.Context, offers []Offer) {
 		}
 	}
 	var wg sync.WaitGroup
-	for _, p := range c.Debrid {
+	for _, p := range accounts {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

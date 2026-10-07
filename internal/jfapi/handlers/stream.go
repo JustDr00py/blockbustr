@@ -19,6 +19,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
+	"github.com/sysadmin/blockbustr/internal/metrics"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 )
@@ -195,7 +196,9 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, s
 	}
 	w.WriteHeader(resp.StatusCode)
 	if r.Method != http.MethodHead {
-		_, _ = io.Copy(w, resp.Body) // ends when either side hangs up
+		metrics.ActiveProxies.Inc()
+		_, _ = io.Copy(countingWriter{w}, resp.Body) // ends when either side hangs up
+		metrics.ActiveProxies.Dec()
 	}
 }
 
@@ -271,6 +274,15 @@ func (a *api) markBadChoice(ctx context.Context, item, choice uuid.UUID) {
 	if a.Cache != nil {
 		_ = a.Cache.AddToSet(ctx, cache.StreamBadKey(item.String()), cache.StreamBadTTL, choice.String())
 	}
+}
+
+// countingWriter counts proxied bytes as they go (a stream can last hours).
+type countingWriter struct{ w io.Writer }
+
+func (c countingWriter) Write(p []byte) (int, error) {
+	n, err := c.w.Write(p)
+	metrics.ProxiedBytes.Add(float64(n))
+	return n, err
 }
 
 // signatureOK checks a signed stream URL (a remote source's Path, P3.10).

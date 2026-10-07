@@ -107,6 +107,31 @@ Rule: `jfapi` depends on the domain packages, never the other way round. Domain 
     - Self or admin: `POST /Users/{id}/Password` (`CurrentPw` must match unless an admin sets someone else's; `ResetPassword` clears it, admin only) and `POST /Users/{id}` (rename).
     - A policy change or rename drops the user's cached sessions, so it applies at once. Disabling or deleting revokes every token.
     - An admin can't demote, disable or delete themselves, and the last enabled admin can't be demoted, disabled or deleted.
+- **Admin web UI (P4.3, `web/admin`, `internal/adminui`):**
+  - **App:** a React + Vite + TypeScript app with no UI library (about 75 KB gzipped). It's built into `internal/adminui/dist` (`make ui`; the Docker image builds it in a Node stage), embedded with `go:embed`, and served at **`/blockbustr/ui/`**. Hashed assets are cached for a year and other paths get `index.html`. A plain `go build` without the UI serves a page explaining how to build it.
+  - **Sign-in:** Jellyfin's own `AuthenticateByName`, administrators only. The token is kept in the browser's localStorage.
+  - **Pages:**
+    - Dashboard: server, devices, now playing.
+    - Libraries: the list, plus `POST /Library/Refresh` and the new `POST /blockbustr/catalogs/sync`.
+    - Users: the P4.1 API.
+    - Addons: the P3.4 API.
+    - Debrid: below.
+  - **Debrid admin API (`/blockbustr/debrid`, `debrid.Manager`):**
+    - `GET` lists the accounts and whether keys can be stored (needs `secret_key`).
+    - `POST /{provider}` takes `{ApiKey?, Enabled?, Priority?}`; a key is sealed like the config bootstrap and enables the account.
+    - `DELETE /{provider}` removes the account and its remembered torrents.
+    - `GET /{provider}/status` runs a live `AccountInfo` check.
+    - Keys are never returned. Every change reloads the live **`provider.Set`** shared by the resolver and the stream collector, so it applies without a restart. Keys from config are re-applied on the next start.
+- **Metrics and profiling (P4.4, `internal/metrics`):**
+  - **`/metrics`:** Prometheus, on the main port, only with `metrics.enabled`. `metrics.token` (env `BLOCKBUSTR_METRICS_TOKEN`) makes scrapes need `Authorization: Bearer <token>`, compared in constant time.
+  - **Metrics** (own registry, plus the Go and process collectors):
+    - `blockbustr_http_requests_total{route,method,code}` and `blockbustr_http_request_duration_seconds{route}`. **route is the chi pattern** (`/Items/{itemId}`), so labels stay bounded; unmatched paths are "unmatched".
+    - Streams: `blockbustr_stream_proxied_bytes_total` (counted as bytes flow) and `blockbustr_stream_active_proxies`.
+    - Resolver: `blockbustr_resolve_total{kind,result}` (file/url/debrid/torrent × ok/cached/downloading/error).
+    - Addons: `blockbustr_addon_requests_total{resource,result}` and `blockbustr_addon_request_duration_seconds{resource}`; cache hits aren't requests.
+    - Search: `blockbustr_search_duration_seconds`.
+    - Gauges: `blockbustr_transcode_sessions`, `blockbustr_debrid_accounts_active`, `blockbustr_db_connections_in_use|idle`.
+  - **pprof:** Go's `/debug/pprof/*` (index, named profiles, profile, trace, symbol, cmdline), for admins only (Jellyfin auth).
   - The admin is bootstrapped from `server.admin_username/admin_password` (env `BLOCKBUSTR_ADMIN_*`): created if missing, otherwise password reset and made an enabled admin (recovery). bcrypt hashes; >72-byte passwords are rejected.
   - Endpoints: `/Users/Me`, `/Users/{id}` (self or admin, otherwise 403), `/Users` (admin), `/Users/Public`, `POST /Sessions/Logout` (204), `/System/Info`, `/System/Endpoint` (IsLocal = loopback/private/link-local/CGNAT), `/QuickConnect/Enabled` → `false` until P2.12.
   - SessionInfo has a stable per-device `Id` (UUIDv5 of the DeviceId); live session state is P2.9.
@@ -755,6 +780,7 @@ transcode: { hwaccel: auto, segment_seconds: 3, max_sessions: 4 }   # hwaccel: a
 metadata:  { tmdb_api_key: "", language: en-US }                    # BLOCKBUSTR_TMDB_API_KEY
 debrid:    { realdebrid_api_key: "", torbox_api_key: "" }           # BLOCKBUSTR_REALDEBRID_API_KEY / _TORBOX_API_KEY
 search:    { enabled: true, timeout: 3s, retention: 168h, cinemeta_fallback: true }
+metrics:   { enabled: false, token: "" }                                 # BLOCKBUSTR_METRICS_TOKEN
 stremio:   { sync_interval: 6h, catalog_pages: 2,                  # addons themselves: /blockbustr/addons
              streams: { timeout: 6s, top: 3, languages: [], allow_groups: [], deny_groups: [] },
              subtitles: { languages: [], per_language: 3 } }

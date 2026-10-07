@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"path"
@@ -76,6 +77,49 @@ func stremioRef(it db.Item) (typ, id string, ok bool) {
 	}
 	typ, id, ok = strings.Cut(rest, ":")
 	return typ, id, ok && id != ""
+}
+
+// addonIDs are the ids to ask addons for an item's streams and subtitles,
+// best first. Most addons, and the services behind aggregators such as
+// AIOStreams, look titles up by IMDb id, so that form comes first when the
+// item has one (from its catalog or TMDB): "tt…" for a movie or series,
+// "tt…:season:episode" for an episode. The catalog's own id ("tmdb:603",
+// "kitsu:1") follows.
+func (a *api) addonIDs(ctx context.Context, it db.Item) (typ string, ids []string, ok bool) {
+	typ, native, ok := stremioRef(it)
+	if !ok {
+		return "", nil, false
+	}
+	if strings.HasPrefix(native, "tt") {
+		return typ, []string{native}, true
+	}
+	imdb := ""
+	switch it.Type {
+	case "Movie", "Series":
+		imdb = imdbOf(it)
+	case "Episode":
+		if it.ParentID != nil && it.IndexNumber != nil && it.ParentIndexNumber != nil {
+			if seasons, err := a.Queries.GetItemsByIDs(ctx, []uuid.UUID{*it.ParentID}); err == nil && len(seasons) == 1 && seasons[0].ParentID != nil {
+				if series, err := a.Queries.GetItemsByIDs(ctx, []uuid.UUID{*seasons[0].ParentID}); err == nil && len(series) == 1 {
+					if s := imdbOf(series[0]); s != "" {
+						imdb = fmt.Sprintf("%s:%d:%d", s, *it.ParentIndexNumber, *it.IndexNumber)
+					}
+				}
+			}
+		}
+	}
+	if imdb == "" {
+		return typ, []string{native}, true
+	}
+	return typ, []string{imdb, native}, true
+}
+
+func imdbOf(it db.Item) string {
+	var ids map[string]string
+	if json.Unmarshal(it.ProviderIds, &ids) == nil && strings.HasPrefix(ids["Imdb"], "tt") {
+		return ids["Imdb"]
+	}
+	return ""
 }
 
 // choiceSources are the sources a set's choices stand for, in its order,
@@ -159,7 +203,7 @@ func (a *api) loadPlaySources(ctx context.Context, b *itemBatch, it db.Item) err
 // the streams best first, and the subtitles. No streams is not an error:
 // the item keeps its placeholder source.
 func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) (streamSet, error) {
-	typ, id, ok := stremioRef(it)
+	typ, ids, ok := a.addonIDs(ctx, it)
 	if !ok || a.Streams == nil {
 		return streamSet{}, nil
 	}
@@ -168,11 +212,17 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	go func() {
 		defer close(done)
 		var err error
-		if subs, err = a.Streams.Subtitles(ctx, typ, id); err != nil {
+		if subs, err = a.Streams.Subtitles(ctx, typ, ids[0]); err != nil {
 			a.Log.WarnContext(ctx, "subtitle collection failed", "item", it.ID, "err", err)
 		}
 	}()
-	offers, err := a.Streams.Collect(ctx, typ, id)
+	var offers []stremio.Offer
+	var err error
+	for _, id := range ids {
+		if offers, err = a.Streams.Collect(ctx, typ, id); err != nil || len(offers) > 0 {
+			break
+		}
+	}
 	<-done
 	if err != nil {
 		return streamSet{}, err

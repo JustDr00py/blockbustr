@@ -243,3 +243,70 @@ func TestAddonsNeedSecretKey(t *testing.T) {
 		t.Errorf("list without key = %d %s", rec.Code, rec.Body)
 	}
 }
+
+// An addon's URL can change to another configuration of the same addon
+// (a new debrid key): it keeps its id, priority and catalog choices, and
+// the URL is still never shown.
+func TestAddonURLChange(t *testing.T) {
+	f := newAddonFixture(t, bytes.Repeat([]byte{3}, 32))
+	server := strings.TrimSuffix(f.url, "/"+addonConfig+"/manifest.json")
+	code, ad := f.call(t, "POST", "/blockbustr/addons", `{"Url":"`+f.url+`","Priority":7}`)
+	if code != 200 {
+		t.Fatalf("add: %d %v", code, ad)
+	}
+	id := ad["Id"].(string)
+	if code, _ := f.call(t, "POST", "/blockbustr/addons/"+id+"/catalogs/movie/top", `{"Enabled":true}`); code != 200 {
+		t.Fatalf("enable catalog: %d", code)
+	}
+
+	newURL := server + "/providers=yts|realdebrid=SECRETKEY456/manifest.json"
+	code, ad = f.call(t, "POST", "/blockbustr/addons/"+id, `{"Url":"`+newURL+`"}`)
+	if code != 200 || ad["Id"] != id || ad["Priority"].(float64) != 7 || catalogState(t, ad)["movie/top"]["Enabled"] != true {
+		t.Fatalf("change URL: %d %v", code, ad)
+	}
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored, err := testutilBase(t, f, uid)
+	if err != nil || !strings.Contains(stored, "SECRETKEY456") {
+		t.Errorf("stored URL not the new one: %v", err)
+	}
+
+	// Another addon's manifest at the new URL: refused, nothing changes.
+	orig := *f.manifest.Load()
+	other, err := os.ReadFile("../../stremio/testdata/torrentio-manifest.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.manifest.Store(&other)
+	if code, out := f.call(t, "POST", "/blockbustr/addons/"+id, `{"Url":"`+server+`/other/manifest.json"}`); code != 400 {
+		t.Errorf("different addon: %d %v", code, out)
+	}
+	f.manifest.Store(&orig)
+
+	// A URL another addon already has: 409. An unreachable one: 502.
+	third := server + "/providers=yts|realdebrid=SECRETKEY789/manifest.json"
+	if code, _ := f.call(t, "POST", "/blockbustr/addons", `{"Url":"`+third+`"}`); code != 200 {
+		t.Fatalf("second addon: %d", code)
+	}
+	if code, _ := f.call(t, "POST", "/blockbustr/addons/"+id, `{"Url":"`+third+`"}`); code != 409 {
+		t.Errorf("taken URL: %d", code)
+	}
+	if code, _ := f.call(t, "POST", "/blockbustr/addons/"+id, `{"Url":"http://127.0.0.1:1/x/manifest.json"}`); code != 502 {
+		t.Errorf("unreachable URL: %d", code)
+	}
+	if stored, _ := testutilBase(t, f, uid); !strings.Contains(stored, "SECRETKEY456") {
+		t.Error("a failed change altered the stored URL")
+	}
+}
+
+// testutilBase opens an addon's stored (sealed) URL.
+func testutilBase(t *testing.T, f *addonFixture, id uuid.UUID) (string, error) {
+	t.Helper()
+	row, err := db.New(testPool).GetStremioAddon(t.Context(), id)
+	if err != nil {
+		return "", err
+	}
+	return f.reg.Base(row)
+}

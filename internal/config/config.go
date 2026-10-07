@@ -39,6 +39,13 @@ type Config struct {
 	Scan      Scan      `yaml:"scan"`
 	Stremio   Stremio   `yaml:"stremio"`
 	Search    Search    `yaml:"search"`
+	Metrics   Metrics   `yaml:"metrics"`
+}
+
+// Metrics configures the Prometheus endpoint (TASKS P4.4).
+type Metrics struct {
+	Enabled bool   `yaml:"enabled"` // serve /metrics
+	Token   string `yaml:"token"`   // when set, scrapes need "Authorization: Bearer <token>" (env BLOCKBUSTR_METRICS_TOKEN)
 }
 
 // Search configures in-client search beyond the library (DESIGN §7.4).
@@ -283,6 +290,7 @@ var envOverrides = []struct {
 	{"BLOCKBUSTR_REALDEBRID_API_KEY", func(c *Config, v string) { c.Debrid.RealDebridAPIKey = v }},
 	{"BLOCKBUSTR_TORBOX_API_KEY", func(c *Config, v string) { c.Debrid.TorBoxAPIKey = v }},
 	{"BLOCKBUSTR_SECRET_KEY", func(c *Config, v string) { c.SecretKey = v }},
+	{"BLOCKBUSTR_METRICS_TOKEN", func(c *Config, v string) { c.Metrics.Token = v }},
 	{"BLOCKBUSTR_LOG_LEVEL", func(c *Config, v string) { c.Log.Level = v }},
 	{"BLOCKBUSTR_LOG_FORMAT", func(c *Config, v string) { c.Log.Format = v }},
 }

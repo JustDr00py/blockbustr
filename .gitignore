@@ -10,3 +10,10 @@ scripts/capture/scrub.local.txt
 *.mitm
 /deploy/recon/captures/
 /deploy/recon/data/
+# admin UI: dependencies and build output (built by `make ui` / the Docker image)
+/web/admin/node_modules/
+/internal/adminui/dist/*
+!/internal/adminui/dist/.gitkeep
+
+# ZCode agent session artifacts
+/.zcode/

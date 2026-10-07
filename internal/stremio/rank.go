@@ -32,6 +32,7 @@ type Info struct {
 var (
 	reHeight  = regexp.MustCompile(`(?i)\b(2160|1080|720|576|480)[pi]\b`)
 	re4K      = regexp.MustCompile(`(?i)\b(4k|uhd)\b`)
+	reFHD     = regexp.MustCompile(`(?i)\bfhd\b`)
 	reHDR     = regexp.MustCompile(`(?i)\b(hdr10\+?|hdr)\b`)
 	reDV      = regexp.MustCompile(`(?i)\b(dv|dovi|dolby vision)\b`)
 	reHEVC    = regexp.MustCompile(`(?i)\b(x265|h 265|h265|hevc)\b`)
@@ -80,6 +81,8 @@ func Parse(s Stream) Info {
 		in.Height, _ = strconv.Atoi(m[1])
 	} else if re4K.MatchString(words) {
 		in.Height = 2160
+	} else if reFHD.MatchString(words) {
+		in.Height = 1080 // AIOStreams' "FHD"
 	}
 	in.HDR = reHDR.MatchString(words)
 	in.DV = reDV.MatchString(words)

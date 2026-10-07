@@ -33,6 +33,7 @@ import (
 	"golang.org/x/sync/singleflight"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
+	"github.com/sysadmin/blockbustr/internal/metrics"
 	"github.com/sysadmin/blockbustr/internal/provider"
 )
 
@@ -46,6 +47,21 @@ const (
 	Debrid                  // Provider, TorrentID, FileID
 	Torrent                 // InfoHash, FileIdx
 )
+
+// String names k for metrics and logs.
+func (k Kind) String() string {
+	switch k {
+	case File:
+		return "file"
+	case URL:
+		return "url"
+	case Debrid:
+		return "debrid"
+	case Torrent:
+		return "torrent"
+	}
+	return "unknown"
+}
 
 // Source is something playable.
 type Source struct {
@@ -226,6 +242,9 @@ type Resolver struct {
 	// priority, for adding torrents.
 	Providers map[provider.Name]provider.Provider
 	Order     []provider.Name
+	// Accounts, when set, replaces Providers/Order: the live set an admin
+	// can change without a restart.
+	Accounts *provider.Set
 	// Torrents remembers the torrents added to the accounts; nil adds a
 	// torrent on every resolve that misses the link cache.
 	Torrents TorrentStore
@@ -267,7 +286,20 @@ func (r *Resolver) client() *http.Client {
 }
 
 // Resolve returns where src's bytes are, from the cache when it's there.
-func (r *Resolver) Resolve(ctx context.Context, src Source) (Link, error) {
+func (r *Resolver) Resolve(ctx context.Context, src Source) (l Link, err error) {
+	cached := false
+	defer func() {
+		result := "ok"
+		switch {
+		case errors.Is(err, ErrDownloading):
+			result = "downloading"
+		case err != nil:
+			result = "error"
+		case cached:
+			result = "cached"
+		}
+		metrics.Resolves.WithLabelValues(src.Kind.String(), result).Inc()
+	}()
 	switch src.Kind {
 	case File:
 		fi, err := os.Stat(src.Path)
@@ -280,9 +312,9 @@ func (r *Resolver) Resolve(ctx context.Context, src Source) (Link, error) {
 		return Link{}, fmt.Errorf("%w: kind %d", ErrNotResolvable, src.Kind)
 	}
 	key := src.key()
-	var l Link
 	if r.Cache != nil {
 		if ok, err := r.Cache.GetJSON(ctx, cache.LinkKey(key), &l); err == nil && ok {
+			cached = true
 			return l, nil
 		}
 	}
@@ -306,7 +338,7 @@ func (r *Resolver) resolve(ctx context.Context, src Source) (Link, time.Duration
 	case Torrent:
 		return r.torrent(ctx, src)
 	}
-	if d, ok := jellybird(src.URL); ok && r.Providers[d.Provider] != nil {
+	if d, ok := jellybird(src.URL); ok && r.account(d.Provider) != nil {
 		l, ttl, err := r.debrid(ctx, d)
 		if err == nil {
 			return l, ttl, nil
@@ -328,7 +360,7 @@ func (r *Resolver) resolve(ctx context.Context, src Source) (Link, time.Duration
 // debrid asks the provider for a fresh link to a file, cached for the
 // lifetime the provider gives (clamped to 5 min–24 h).
 func (r *Resolver) debrid(ctx context.Context, src Source) (Link, time.Duration, error) {
-	p := r.Providers[src.Provider]
+	p := r.account(src.Provider)
 	if p == nil {
 		return Link{}, 0, fmt.Errorf("%w: no %s account", ErrNotResolvable, src.Provider)
 	}
@@ -372,6 +404,14 @@ func (r *Resolver) follow(ctx context.Context, target string) (Link, error) {
 		l.Size = max(resp.ContentLength, 0)
 	}
 	return l, nil
+}
+
+// account is the debrid account for name, or nil.
+func (r *Resolver) account(name provider.Name) provider.Provider {
+	if r.Accounts != nil {
+		return r.Accounts.Get(name)
+	}
+	return r.Providers[name]
 }
 
 // Forget drops src's cached link (it expired or stopped working).

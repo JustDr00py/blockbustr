@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P4.3 Admin web UI (React + Vite, embedded): libraries, users, addons, debrid, scans, sessions
+- [ ] P4.5 `scripts/seed` 50k items + vegeta load test; hit p95 targets [§1, §9.6]
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -179,8 +179,11 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
   - Open: non-admin default policy values vs a Jellyfin-created non-admin; the stream endpoint is anonymous (as Jellyfin), so policy can't limit a URL already handed out; no admin UI until P4.3
 - [ ] P4.2 Kodi Sync Queue endpoints backed by `library_events` [§3.5]
   - Skipped 2026-10-07 by user decision (not needed now)
-- [ ] P4.3 Admin web UI (React + Vite, embedded): libraries, users, addons, debrid, scans, sessions
-- [ ] P4.4 Prometheus `/metrics`; pprof behind admin
+- [x] P4.3 Admin web UI (React + Vite, embedded): libraries, users, addons, debrid, scans, sessions
+  - Done 2026-10-07 (DESIGN §3.2): `/blockbustr/ui/` (web/admin, embedded via internal/adminui; `make ui`, Docker Node stage), admin sign-in via AuthenticateByName; dashboard (devices, now playing), libraries + scan + catalog sync, users (P4.1 policies, passwords), addons (P3.4 API, catalogs), debrid (new `/blockbustr/debrid` API: keys sealed, live reload through `provider.Set`, key check). Checked in Chrome against the dev server: all pages load live data; key check reports RD ok, TorBox 403.
+  - Follow-ups: no favicon (one 404 in the console); config-defined libraries can't be edited from the UI; no frontend unit tests (type-checked; `make ui-check`)
+- [x] P4.4 Prometheus `/metrics`; pprof behind admin
+  - Done 2026-10-07 (DESIGN §3.2): `internal/metrics` (HTTP by route pattern, proxied bytes and active proxies, resolver outcomes, addon requests and latency, search latency, transcode/debrid/DB pool gauges, Go and process collectors); `/metrics` when `metrics.enabled`, optional bearer token; admin-only `/debug/pprof/*`. Live: /metrics off by default (404), pprof 401 anonymous, 200 for an admin.
 - [ ] P4.5 `scripts/seed` 50k items + vegeta load test; hit p95 targets [§1, §9.6]
 - [ ] P4.6 Backups: pg_dump job docs; Redis rebuild-from-PG test
 - [ ] P4.7 Release: multi-arch Docker image, versioning, README, LICENSE choice

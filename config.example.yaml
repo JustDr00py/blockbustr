@@ -61,3 +61,6 @@ search:                        # the clients' search also finds titles you don't
   timeout: 3s                  # budget for one search; slower sources are left out
   retention: 168h              # found titles nobody played or favourited are dropped after this
   cinemeta_fallback: true      # search Cinemeta when no enabled addon has a search catalog
+metrics:                       # Prometheus (P4.4); pprof is at /debug/pprof/ for admins either way
+  enabled: false               # serve /metrics on the main port
+  token: ""                    # require "Authorization: Bearer <token>" (better: BLOCKBUSTR_METRICS_TOKEN in .env)

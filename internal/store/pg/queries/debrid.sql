@@ -39,3 +39,11 @@ DELETE FROM debrid_torrents WHERE provider = $1 AND info_hash = $2;
 SELECT DISTINCT info_hash
 FROM debrid_torrents
 WHERE info_hash = ANY(@hashes::text[]) AND status = 'ready';
+
+-- name: SetDebridAccount :execrows
+-- An admin turns an account on or off or changes its priority (P4.3).
+UPDATE debrid_accounts
+SET enabled    = coalesce(sqlc.narg('enabled'), enabled),
+    priority   = coalesce(sqlc.narg('priority'), priority),
+    updated_at = now()
+WHERE provider = @provider;

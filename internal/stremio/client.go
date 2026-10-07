@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
+	"github.com/sysadmin/blockbustr/internal/metrics"
 )
 
 // DefaultTimeout bounds one addon request when the caller's context has no
@@ -205,7 +206,18 @@ func (c *Client) store(ctx context.Context, key cache.Key, v any, ttl time.Durat
 }
 
 // get fetches base/path into out. Errors never contain base itself.
-func (c *Client) get(ctx context.Context, base, path string, out any) error {
+func (c *Client) get(ctx context.Context, base, path string, out any) (err error) {
+	start := time.Now()
+	defer func() {
+		res, _, _ := strings.Cut(path, "/") // "stream/movie/tt1.json" → stream
+		res = strings.TrimSuffix(res, ".json")
+		result := "ok"
+		if err != nil {
+			result = "error"
+		}
+		metrics.AddonRequests.WithLabelValues(res, result).Inc()
+		metrics.AddonDuration.WithLabelValues(res).Observe(time.Since(start).Seconds())
+	}()
 	name := Redact(base)
 	timeout := c.Timeout
 	if timeout <= 0 {
