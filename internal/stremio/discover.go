@@ -46,8 +46,12 @@ type Discover struct {
 	Retention time.Duration
 	// Refresh enriches the discover library's new titles (TMDB); nil skips.
 	Refresh func(ctx context.Context, lib db.Library) error
-	// Fallback is searched when no enabled addon has a search catalog;
-	// "" searches nothing then.
+	// TMDB, when set, is the primary source: its results come first and
+	// addons' are merged in after. Without it, addons are searched, or
+	// Fallback (Cinemeta) when no enabled addon has a search catalog.
+	TMDB *TMDBSearch
+	// Fallback is searched when there's neither TMDB nor an addon search
+	// catalog; "" searches nothing then.
 	Fallback string
 
 	mu      sync.Mutex
@@ -55,6 +59,9 @@ type Discover struct {
 	refresh chan struct{}
 	flight  singleflight.Group
 }
+
+// primaryGrace is how long other sources may still answer once TMDB has.
+const primaryGrace = time.Second
 
 // found is one search result.
 type found struct {
@@ -128,7 +135,7 @@ func (d *Discover) sources(ctx context.Context, kinds []string) []searchSource {
 				break // one search catalog per addon and kind
 			}
 		}
-		if n == 0 && d.Fallback != "" {
+		if n == 0 && d.TMDB == nil && d.Fallback != "" {
 			out = append(out, searchSource{base: d.Fallback, catalog: "top", kind: k})
 		}
 	}
@@ -146,23 +153,61 @@ func (d *Discover) search(ctx context.Context, term string, kinds []string) []fo
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	sources := d.sources(ctx, kinds)
-	per := make([][]found, len(sources))
-	var wg sync.WaitGroup
-	for i, s := range sources {
-		wg.Add(1)
+	// per[0] is TMDB's (both kinds, first); then one list per addon source.
+	// Sources run on a context of their own, so one that misses the
+	// search still finishes and caches its answer for the next search.
+	per := make([][]found, len(sources)+1)
+	type answer struct {
+		i    int
+		list []found
+	}
+	answers := make(chan answer, len(sources)+1)
+	run := func(i int, host string, fetch func(context.Context) ([]found, error)) {
 		go func() {
-			defer wg.Done()
-			metas, err := d.catalogSearch(ctx, s, term)
+			sctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), timeout)
+			defer cancel()
+			list, err := fetch(sctx)
 			if err != nil {
-				d.Log.Debug("search source failed", "host", Redact(s.base), "kind", s.kind, "err", err)
-				return
+				d.Log.Debug("search source failed", "host", host, "err", err)
 			}
-			for _, m := range metas {
-				per[i] = append(per[i], found{Type: s.kind, Meta: m, Addon: s.addon})
-			}
+			answers <- answer{i, list}
 		}()
 	}
-	wg.Wait()
+	pending := len(sources)
+	if d.TMDB != nil {
+		pending++
+		run(0, "tmdb", func(ctx context.Context) ([]found, error) {
+			res, err := d.TMDB.Search(ctx, term)
+			return slices.DeleteFunc(res, func(f found) bool { return !slices.Contains(kinds, f.Type) }), err
+		})
+	}
+	for i, s := range sources {
+		run(i+1, Redact(s.base), func(ctx context.Context) ([]found, error) {
+			metas, err := d.catalogSearch(ctx, s, term)
+			out := make([]found, 0, len(metas))
+			for _, m := range metas {
+				out = append(out, found{Type: s.kind, Meta: m, Addon: s.addon})
+			}
+			return out, err
+		})
+	}
+	// Wait for every source within the budget; once TMDB (the primary)
+	// has answered, the others get at most primaryGrace more.
+	var grace <-chan time.Time
+	for pending > 0 {
+		select {
+		case a := <-answers:
+			per[a.i] = a.list
+			pending--
+			if a.i == 0 && d.TMDB != nil && grace == nil {
+				grace = time.After(primaryGrace)
+			}
+		case <-grace:
+			pending = 0
+		case <-ctx.Done():
+			pending = 0
+		}
+	}
 
 	byKind := map[string][]found{}
 	seen := map[string]bool{}

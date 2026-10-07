@@ -183,6 +183,9 @@ func run() error {
 			Registry: addons, Cache: rc, Log: log, Timeout: cfg.Search.Timeout, Retention: cfg.Search.Retention,
 			Refresh: refresher.Refresh,
 		}
+		if tmdbClient != nil {
+			discover.TMDB = &stremio.TMDBSearch{Client: tmdbClient, Cache: rc}
+		}
 		if cfg.Search.CinemetaFallback {
 			discover.Fallback = stremio.CinemetaURL
 		}

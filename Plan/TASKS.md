@@ -154,7 +154,8 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 - Reference for P3.12–P3.13: lostb1t/remux (Rust, Jellyfin-compatible, Stremio addons, search in the Jellyfin UI)
 - [x] P3.12 `search.Provider` interface + Cinemeta provider (no key) + TMDB provider (when keyed) + addon search catalogs; parallel fan-out with a time budget, Redis `search:*` cache [§7.4]
   - Done 2026-10-07 (DESIGN §7.4 item 8): `stremio.Discover` searches every enabled addon's search catalog (Cinemeta when none), in parallel within 3 s, cached 1 h; `search` config. Live: "paddington" 1.4 s.
-  - Follow-up: TMDB as a search source (titles TMDB knows but Cinemeta doesn't); only IMDb-keyed results are kept
+  - TMDB added 2026-10-07 as the primary source when keyed (`stremio.TMDBSearch`: multi-search, IMDb ids via external_ids, cached 30 days; others get 1 s once TMDB has answered). Live: uncached searches 0.2–1.3 s, Conclave found and played.
+  - Only IMDb-keyed results are kept (stream addons need them)
 - [x] P3.13 Hidden `discover` library + deterministic UUIDv5 item IDs + upsert of remote results (with posters/backdrops into `images`) + retention GC
   - Done 2026-10-07: migration 00015 (`discover` kind); UUIDv5 ids from the IMDb id; artwork from the addon, TMDB enrichment in the background; hidden from views and browsing; hourly cleanup after 7 days unless played/favourited/started
 - [x] P3.14 Merge remote results into `/Items?searchTerm=` (and `/Search/Hints`): library first, dedupe by provider IDs, honour type filters and limits

@@ -69,6 +69,7 @@ type Result struct {
 	MediaType     string  `json:"media_type"`
 	Overview      string  `json:"overview"`
 	PosterPath    string  `json:"poster_path"`
+	BackdropPath  string  `json:"backdrop_path"`
 	VoteAverage   float64 `json:"vote_average"`
 }
 

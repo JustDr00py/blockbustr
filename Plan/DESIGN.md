@@ -536,7 +536,13 @@ Every captured client searches through `GET /Items?searchTerm=…&recursive=true
    - Verify per client in the P3 manual matrix.
 7. **Later (optional):** `/Items/Suggestions` and the home rows can also be filled from addon catalogs ("Trending on Cinemeta"), driven by the same machinery.
 8. **Implemented (P3.12–P3.15, `stremio.Discover`, migration 00015):**
-   - **Sources:** each enabled addon with a movie or series catalog that accepts `search` (and requires nothing else), one catalog per addon and kind. Built-in Cinemeta is used for a kind no addon searches (`search.cinemeta_fallback`). They're asked in parallel within `search.timeout` (3 s); a late or failing source is left out. Each source's results are cached 1 h (`search:{addonKey:catalog}:{kind}:{term}`). Only IMDb-keyed results (`tt…`) are kept, because stream addons look titles up by them. **TMDB search isn't a source yet** (follow-up); TMDB still enriches found titles.
+   - **Sources:**
+     - **TMDB** (`stremio.TMDBSearch`, when `metadata.tmdb_api_key` is set) is the primary source. It runs `/search/multi` (`metadata.language`), maps the top 12 results to IMDb ids through `/external_ids` in parallel, and drops results without one. Mappings are cached 30 days, a missing one 1 day; transient errors aren't cached.
+     - **Addons:** each enabled addon with a movie or series catalog that accepts `search` (and requires nothing else), one catalog per addon and kind. Their results are merged in after TMDB's.
+     - **Cinemeta** is built in for a kind neither TMDB nor an addon covers (`search.cinemeta_fallback`): blockbustr without a TMDB key.
+     - **Timing:** sources run in parallel within `search.timeout` (3 s). Once TMDB has answered, the others get at most 1 s more. A source that misses the cut finishes in the background and caches its answer.
+     - **Caching:** each source's results are cached 1 h (`search:{source}:{kind}:{term}`). Only IMDb-keyed results (`tt…`) are kept, because stream addons look titles up by them.
+     - **Live:** uncached searches take 0.2–1.3 s; TMDB finds misspellings ("oppenhiemer").
    - **Merge:** kinds interleaved by rank (movie 1, series 1, movie 2…), each IMDb id once, higher-priority addons first. A title already in an enabled library (`LibraryItemsByImdb`) is returned as the library's item. `/Items` and `/Search/Hints` put remote matches after the library's (`withRemoteMatches`).
    - **Discover library:** `kind='discover'`, named `blockbustr:discover`. It has no CollectionFolder, so it isn't a view, and `DisableLibrariesExcept` skips it.
      - Items are upserted with **id = UUIDv5(ns, "imdb:tt…")**, `path` = `stremio:{type}:{id}` (so P3.7–P3.9 streams and subtitles work unchanged), the addon's poster/backdrop/logo, year and overview. The metadata refresher (TMDB) then runs on the library in the background.

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
+	"github.com/sysadmin/blockbustr/internal/metadata/tmdb"
 	"github.com/sysadmin/blockbustr/internal/stremio"
 	"github.com/sysadmin/blockbustr/internal/testutil"
 )
@@ -183,5 +184,103 @@ func TestSearchBeyondLibrary(t *testing.T) {
 	// Found again later: the same id, so clients' cached ids keep working.
 	if again := search("matrix", "Series"); len(again) != 1 || again[0].Id != series.Id {
 		t.Errorf("found again: %+v, want id %s", again, series.Id)
+	}
+}
+
+// fakeTMDB answers /search/multi for "matrix" (The Matrix, a movie and a
+// show only TMDB knows, a movie without an IMDb id, a person) and their
+// /external_ids, counting the lookups.
+func fakeTMDB(t *testing.T) (*tmdb.Client, *atomic.Int32) {
+	t.Helper()
+	var lookups atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/search/multi":
+			if !strings.EqualFold(r.URL.Query().Get("query"), "matrix") {
+				_, _ = w.Write([]byte(`{"results":[]}`))
+				return
+			}
+			_, _ = w.Write([]byte(`{"results":[
+				{"id":603,"media_type":"movie","title":"The Matrix","release_date":"1999-03-30"},
+				{"id":99002,"media_type":"tv","name":"TMDB Show","first_air_date":"2023-05-01","poster_path":"/show.jpg","backdrop_path":"/show-bd.jpg","overview":"Only on TMDB."},
+				{"id":99001,"media_type":"movie","title":"TMDB Only Film","release_date":"2026-01-02"},
+				{"id":99003,"media_type":"movie","title":"No IMDb Id"},
+				{"id":7,"media_type":"person","name":"Keanu Reeves"}]}`))
+		case "/movie/603/external_ids":
+			lookups.Add(1)
+			_, _ = w.Write([]byte(`{"imdb_id":"tt0133093"}`))
+		case "/movie/99001/external_ids":
+			lookups.Add(1)
+			_, _ = w.Write([]byte(`{"imdb_id":"tt8888801"}`))
+		case "/tv/99002/external_ids":
+			lookups.Add(1)
+			_, _ = w.Write([]byte(`{"imdb_id":"tt8888802"}`))
+		case "/movie/99003/external_ids":
+			lookups.Add(1)
+			_, _ = w.Write([]byte(`{"imdb_id":null}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	c := tmdb.New("test-key", "en-US")
+	c.SetBaseURL(srv.URL)
+	return c, &lookups
+}
+
+// With TMDB, its results come first, addons' are merged in after (each
+// title once by IMDb id), and results without an IMDb id are dropped.
+func TestSearchTMDBFirst(t *testing.T) {
+	var disc *stremio.Discover
+	client, lookups := fakeTMDB(t)
+	sf := newSyncFixture(t, func(d *Deps) {
+		disc = &stremio.Discover{Registry: d.Addons, Cache: d.Cache, Log: testutil.Discard(), Timeout: 5 * time.Second,
+			TMDB: &stremio.TMDBSearch{Client: client, Cache: d.Cache}}
+		d.RemoteSearch = disc
+	})
+	sf.syncAll(t)
+	addonURL, _ := fakeSearchAddon(t)
+	if _, err := disc.Registry.Add(t.Context(), addonURL, 5); err != nil {
+		t.Fatal(err)
+	}
+	search := func() []searchHit {
+		t.Helper()
+		var out struct{ Items []searchHit }
+		getJSON(t, sf.h, "/Items?recursive=true&limit=20&fields=ProviderIds&searchTerm=matrix&includeItemTypes=Movie,Series", &out)
+		return out.Items
+	}
+	hits := search()
+	var got []string
+	for _, h := range hits {
+		got = append(got, h.Name)
+	}
+	// Library first; then by rank, kinds interleaved: TMDB's movie (The
+	// Matrix, the library's) and show, TMDB's second movie, then the
+	// addon's that TMDB didn't have.
+	want := []string{"The Matrix", "The Matrix Reloaded", "The Matrix Resurrections",
+		"TMDB Show", "TMDB Only Film", "Matrix: The Series", "Matrix Fan Film"}
+	if strings.Join(got, " | ") != strings.Join(want, " | ") {
+		t.Fatalf("hits:\n %q\nwant\n %q", got, want)
+	}
+	show := hits[3]
+	if show.Type != "Series" || show.ProviderIds["Imdb"] != "tt8888802" || show.ProviderIds["Tmdb"] != "99002" || show.ImageTags["Primary"] == "" ||
+		show.Id != dto.IDFromUUID(stremio.DiscoverID("tt8888802")).String() {
+		t.Errorf("TMDB show: %+v", show)
+	}
+	var detail struct{ Overview string }
+	getJSON(t, sf.h, "/Items/"+show.Id, &detail)
+	if detail.Overview != "Only on TMDB." {
+		t.Errorf("overview %q", detail.Overview)
+	}
+	// IMDb lookups are cached: searching again asks TMDB for none.
+	n := lookups.Load()
+	if n != 4 {
+		t.Errorf("lookups = %d, want 4", n)
+	}
+	if again := search(); len(again) != len(hits) {
+		t.Errorf("again: %d hits", len(again))
+	}
+	if lookups.Load() != n {
+		t.Errorf("lookups repeated: %d", lookups.Load()-n)
 	}
 }
