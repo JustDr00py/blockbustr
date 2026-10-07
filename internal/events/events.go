@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -56,7 +57,7 @@ func (b *Bus) Publish(ctx context.Context, e Event) {
 	}
 	// Items or user data changed: cached query results are stale now.
 	if e.Kind == LibraryChanged || e.Kind == UserDataChanged {
-		if _, err := b.Cache.Incr(context.WithoutCancel(ctx), cache.QueryGenKey()); err != nil && b.Log != nil {
+		if err := b.Cache.SetJSON(context.WithoutCancel(ctx), cache.QueryGenKey(), time.Now().UnixNano(), 0); err != nil && b.Log != nil {
 			b.Log.WarnContext(ctx, "retiring cached queries failed", "err", err)
 		}
 	}

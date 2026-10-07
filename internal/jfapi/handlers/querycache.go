@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"time"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/store/pg"
@@ -30,8 +31,15 @@ func cachedQuery[T any](ctx context.Context, a *api, kind, query string, run fun
 		return run()
 	}
 	var gen int64
-	if _, err := a.Cache.GetJSON(ctx, cache.QueryGenKey(), &gen); err != nil {
+	ok, err := a.Cache.GetJSON(ctx, cache.QueryGenKey(), &gen)
+	if err != nil {
 		return run()
+	}
+	if !ok { // lost (flushed or evicted): start a generation newer than any kept result
+		gen = time.Now().UnixNano()
+		if err := a.Cache.SetJSON(ctx, cache.QueryGenKey(), gen, 0); err != nil {
+			return run()
+		}
 	}
 	sum := sha256.Sum256([]byte(query))
 	key := cache.QueryKey(kind, gen, hex.EncodeToString(sum[:16]))
@@ -39,7 +47,7 @@ func cachedQuery[T any](ctx context.Context, a *api, kind, query string, run fun
 	if ok, err := a.Cache.GetJSON(ctx, key, &v); err == nil && ok {
 		return v, nil
 	}
-	v, err := run()
+	v, err = run()
 	if err == nil {
 		if err := a.Cache.SetJSON(ctx, key, v, cache.QueryTTL); err != nil {
 			a.Log.WarnContext(ctx, "caching a query result failed", "kind", kind, "err", err)

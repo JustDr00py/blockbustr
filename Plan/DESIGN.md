@@ -373,6 +373,9 @@ Queries live in `internal/store/pg/queries/*.sql` and are compiled with sqlc (`s
 | channel `events` | pub/sub of typed events | — |
 
 Redis is a **cache and coordination layer only**. Everything has to be rebuildable from Postgres, and a cold Redis must never lose user data.
+- **Checked (P4.6):** `TestRedisRebuildFromPostgres` writes a favourite and a progress report, empties Redis, and gets byte-identical answers (signed-in user, views, lists, Latest, Resume, Next Up, details). Tokens fall back to `access_tokens`, and stream choices are collected again (their ids are deterministic).
+- **Query generation:** `q:gen` is the time of the last event, not a counter. Redis may evict it (`allkeys-lru`) while `q:*` results remain; a counter would start over and bring them back. A lost generation is set to the current time on the next read.
+- **Backups (P4.6):** `deploy/backup.sh` (`pg_dump --format=custom` in the Postgres container, newest `KEEP` kept), plus `BLOCKBUSTR_SECRET_KEY`, without which sealed addon URLs and debrid keys can't be read. Restore with `pg_restore --clean --if-exists`, then restart Redis. Steps and a systemd timer are in `deploy/README.md`.
 
 **Implemented (P1.5)** in `internal/cache`, on go-redis v9:
 - Every key is prefixed `bb:`, so a Redis can be shared with other apps.

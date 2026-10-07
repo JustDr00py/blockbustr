@@ -84,11 +84,6 @@ func decode(k Key, cmd *redis.StringCmd, dst any) (bool, error) {
 	return true, nil
 }
 
-// Incr adds one to the counter at k (made at 0) and returns the new value.
-func (c *Cache) Incr(ctx context.Context, k Key) (int64, error) {
-	return c.rdb.Incr(ctx, c.key(k)).Result()
-}
-
 // Delete removes keys; missing keys are not an error.
 func (c *Cache) Delete(ctx context.Context, keys ...Key) error {
 	if len(keys) == 0 {

@@ -6,6 +6,7 @@ scripts/capture/scrub.local.txt
 .env
 /config.yaml
 /deploy/data/
+/deploy/backups/
 # mitmproxy captures and the recon Jellyfin's data hold real tokens and links
 *.mitm
 /deploy/recon/captures/

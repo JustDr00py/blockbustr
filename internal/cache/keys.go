@@ -81,8 +81,12 @@ func StremioMetaKey(addon, typ, id string) Key {
 	return Key("stremio:meta:" + addon + ":" + typ + ":" + id)
 }
 
-// QueryGenKey counts library and user-data events (events.Bus.Publish). The
-// q:* result keys embed it, so an event retires every cached result at once.
+// QueryGenKey holds the query generation: the time (Unix ns) of the last
+// library or user-data event (events.Bus.Publish), or of the first read
+// after Redis lost it. The q:* result keys embed it, so an event retires
+// every cached result at once. A time, not a counter: Redis may evict the
+// key (allkeys-lru) while results remain, and a counter starting over
+// would bring those back.
 func QueryGenKey() Key { return Key("q:gen") }
 
 // QueryKey holds one query result (kind: count, nextup…) for one

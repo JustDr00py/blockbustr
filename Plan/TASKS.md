@@ -4,7 +4,7 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 
 ## Now
 - [x] AIOStreams fixes 2026-10-07 (user report): TMDB-keyed catalogs asked by IMDb id first (AIOStreams returned 0 streams for `tmdb:` ids; OpenSubtitles only knows IMDb); "FHD" read as 1080p; ready stream choices probed (tracks, audio switching, default audio in the preferred language, real play decisions); preferred language defaults to metadata.language. Follow-ups: rank by probed audio languages, not just the addon's flags; `TestCatalogStreamsAsMediaSources` fails since the quota commit (a CAM rip fills the 4th HD slot) — decision pending
-- [ ] P4.6 Backups: pg_dump job docs; Redis rebuild-from-PG test
+- [ ] P4.7 Release: multi-arch Docker image, versioning, README, LICENSE choice
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -189,7 +189,9 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 - [x] P4.5 `scripts/seed` 50k items + vegeta load test; hit p95 targets [§1, §9.6]
   - Done 2026-10-07 (DESIGN §9.6): `scripts/seed` (51,302 items), `scripts/loadtest/run.sh` / `make loadtest` (12 client-shaped queries, 50 req/s each). First run: NextUp 9 s, `/Items` 80–200 ms, deep pages timing out. Fixed: NextUp rewrite, exact type compare, libraries as a filter, indexable parent filters, ids-first pages, covering sort indexes (migration 00016), Redis `q:*` caches retired by event generation. Now every endpoint p95 13–44 ms.
   - Follow-ups: a cold Next Up still takes about 60 ms (whole-library query); every progress report (UserDataChanged) retires all users' cached results, so per-user generations may be worth it if many people watch at once; deep offsets still cost O(offset) (about 25 ms at 20k); the load test runs on the dev laptop, not a server-class box
-- [ ] P4.6 Backups: pg_dump job docs; Redis rebuild-from-PG test
+- [x] P4.6 Backups: pg_dump job docs; Redis rebuild-from-PG test
+  - Done 2026-10-07 (DESIGN §5, deploy/README.md "Backups"): `deploy/backup.sh` (pg_dump custom format in the container, keeps the newest 14) with a systemd user timer and restore steps; `TestRedisRebuildFromPostgres` (byte-identical answers after emptying Redis). Checked on the dev database: a 22 MB dump restored into a scratch database with identical row counts, and `pg_restore --clean --if-exists` over a modified copy restored it. Found and fixed: `q:gen` was a counter, and an eviction under `allkeys-lru` would have brought stale cached results back; it is now the time of the last event.
+  - Follow-ups: backups aren't offsite or encrypted (users point BACKUP_DIR at a NAS or sync it); no automated restore check
 - [ ] P4.7 Release: multi-arch Docker image, versioning, README, LICENSE choice
 
 ## Phase 5 — Later

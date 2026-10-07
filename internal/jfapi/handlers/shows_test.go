@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sysadmin/blockbustr/internal/cache"
+	"github.com/sysadmin/blockbustr/internal/events"
 )
 
 // Home-screen and TV endpoints (TASKS P1.21): /Items/Latest,
@@ -165,9 +165,7 @@ func TestNextUpRules(t *testing.T) {
 	write := func(sql string, args ...any) {
 		t.Helper()
 		execSQL(t, sql, args...)
-		if _, err := d.Cache.Incr(t.Context(), cache.QueryGenKey()); err != nil {
-			t.Fatal(err)
-		}
+		(&events.Bus{Cache: d.Cache}).Publish(t.Context(), events.Event{Kind: events.UserDataChanged})
 	}
 	names := func(query string) []string {
 		t.Helper()
