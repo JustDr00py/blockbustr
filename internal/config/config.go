@@ -104,6 +104,9 @@ type Server struct {
 	// (env BLOCKBUSTR_DISCOVERY). In a container, publish 7359/udp and set
 	// ExternalURL: the container's own address is no use to clients.
 	Discovery bool `yaml:"discovery"`
+	// StreamURLTTL is how long the signed stream URLs in remote media
+	// sources' Path stay valid (TASKS P3.10).
+	StreamURLTTL time.Duration `yaml:"stream_url_ttl"`
 	// AdminUsername/AdminPassword seed the administrator at startup. If the
 	// user exists its password is reset, which doubles as lost-password
 	// recovery (as in jellybird). Prefer the env vars
@@ -199,6 +202,7 @@ func Defaults() Config {
 			ServerName:      "blockbustr",
 			ShutdownTimeout: 10 * time.Second,
 			Discovery:       true,
+			StreamURLTTL:    48 * time.Hour,
 		},
 		Database: Database{URL: "postgres://blockbustr:blockbustr@localhost:5432/blockbustr?sslmode=disable"},
 		Redis:    Redis{URL: "redis://localhost:6379/0"},
@@ -368,6 +372,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Stremio.CatalogPages < 1 || c.Stremio.CatalogPages > 20 {
 		add("stremio.catalog_pages must be between 1 and 20")
+	}
+	if c.Server.StreamURLTTL < time.Hour || c.Server.StreamURLTTL > 30*24*time.Hour {
+		add("server.stream_url_ttl must be between 1h and 720h")
 	}
 	if c.Stremio.Streams.Timeout < time.Second || c.Stremio.Streams.Timeout > 30*time.Second {
 		add("stremio.streams.timeout must be between 1s and 30s")

@@ -22,7 +22,8 @@ type Info struct {
 	Seeders   int      // torrents only
 	Group     string   // release group ("FLUX")
 	Languages []string // ISO 639-1 from flags, plus "multi" for multi-audio
-	Cached    bool     // ready on a debrid account, or a direct URL
+	Cached    bool     // ready: on a debrid account, or a direct URL nobody marked uncached
+	Debrid    bool     // known cached on a debrid account (marker or check), not just a URL
 	Uncached  bool     // the addon says its debrid service doesn't have it
 	Cam       bool     // CAM/TS/screener rip
 	Remux     bool
@@ -101,8 +102,12 @@ func Parse(s Stream) Info {
 	}
 	in.Group = releaseGroup(s.Hints.Filename, details)
 	in.Languages = languages(s.Name + "\n" + details)
-	in.Cached = s.URL != "" || reCached.MatchString(s.Name+" "+details)
-	in.Uncached = !in.Cached && reUncached.MatchString(s.Name+" "+details)
+	// The addon's own markers win: a debrid-configured addon (Torrentio
+	// with a key, AIOStreams) gives every stream a URL, and an "[RD
+	// download]" one starts a download and plays a placeholder video.
+	in.Debrid = reCached.MatchString(s.Name + " " + details)
+	in.Uncached = !in.Debrid && reUncached.MatchString(s.Name+" "+details)
+	in.Cached = in.Debrid || (s.URL != "" && !in.Uncached)
 	// Only the release name decides CAM: "ts" elsewhere is noise.
 	in.Cam = reCam.MatchString(wordSep.Replace(firstLine(details))) || reCam.MatchString(wordSep.Replace(s.Hints.Filename))
 	in.Remux = reRemux.MatchString(words)
@@ -289,7 +294,7 @@ func Rank(offers []Offer, p Prefs) []Ranked {
 		seen[key] = true
 		in := Parse(o.Stream)
 		if o.Cached {
-			in.Cached, in.Uncached = true, false
+			in.Cached, in.Debrid, in.Uncached = true, true, false
 		}
 		score, ok := Score(in, p)
 		if !ok {

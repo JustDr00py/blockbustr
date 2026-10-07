@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -143,10 +144,73 @@ func jellybird(target string) (Source, bool) {
 	return Source{Kind: Debrid, Provider: name, TorrentID: seg[1], FileID: seg[2]}, true
 }
 
+// ErrPlaceholder is a link that plays an addon's notice video instead of
+// the title: a debrid-configured addon (Torrentio, AIOStreams) never fails
+// with an error, it redirects to "failed_access.mp4" and the like.
+var ErrPlaceholder = errors.New("resolve: the addon answered with a notice video")
+
+// notice matches an addon's notice video by name: Torrentio's
+// /videos/{failed_access,failed_infringement,downloading,…}_vN.mp4 and
+// look-alikes under /static/.
+var notice = regexp.MustCompile(`(?i)/(?:videos?|static)/(?:[^/]+/)*((?:failed|downloading|download|error|limit|limits|unavailable|not_?ready|no_)[a-z0-9_-]*)\.mp4$`)
+
+// placeholder reports whether l is an addon's notice video. "downloading"
+// ones mean the debrid service is fetching the torrent.
+func placeholder(l Link) error {
+	u, err := url.Parse(l.URL)
+	if err != nil {
+		return nil
+	}
+	m := notice.FindStringSubmatch(u.Path)
+	if m == nil {
+		return nil
+	}
+	if strings.HasPrefix(strings.ToLower(m[1]), "downloading") {
+		return fmt.Errorf("%w (%s)", ErrDownloading, m[1])
+	}
+	return fmt.Errorf("%w (%s)", ErrPlaceholder, m[1])
+}
+
+// UserAgent is sent when following and fetching links. Some addon hosts
+// (Torrentio's resolve URLs, behind Cloudflare) answer Go's default agent
+// with 403.
+const UserAgent = "blockbustr"
+
 // Link is a resolved source.
 type Link struct {
 	URL  string // final URL after redirects; the path for a File
 	Size int64  // bytes; 0 if unknown
+	// Private links are bound to a debrid account: they must never reach a
+	// client (AGENTS Safety), so they're proxied, not redirected to.
+	Private bool
+}
+
+// debridHosts are the download hosts of debrid services. A followed URL
+// (a .strm target, an addon's resolve URL) that ends on one is private too.
+var debridHosts = []string{
+	"real-debrid.com", "rdeb.io", "rdb.so", "torbox.app", "tb-cdn.st", "tb-cdn.io",
+	"alldebrid.com", "alldebrid.fr", "debrid.it", "premiumize.me", "debrid-link.com", "debrid-link.fr",
+	"offcloud.com", "easydebrid.com",
+}
+
+// IsPrivate reports whether l must stay on the server: resolved through a
+// debrid account, or on a debrid download host. (Links cached before the
+// flag existed are caught by their host.)
+func IsPrivate(l Link) bool {
+	if l.Private {
+		return true
+	}
+	u, err := url.Parse(l.URL)
+	if err != nil {
+		return true
+	}
+	host := strings.ToLower(u.Hostname())
+	for _, h := range debridHosts {
+		if host == h || strings.HasSuffix(host, "."+h) {
+			return true
+		}
+	}
+	return false
 }
 
 // Resolver resolves and caches links.
@@ -182,6 +246,7 @@ func (r *Resolver) Open(ctx context.Context, method, link string, from http.Head
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("User-Agent", UserAgent)
 	for _, k := range []string{"Range", "If-Range"} {
 		if v := from.Get(k); v != "" {
 			req.Header.Set(k, v)
@@ -253,6 +318,10 @@ func (r *Resolver) resolve(ctx context.Context, src Source) (Link, time.Duration
 		}
 	}
 	l, err := r.follow(ctx, src.URL)
+	if err == nil {
+		err = placeholder(l)
+	}
+	l.Private = err == nil && IsPrivate(l)
 	return l, cache.LinkTTL, err
 }
 
@@ -267,7 +336,7 @@ func (r *Resolver) debrid(ctx context.Context, src Source) (Link, time.Duration,
 	if err != nil {
 		return Link{}, 0, fmt.Errorf("resolve: %s: %w", src.Provider, err)
 	}
-	return Link{URL: link}, linkTTL(expiry, time.Now()), nil
+	return Link{URL: link, Private: true}, linkTTL(expiry, time.Now()), nil
 }
 
 func linkTTL(expiry, now time.Time) time.Duration {
@@ -286,6 +355,7 @@ func (r *Resolver) follow(ctx context.Context, target string) (Link, error) {
 		return l, fmt.Errorf("resolve: %w", err)
 	}
 	req.Header.Set("Range", "bytes=0-0")
+	req.Header.Set("User-Agent", UserAgent)
 	resp, err := r.client().Do(req)
 	if err != nil {
 		return l, fmt.Errorf("resolve: %w", err)

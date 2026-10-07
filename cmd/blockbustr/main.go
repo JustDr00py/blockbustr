@@ -39,6 +39,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/stremio"
 	"github.com/sysadmin/blockbustr/internal/subtitles"
 	"github.com/sysadmin/blockbustr/internal/transcode"
+	"github.com/sysadmin/blockbustr/internal/urlsign"
 )
 
 var version = "dev"
@@ -98,6 +99,10 @@ func run() error {
 	defer pool.Close()
 	queries := sqlcdb.New(pool)
 	serverID, err := pg.EnsureServerID(ctx, queries)
+	if err != nil {
+		return err
+	}
+	streamKey, err := pg.EnsureStreamKey(ctx, queries)
 	if err != nil {
 		return err
 	}
@@ -178,6 +183,7 @@ func run() error {
 		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
 		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams,
+		StreamSigner: &urlsign.Signer{Key: streamKey, TTL: cfg.Server.StreamURLTTL},
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -311,8 +317,25 @@ func loadProviders(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, lo
 		}
 		order = append(order, name)
 		log.Info("debrid account enabled", "provider", name)
+		go checkDebridAccount(ctx, out[name], log)
 	}
 	return out, order, nil
+}
+
+// checkDebridAccount logs whether the account accepts its key, so a revoked
+// or mistyped key shows at start rather than as failed playback.
+func checkDebridAccount(ctx context.Context, p provider.Provider, log *slog.Logger) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	acct, err := p.AccountInfo(ctx)
+	switch {
+	case err != nil:
+		log.Warn("debrid account check failed: is the API key right?", "provider", p.Name(), "err", err)
+	case !acct.PremiumUntil.IsZero() && acct.PremiumUntil.Before(time.Now()):
+		log.Warn("debrid account is not premium", "provider", p.Name(), "premium_until", acct.PremiumUntil)
+	default:
+		log.Info("debrid account ok", "provider", p.Name(), "premium_until", acct.PremiumUntil)
+	}
 }
 
 // healthcheck GETs /healthz on the local listener so the container image

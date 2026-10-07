@@ -180,7 +180,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		// (from the details' placeholder) gets every choice.
 		allSources = req.MediaSourceId != nil && sameID(*req.MediaSourceId, dto.IDFromUUID(it.ID).String())
 	}
-	dtos := mediaSourceDtos(it, rows, b.streams, baseURL(r.Context()))
+	dtos := mediaSourceDtos(it, rows, b.streams, baseURL(r.Context()), a.StreamSigner)
 
 	session := PlaySession{
 		UserID: user, DeviceID: s.DeviceID, ItemID: it.ID, Sources: map[string]media.Decision{},

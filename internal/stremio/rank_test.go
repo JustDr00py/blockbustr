@@ -85,10 +85,12 @@ func TestParseMarkers(t *testing.T) {
 		s    Stream
 		want func(Info) bool
 	}{
-		{"RD+ is cached", Stream{Name: "[RD+] Torrentio\n1080p", InfoHash: "a"}, func(i Info) bool { return i.Cached && !i.Uncached }},
+		{"RD+ is cached", Stream{Name: "[RD+] Torrentio\n1080p", InfoHash: "a"}, func(i Info) bool { return i.Cached && i.Debrid && !i.Uncached }},
 		{"lightning is cached", Stream{Name: "TB ⚡\n1080p", InfoHash: "a"}, func(i Info) bool { return i.Cached }},
 		{"RD download is uncached", Stream{Name: "[RD download] Torrentio\n1080p", InfoHash: "a"}, func(i Info) bool { return !i.Cached && i.Uncached }},
-		{"direct URL is ready", Stream{Name: "Addon", URL: "https://cdn.example/x.mkv"}, func(i Info) bool { return i.Cached }},
+		{"RD-configured cached URL", Stream{Name: "[RD+] Torrentio\n4k", URL: "https://torrentio.strem.fun/resolve/realdebrid/K/h/null/0/x.mkv"}, func(i Info) bool { return i.Cached && i.Debrid && !i.Uncached }},
+		{"RD-configured uncached URL", Stream{Name: "[RD download] Torrentio\n4k", URL: "https://torrentio.strem.fun/resolve/realdebrid/K/h/null/0/x.mkv"}, func(i Info) bool { return !i.Cached && !i.Debrid && i.Uncached }},
+		{"direct URL is ready", Stream{Name: "Addon", URL: "https://cdn.example/x.mkv"}, func(i Info) bool { return i.Cached && !i.Debrid }},
 		{"plain torrent is neither", Stream{Name: "Torrentio\n1080p", InfoHash: "a"}, func(i Info) bool { return !i.Cached && !i.Uncached }},
 		{"HDCAM", Stream{Title: "Movie.2026.HDCAM.x264-GRP\n👤 5"}, func(i Info) bool { return i.Cam && i.Codec == "h264" && i.Group == "GRP" }},
 		{"TELESYNC filename", Stream{Hints: StreamHints{Filename: "Movie 2026 TELESYNC 720p.mkv"}}, func(i Info) bool { return i.Cam && i.Height == 720 }},

@@ -3,7 +3,7 @@
 Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the definition of done, then move the next item into **Now**. Design details are in `DESIGN.md` (section numbers in brackets).
 
 ## Now
-- [ ] P3.10 Signed, expiring blockbustr stream URLs (no raw debrid links to clients) [AGENTS Safety]
+- [ ] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources
 
 ## Next
 - P2.13 leftovers, deferred 2026-10-06 by user decision (test later): Infuse full list, Jellyfin Android one-shot (expected blocked on jellyfin-web/Phase 5), QuickConnect from a second device, user confirmations (Findroid PGS subs visible + player; Moonfin post-scrub picture)
@@ -144,9 +144,13 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 - [x] P3.9 Stremio subtitles → external subtitle streams
   - Done 2026-10-06 (DESIGN §7.3): subtitle addons asked alongside streams at PlaybackInfo (`Collector.Subtitles`, lists cached 6 h); picked by `stremio.subtitles` (languages, default English; 3 per language, 20 max; OpenSubtitles codes like `pob` mapped); offered as external SubRip tracks (index 100+) on every choice with External delivery URLs; the subtitle store downloads remote tracks once (5 MB cap), so conversion and burn-in work; external tracks never resolve the video, so they load while a torrent downloads. Live: OpenSubtitles v3 lists 92 for GoT S01E02, serving UTF-8 SubRip.
   - Follow-up: per-user subtitle language preferences (`SubtitleLanguagePreference`) aren't used, only the server config
-- [ ] P3.10 Signed, expiring blockbustr stream URLs (no raw debrid links to clients) [AGENTS Safety]
+- [x] P3.10 Signed, expiring blockbustr stream URLs (no raw debrid links to clients) [AGENTS Safety]
+  - Done 2026-10-06 (DESIGN §6, §8.2), scoped by user decision ("never redirect + signed URLs"): debrid-bound links (resolved through an account, or on a debrid download host) are always proxied, never redirected, whatever `compat.redirect_clients` says; remote sources' `Path` carries `Expires` + HMAC `Signature` (`internal/urlsign`, key in `server_settings`, `server.stream_url_ttl` 48 h); a bad or expired signature is 403, unsigned requests still play (Findroid streams anonymously, as Jellyfin allows).
+  - Trade-off: debrid playback always flows through the server (bandwidth), as the safety rule requires
+- [x] Live-test fixes 2026-10-07 (DESIGN §7.3 "Hardening"): `[RD download]` URLs ranked uncached; Torrentio notice videos (`failed_access_v3.mp4`…) detected as failures; `User-Agent: blockbustr` (Torrentio's Cloudflare 403s Go's); addon links always proxied; default-source fallback through the ranked versions with failed ones remembered 6 h; next debrid account tried when one refuses; debrid keys checked at start.
 - [ ] P3.11 Manual: a Torrentio-backed catalog browses and plays in Infuse and Findroid; version picker shows several sources
 
+- Reference for P3.12–P3.13: lostb1t/remux (Rust, Jellyfin-compatible, Stremio addons, search in the Jellyfin UI)
 - [ ] P3.12 `search.Provider` interface + Cinemeta provider (no key) + TMDB provider (when keyed) + addon search catalogs; parallel fan-out with a time budget, Redis `search:*` cache [§7.4]
 - [ ] P3.13 Hidden `discover` library + deterministic UUIDv5 item IDs + upsert of remote results (with posters/backdrops into `images`) + retention GC
 - [ ] P3.14 Merge remote results into `/Items?searchTerm=` (and `/Search/Hints`): library first, dedupe by provider IDs, honour type filters and limits

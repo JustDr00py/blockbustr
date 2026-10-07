@@ -185,8 +185,14 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	ranked := stremio.Rank(offers, prefs)
 	top := max(cfg.Top, 1)
 	choices := make([]StreamChoice, 0, top)
-	for _, r := range ranked[:min(top, len(ranked))] {
-		choices = append(choices, streamChoice(it.ID, r))
+	bad := a.badChoices(ctx, it.ID)
+	for _, r := range ranked {
+		if len(choices) == top {
+			break
+		}
+		if c := streamChoice(it.ID, r); !bad[c.ID] {
+			choices = append(choices, c)
+		}
 	}
 	pick := streamSet{Choices: choices, Subtitles: pickSubtitles(subs, a.Config.Stremio.Subtitles.Languages, a.Config.Stremio.Subtitles.PerLanguage)}
 	if len(choices) == 0 || a.Cache == nil {
@@ -341,7 +347,7 @@ func streamLabel(r stremio.Ranked) string {
 		parts = append(parts, r.Addon)
 	}
 	switch {
-	case in.Cached && r.Stream.InfoHash != "":
+	case in.Debrid:
 		parts = append(parts, "cached")
 	case in.Uncached:
 		parts = append(parts, "not cached")

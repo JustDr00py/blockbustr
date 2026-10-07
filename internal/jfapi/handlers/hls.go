@@ -17,7 +17,6 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/media"
-	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/transcode"
 )
@@ -73,6 +72,7 @@ func (a *api) registerHLS(rt *jfapi.Router) {
 type hlsJob struct {
 	item        db.Item
 	src         db.MediaSource
+	sources     []db.MediaSource // the item's, for a catalog title's fallback
 	streams     []db.MediaStream
 	video       *db.MediaStream
 	audio       *db.MediaStream
@@ -131,7 +131,7 @@ func (a *api) hlsRequest(w http.ResponseWriter, r *http.Request, s auth.Session)
 		w.WriteHeader(http.StatusNotFound)
 		return j, false
 	}
-	j.item, j.src = it, src
+	j.item, j.src, j.sources = it, src, b.sources[it.ID]
 	want := -1
 	if n, ok := j.q.Int("AudioStreamIndex"); ok {
 		want = n
@@ -232,7 +232,7 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 		if a.Resolver == nil {
 			return o, errors.New("remote source without a resolver")
 		}
-		link, err := a.Resolver.Resolve(r.Context(), resolve.FromURL(j.src.PathOrUrl))
+		_, _, link, err := a.playLink(r.Context(), j.item, j.src, j.sources, j.q.Get("MediaSourceId"))
 		if err != nil {
 			return o, err
 		}

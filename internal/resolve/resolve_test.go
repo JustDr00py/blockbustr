@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -190,6 +191,91 @@ func TestMagnetTargets(t *testing.T) {
 	for in, want := range cases {
 		if got := FromURL(in); got != want {
 			t.Errorf("FromURL(%q) = %+v, want %+v", in, got, want)
+		}
+	}
+}
+
+func TestIsPrivate(t *testing.T) {
+	for link, want := range map[Link]bool{
+		{URL: "https://cdn.example/movie.mkv"}:                          false,
+		{URL: "https://cdn.example/movie.mkv", Private: true}:           true,
+		{URL: "https://abc12.download.real-debrid.com/d/XYZ/movie.mkv"}: true,
+		{URL: "https://store-021.weur.tb-cdn.st/zip/1?token=t"}:         true,
+		{URL: "https://REAL-DEBRID.COM/x"}:                              true,
+		{URL: "https://notreal-debrid.com/x"}:                           false,
+		{URL: "/media/Movies/movie.mkv"}:                                false,
+	} {
+		if got := IsPrivate(link); got != want {
+			t.Errorf("IsPrivate(%+v) = %v, want %v", link, got, want)
+		}
+	}
+}
+
+func TestUserAgent(t *testing.T) {
+	var agents []string
+	var mu sync.Mutex
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		agents = append(agents, r.UserAgent())
+		mu.Unlock()
+		if strings.HasPrefix(r.UserAgent(), "Go-http-client") {
+			w.WriteHeader(http.StatusForbidden) // like Torrentio's Cloudflare
+			return
+		}
+		w.Header().Set("Content-Range", "bytes 0-0/10")
+		w.WriteHeader(http.StatusPartialContent)
+	}))
+	t.Cleanup(srv.Close)
+	r := &Resolver{}
+	l, err := r.Resolve(t.Context(), FromURL(srv.URL+"/resolve/x"))
+	if err != nil || l.Size != 10 {
+		t.Fatalf("Resolve = %+v, %v", l, err)
+	}
+	resp, err := r.Open(t.Context(), http.MethodGet, l.URL, http.Header{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	mu.Lock()
+	defer mu.Unlock()
+	for _, a := range agents {
+		if a != UserAgent {
+			t.Errorf("User-Agent %q", a)
+		}
+	}
+}
+
+func TestPlaceholders(t *testing.T) {
+	cases := map[string]error{
+		"https://torrentio.strem.fun/videos/failed_access_v3.mp4":       ErrPlaceholder,
+		"https://torrentio.strem.fun/videos/failed_infringement_v2.mp4": ErrPlaceholder,
+		"https://torrentio.strem.fun/videos/downloading_v2.mp4":         ErrDownloading,
+		"https://aio.example/static/videos/download_failed.mp4":         ErrPlaceholder,
+		"https://abc.download.real-debrid.com/d/X/Movie.2160p.mkv":      nil,
+		"https://cdn.example/videos/Movie.2019.1080p.mp4":               nil, // a real title in a /videos/ folder
+		"https://cdn.example/videos/Failed.Love.2019.mkv":               nil,
+	}
+	for u, want := range cases {
+		if err := placeholder(Link{URL: u}); !errors.Is(err, want) || (want == nil && err != nil) {
+			t.Errorf("%s: %v, want %v", u, err, want)
+		}
+	}
+	// Through Resolve: a resolve URL that lands on a notice fails (and
+	// isn't cached as a link).
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/videos/failed_access_v3.mp4" {
+			http.Redirect(w, r, "/videos/failed_access_v3.mp4", http.StatusFound)
+			return
+		}
+		w.Header().Set("Content-Range", "bytes 0-0/149660")
+		w.WriteHeader(http.StatusPartialContent)
+	}))
+	t.Cleanup(srv.Close)
+	r := &Resolver{Cache: testutil.Cache(t)}
+	src := FromURL(srv.URL + "/resolve/realdebrid/k/h/null/0/x.mkv")
+	for range 2 {
+		if _, err := r.Resolve(t.Context(), src); !errors.Is(err, ErrPlaceholder) {
+			t.Errorf("Resolve: %v", err)
 		}
 	}
 }

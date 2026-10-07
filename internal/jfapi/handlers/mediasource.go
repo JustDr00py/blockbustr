@@ -3,12 +3,14 @@ package handlers
 import (
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
+	"github.com/sysadmin/blockbustr/internal/urlsign"
 )
 
 // MediaSourceInfo / MediaStream as Jellyfin 12.1.0 reports them in item
@@ -27,8 +29,9 @@ func mediaSourceID(it db.Item, i int, src db.MediaSource) string {
 
 // mediaSourceDtos builds an item's sources. A playable item always gets at
 // least one: an unprobed .strm still shows a Play button (DESIGN §7.4).
-// base is the server URL remote sources' Path points at.
-func mediaSourceDtos(it db.Item, sources []db.MediaSource, streams map[uuid.UUID][]db.MediaStream, base string) []dto.MediaSourceInfo {
+// base is the server URL remote sources' Path points at; sign, when set,
+// adds an expiring signature to it (P3.10).
+func mediaSourceDtos(it db.Item, sources []db.MediaSource, streams map[uuid.UUID][]db.MediaStream, base string, sign *urlsign.Signer) []dto.MediaSourceInfo {
 	if len(sources) == 0 {
 		src := db.MediaSource{ID: it.ID, ItemID: it.ID, Protocol: "File", Etag: it.Etag, RuntimeTicks: it.RuntimeTicks}
 		switch {
@@ -57,7 +60,7 @@ func mediaSourceDtos(it db.Item, sources []db.MediaSource, streams map[uuid.UUID
 			// Never the raw target (it may carry signatures or debrid
 			// tokens): clients open Path for Http sources, so it is this
 			// server's stream URL, which redirects or proxies (DESIGN §6).
-			out[i].Path = ptr(base + "/Videos/" + dto.IDFromUUID(it.ID).String() + "/stream?static=true&MediaSourceId=" + *out[i].Id)
+			out[i].Path = ptr(streamPath(base, dto.IDFromUUID(it.ID).String(), *out[i].Id, sign))
 		}
 	}
 	return out
@@ -201,4 +204,15 @@ func spatialFormat(codec, profile string) dto.AudioSpatialFormat {
 		return dto.AudioSpatialFormat("DTSX")
 	}
 	return dto.AudioSpatialFormatNone
+}
+
+// streamPath is a remote source's Path: this server's stream URL, signed
+// with an expiry when sign is set (verified by videoStream).
+func streamPath(base, item, ms string, sign *urlsign.Signer) string {
+	p := base + "/Videos/" + item + "/stream?static=true&MediaSourceId=" + ms
+	if sign != nil {
+		exp, sig := sign.Sign(item, ms, time.Now())
+		p += "&Expires=" + exp + "&Signature=" + sig
+	}
+	return p
 }

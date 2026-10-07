@@ -424,7 +424,7 @@ func (a *api) itemDto(b *itemBatch, it db.Item, withUser bool, o dtoOptions) dto
 			d.Trickplay = &map[string]*map[string]dto.TrickplayInfoDto{}
 		}
 		if o.has("mediasources") || o.has("mediastreams") {
-			srcs := mediaSourceDtos(it, b.sources[it.ID], b.streams, b.base)
+			srcs := mediaSourceDtos(it, b.sources[it.ID], b.streams, b.base, a.StreamSigner)
 			if o.has("mediasources") {
 				d.MediaSources = &srcs
 			}

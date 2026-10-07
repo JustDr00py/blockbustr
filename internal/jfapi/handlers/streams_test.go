@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
@@ -20,6 +23,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/stremio"
 	"github.com/sysadmin/blockbustr/internal/subtitles"
 	"github.com/sysadmin/blockbustr/internal/testutil"
+	"github.com/sysadmin/blockbustr/internal/urlsign"
 )
 
 // fakeAccount is a debrid account holding one torrent, downloading until
@@ -127,6 +131,7 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		d.Config.Stremio.Streams.DenyGroups = []string{"bad"}
 		d.Config.Stremio.Subtitles.Languages = []string{"en", "pt"}
 		d.Subtitles = &subtitles.Store{Dir: t.TempDir()}
+		d.StreamSigner = &urlsign.Signer{Key: []byte("test stream key, thirty-two byte"), TTL: time.Hour}
 		rc = d.Cache
 	})
 	sf.syncAll(t)
@@ -220,8 +225,35 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	stream := func(ms string) int {
 		return call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+ms, "", "").Code
 	}
-	if code := stream(matrix.Id); code != 200 && code != 302 {
-		t.Errorf("stream by item id: %d", code)
+	// Addon links are always proxied (they may carry the addon's
+	// credentials), even a plain CDN URL whose scheme matches.
+	if rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+matrix.Id, "", ""); rec.Code != 200 || rec.Header().Get("Location") != "" {
+		t.Errorf("stream by item id: %d, Location %q; want proxied", rec.Code, rec.Header().Get("Location"))
+	}
+	// Paths are signed: as given they play; altered, moved to another
+	// source or expired they're refused; unsigned ones play (Findroid).
+	for _, src := range srcs {
+		if !strings.Contains(src.Path, "&Expires=") || !strings.Contains(src.Path, "&Signature=") {
+			t.Errorf("%s: unsigned path %s", src.Name, src.Path)
+		}
+	}
+	_, rest, found := strings.Cut(srcs[0].Path, "/Videos/")
+	if !found {
+		t.Fatalf("path %s", srcs[0].Path)
+	}
+	signed := "/Videos/" + rest
+	if code := call(t, sf.h, "GET", signed, "", "").Code; code != 200 {
+		t.Errorf("signed path: %d", code)
+	}
+	if code := call(t, sf.h, "GET", signed+"x", "", "").Code; code != 403 {
+		t.Errorf("tampered signature: %d", code)
+	}
+	if code := call(t, sf.h, "GET", strings.Replace(signed, "MediaSourceId="+srcs[0].Id, "MediaSourceId="+srcs[2].Id, 1), "", "").Code; code != 403 {
+		t.Errorf("signature moved to another source: %d", code)
+	}
+	expired := regexp.MustCompile(`Expires=\d+`).ReplaceAllString(signed, "Expires=1000")
+	if code := call(t, sf.h, "GET", expired, "", "").Code; code != 403 {
+		t.Errorf("expired/altered expiry: %d", code)
 	}
 	// The torrent goes to the debrid account; while it downloads the
 	// stream is 503 with Retry-After, then it plays.
@@ -241,8 +273,9 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		t.Errorf("subtitle as WebVTT: %d %q", rec.Code, rec.Body.String())
 	}
 	rd.ready.Store(true)
-	if code := stream(srcs[1].Id); code != 200 && code != 302 {
-		t.Errorf("ready torrent: %d", code)
+	// A debrid link never reaches the client: proxied.
+	if rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+srcs[1].Id, "", ""); rec.Code != 200 || rec.Body.String() != "matroska bytes" || rec.Header().Get("Location") != "" {
+		t.Errorf("ready torrent: %d %q, Location %q", rec.Code, rec.Body.String(), rec.Header().Get("Location"))
 	}
 	if code := stream(strings.Repeat("0", 31) + "1"); code != 404 {
 		t.Errorf("unknown source: %d", code)
@@ -337,7 +370,7 @@ func TestStreamLabel(t *testing.T) {
 		want string
 	}{
 		{stremio.Ranked{Offer: stremio.Offer{Addon: "Torrentio", Stream: stremio.Stream{InfoHash: "a"}},
-			Info: stremio.Info{Height: 2160, DV: true, HDR: true, Codec: "hevc", Remux: true, Size: 29 << 30, Cached: true}},
+			Info: stremio.Info{Height: 2160, DV: true, HDR: true, Codec: "hevc", Remux: true, Size: 29 << 30, Cached: true, Debrid: true}},
 			"2160p DV HEVC Remux • 29.0 GB • Torrentio • cached"},
 		{stremio.Ranked{Offer: stremio.Offer{Addon: "Torrentio", Stream: stremio.Stream{InfoHash: "a"}}, Info: stremio.Info{Height: 1080, Uncached: true}},
 			"1080p • Torrentio • not cached"},
@@ -407,5 +440,100 @@ func TestPickSubtitles(t *testing.T) {
 	}
 	if n := len(pickSubtitles(many, nil, 10)); n != 10 {
 		t.Errorf("per-language cap: %d", n)
+	}
+}
+
+// A version that fails falls back to the next when the player didn't pick
+// one, and isn't offered again; one the player picked fails as itself.
+func TestCatalogStreamFallback(t *testing.T) {
+	var blockedHits atomic.Int32
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/blocked.mkv" {
+			blockedHits.Add(1)
+			w.WriteHeader(http.StatusUnavailableForLegalReasons)
+			return
+		}
+		_, _ = w.Write([]byte("matroska bytes"))
+	}))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "Torrentio RD", Stream: stremio.Stream{Name: "[RD+] Torrentio\n4k", Title: "Blocked.2160p.mkv", URL: cdn.URL + "/blocked.mkv"}},
+		{Addon: "Torrentio RD", Stream: stremio.Stream{Name: "[RD+] Torrentio\n1080p", Title: "Works.1080p.mkv", URL: cdn.URL + "/works.mkv"}},
+		{Addon: "Torrentio RD", Stream: stremio.Stream{Name: "[RD download] Torrentio\n4k", Title: "Uncached.2160p.mkv", URL: cdn.URL + "/uncached.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	itemID, err := dto.ParseID(matrix.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	blocked := dto.IDFromUUID(uuid.NewSHA1(itemID.UUID(), []byte("url:"+cdn.URL+"/blocked.mkv"))).String()
+	auth := `MediaBrowser Token="` + captureToken + `"`
+	offered := func() []string {
+		rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", auth, `{}`)
+		var out playbackSources
+		_ = json.Unmarshal(rec.Body.Bytes(), &out)
+		var names []string
+		for _, s := range out.MediaSources {
+			names = append(names, s.Name)
+		}
+		return names
+	}
+	stream := func(ms string) *httptest.ResponseRecorder {
+		return call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+ms, "", "")
+	}
+
+	// [RD+] links rank as cached; the [RD download] one is offered last.
+	if names := offered(); len(names) != 3 || !strings.HasPrefix(names[0], "2160p") || !strings.HasSuffix(names[2], "not cached") {
+		t.Fatalf("offered %q", names)
+	}
+	// Picked in a version picker, the blocked one fails as itself.
+	if code := stream(blocked).Code; code != http.StatusBadGateway {
+		t.Errorf("picked blocked version: %d", code)
+	}
+	// Remembered as bad: the default (item id) goes straight to the 1080p,
+	// and it's no longer offered.
+	hits := blockedHits.Load()
+	if rec := stream(matrix.Id); rec.Code != 200 || rec.Body.String() != "matroska bytes" {
+		t.Errorf("default stream: %d %q", rec.Code, rec.Body.String())
+	}
+	if blockedHits.Load() != hits {
+		t.Error("a version known bad was tried again")
+	}
+	if names := offered(); len(names) != 2 || strings.HasPrefix(names[0], "2160p") {
+		t.Errorf("offered after the failure: %q", names)
+	}
+}
+
+// Without anything remembered, the default stream tries the versions in
+// order and plays the first that works.
+func TestCatalogStreamFallsBack(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/blocked.mkv" {
+			w.WriteHeader(http.StatusUnavailableForLegalReasons)
+			return
+		}
+		_, _ = w.Write([]byte("matroska bytes"))
+	}))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "A", Stream: stremio.Stream{Name: "[RD+] 4k", URL: cdn.URL + "/blocked.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "[RD+] 1080p", URL: cdn.URL + "/works.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Cinemeta Popular"].Id)[0]
+	if rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`); rec.Code != 200 {
+		t.Fatal(rec.Code)
+	}
+	if rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+matrix.Id, "", ""); rec.Code != 200 || rec.Body.String() != "matroska bytes" {
+		t.Errorf("default stream: %d %q", rec.Code, rec.Body.String())
 	}
 }

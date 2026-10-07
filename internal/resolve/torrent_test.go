@@ -20,6 +20,7 @@ type fakeCloud struct {
 	name     provider.Name
 	cached   map[string]bool // hashes the account has cached
 	instant  bool            // InstantCheck reports cached hashes
+	refuse   bool            // AddMagnet fails (a revoked key)
 	files    []provider.File
 	mu       sync.Mutex
 	torrents map[string]*provider.Torrent
@@ -45,6 +46,9 @@ func (c *fakeCloud) Name() provider.Name { return c.name }
 func (c *fakeCloud) AddMagnet(_ context.Context, magnet string) (string, bool, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if c.refuse {
+		return "", false, errors.New("HTTP 401 (code 8): bad_token")
+	}
 	c.adds++
 	hash := strings.TrimPrefix(magnet, "magnet:?xt=urn:btih:")
 	id := fmt.Sprintf("t%d", c.adds)
@@ -161,7 +165,7 @@ func TestTorrentCached(t *testing.T) {
 	r, store := torrentResolver(rd)
 	src := FromURL(Magnet("aaaa", 1, "S01E02 - The Kingsroad.mkv"))
 	l, err := r.Resolve(t.Context(), src)
-	if err != nil || l.URL != "https://cdn.realdebrid/t1/2" {
+	if err != nil || l.URL != "https://cdn.realdebrid/t1/2" || !l.Private {
 		t.Fatalf("Resolve = %+v, %v", l, err)
 	}
 	if k, ok := store.get(provider.RealDebrid, "aaaa"); !ok || k.TorrentID != "t1" || k.Status != provider.StatusReady {
@@ -337,5 +341,23 @@ func TestPGTorrents(t *testing.T) {
 	}
 	if got, _ := s.Find(ctx, "aaaa"); len(got) != 0 {
 		t.Errorf("after account removal: %+v", got)
+	}
+}
+
+func TestTorrentRefusedTriesNextAccount(t *testing.T) {
+	rd := newCloud(provider.RealDebrid)
+	rd.refuse = true
+	tb := newCloud(provider.TorBox, "abab")
+	r, store := torrentResolver(rd, tb)
+	l, err := r.Resolve(t.Context(), FromURL(Magnet("abab", -1, "")))
+	if err != nil || !strings.HasPrefix(l.URL, "https://cdn.torbox/") {
+		t.Fatalf("Resolve = %+v, %v", l, err)
+	}
+	if _, ok := store.get(provider.TorBox, "abab"); !ok {
+		t.Error("not remembered on the account that took it")
+	}
+	tb.refuse = true
+	if _, err := r.Resolve(t.Context(), FromURL(Magnet("cdcd", -1, ""))); err == nil || !strings.Contains(err.Error(), "realdebrid") || !strings.Contains(err.Error(), "torbox") {
+		t.Errorf("every account refusing: %v", err)
 	}
 }

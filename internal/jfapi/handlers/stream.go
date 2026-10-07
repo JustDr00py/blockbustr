@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -10,9 +12,11 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/resolve"
@@ -99,6 +103,10 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := jfapi.QueryOf(r)
+	if !a.signatureOK(r, q, it) {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 	src, ok := streamSource(it, b.sources[it.ID], q.Get("mediaSourceId"))
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
@@ -110,7 +118,7 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 	}
 	contentType := streamContentType(container, deref(src.Container), src.PathOrUrl)
 	if src.IsRemote || !strings.EqualFold(src.Protocol, "File") {
-		a.remoteStream(w, r, src, contentType)
+		a.remoteStream(w, r, it, src, b.sources[it.ID], q.Get("mediaSourceId"), contentType)
 		return
 	}
 	f, err := os.Open(src.PathOrUrl)
@@ -131,21 +139,24 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 
 // remoteStream sends a remote source (DESIGN §8.2): a redirect to the
 // resolved link when the client can follow it, else a proxy with Range
-// passthrough. A link that stopped working is resolved again once.
-func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, src db.MediaSource, contentType string) {
+// passthrough. A link that stopped working is resolved again once. A
+// catalog title's addon links are always proxied: they may carry the
+// addon's credentials (a debrid key in a resolve URL), and a version that
+// fails falls back to the next (playLink).
+func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, src db.MediaSource, sources []db.MediaSource, want, contentType string) {
 	if a.Resolver == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	ctx := r.Context()
-	target := resolve.FromURL(src.PathOrUrl)
-	link, err := a.Resolver.Resolve(ctx, target)
+	src, target, link, err := a.playLink(ctx, it, src, sources, want)
 	if err != nil {
 		a.Log.WarnContext(ctx, "remote source unavailable", "item", src.ItemID, "err", err)
 		sourceUnavailable(w, err, http.StatusBadGateway)
 		return
 	}
-	if a.mayRedirect(r, link.URL) {
+	_, _, catalog := stremioRef(it)
+	if !catalog && !resolve.IsPrivate(link) && a.mayRedirect(r, link.URL) {
 		http.Redirect(w, r, link.URL, http.StatusFound)
 		return
 	}
@@ -186,6 +197,100 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, src db.MediaS
 	if r.Method != http.MethodHead {
 		_, _ = io.Copy(w, resp.Body) // ends when either side hangs up
 	}
+}
+
+// playLink resolves src. For a catalog title asked for by its default
+// source (no id, or the item id: the player didn't pick a version), a
+// version that fails falls back to the next ranked one, skipping those
+// that failed recently; a version that fails for good (blocked by the
+// debrid service, refused by every account) is remembered as bad and no
+// longer offered (TASKS P3.11). Still downloading isn't failing for good,
+// but the default moves on to a version that plays now.
+func (a *api) playLink(ctx context.Context, it db.Item, src db.MediaSource, sources []db.MediaSource, want string) (db.MediaSource, resolve.Source, resolve.Link, error) {
+	try := []db.MediaSource{src}
+	_, _, catalog := stremioRef(it)
+	if catalog && (want == "" || sameID(want, dto.IDFromUUID(it.ID).String())) {
+		bad := a.badChoices(ctx, it.ID)
+		try = try[:0]
+		for _, s := range sources {
+			if !bad[s.ID] {
+				try = append(try, s)
+			}
+		}
+		if len(try) == 0 {
+			try = []db.MediaSource{src}
+		}
+	}
+	var firstErr error
+	downloading := false
+	for _, s := range try {
+		target := resolve.FromURL(s.PathOrUrl)
+		link, err := a.Resolver.Resolve(ctx, target)
+		if err == nil {
+			return s, target, link, nil
+		}
+		if ctx.Err() != nil {
+			return s, target, link, err
+		}
+		if errors.Is(err, resolve.ErrDownloading) {
+			downloading = true
+		} else if catalog {
+			a.markBadChoice(ctx, it.ID, s.ID)
+		}
+		if firstErr == nil {
+			firstErr = err
+		}
+		if len(try) > 1 {
+			a.Log.WarnContext(ctx, "stream version unavailable; trying the next", "item", it.ID, "source", s.ID, "err", err)
+		}
+	}
+	if downloading {
+		firstErr = fmt.Errorf("%w (and no other version plays now)", resolve.ErrDownloading)
+	}
+	return src, resolve.FromURL(src.PathOrUrl), resolve.Link{}, firstErr
+}
+
+func (a *api) badChoices(ctx context.Context, item uuid.UUID) map[uuid.UUID]bool {
+	out := map[uuid.UUID]bool{}
+	if a.Cache == nil {
+		return out
+	}
+	ids, err := a.Cache.SetMembers(ctx, cache.StreamBadKey(item.String()))
+	if err != nil {
+		return out
+	}
+	for _, s := range ids {
+		if id, err := uuid.Parse(s); err == nil {
+			out[id] = true
+		}
+	}
+	return out
+}
+
+func (a *api) markBadChoice(ctx context.Context, item, choice uuid.UUID) {
+	if a.Cache != nil {
+		_ = a.Cache.AddToSet(ctx, cache.StreamBadKey(item.String()), cache.StreamBadTTL, choice.String())
+	}
+}
+
+// signatureOK checks a signed stream URL (a remote source's Path, P3.10).
+// A request without a signature is let through, as Jellyfin lets
+// anonymous stream requests through (Findroid builds its own URL with no
+// credentials); one with a bad or expired signature is refused.
+func (a *api) signatureOK(r *http.Request, q jfapi.Query, it db.Item) bool {
+	sig := q.Get("Signature")
+	if sig == "" || a.StreamSigner == nil {
+		return true
+	}
+	ms := q.Get("mediaSourceId")
+	if id, err := dto.ParseID(ms); err == nil {
+		ms = id.String()
+	}
+	if err := a.StreamSigner.Verify(dto.IDFromUUID(it.ID).String(), ms, q.Get("Expires"), sig, time.Now()); err != nil {
+		a.Log.InfoContext(r.Context(), "stream signature refused", "item", it.ID, "err", err)
+		return false
+	}
+	return true
 }
 
 // sourceUnavailable answers a source that can't be opened: a torrent still

@@ -395,9 +395,9 @@ Redis is a **cache and coordination layer only**. Everything has to be rebuildab
 
 ### `.strm`
 - **Observed in Jellyfin 12.1.0 (recon, Findroid 1.1.0):** for a `.strm`, `PlaybackInfo` returns a MediaSource with `Protocol: "Http"`, `IsRemote: true`, `Path` = **the raw `.strm` URL**, and `SupportsDirectPlay/DirectStream/Transcoding` all `false`, even though the streams were probed. The client then opens `Path` itself and never calls `/Videos/{id}/stream`. So playback only works if the *client device* can reach the `.strm` host, and the URL (including any `sig=`/token) is exposed to every client.
-- **blockbustr does it differently:** `Path` and `DirectStreamUrl` always point at blockbustr's own `/Videos/{id}/stream?static=true&MediaSourceId=…`, with `Protocol: "File"`-style semantics. That endpoint 302s to the resolved URL (or proxies it, §8.2). Clients only need to reach blockbustr, and raw URLs are never sent. Contract tests must allow this deliberate difference.
+- **blockbustr does it differently:** `Path` and `DirectStreamUrl` always point at blockbustr's own `/Videos/{id}/stream?static=true&MediaSourceId=…`, with `Protocol: "File"`-style semantics. That endpoint 302s to the resolved URL (or proxies it, §8.2; debrid links are always proxied). Clients only need to reach blockbustr, and raw URLs are never sent. Remote sources' `Path` is signed with an expiry (P3.10, §8.2). Contract tests must allow this deliberate difference.
 - Content is a single URL (trimmed; `#` comments ignored).
-- A jellybird target (`…/stream/{realdebrid|torbox}/{torrent}/{file}`, any host or base path; the `sig` is ignored) is resolved straight through blockbustr's own account for that provider, skipping jellybird. If blockbustr has no such account, or the torrent isn't on it (jellybird may use another account), the URL is followed as before, with a warning. *(Implemented P3.2.)* Blockbustr's own resolver URLs come with P3.10.
+- A jellybird target (`…/stream/{realdebrid|torbox}/{torrent}/{file}`, any host or base path; the `sig` is ignored) is resolved straight through blockbustr's own account for that provider, skipping jellybird. If blockbustr has no such account, or the torrent isn't on it (jellybird may use another account), the URL is followed as before, with a warning. *(Implemented P3.2.)* What clients receive is blockbustr's signed, expiring stream URL (P3.10, §8.2), never the target.
 - On first PlaybackInfo, resolve and ffprobe (`-analyzeduration 5M -probesize 10M`, 15s timeout), then persist the streams. If probing fails, return a MediaSource with minimal info (container guessed from the URL, `SupportsDirectPlay: true`) so playback can still be tried.
 - **Implemented (P2.4b):**
   - `Scanner.ProbeRemote` (`library/remote.go`) runs on the first PlaybackInfo of a source never probed. One probe runs per item (singleflight), and the result replaces the item's source. A failure is recorded (`probe_error`) and not retried until the `.strm` changes.
@@ -501,6 +501,15 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
   - **Offered:** remembered with the stream set and attached to **every** choice as external SubRip tracks from index 100, which leaves the low indexes free for the choice's own tracks once probed. The track's `Title` is the addon's name. An undecided source (no video stream known) still gets `DeliveryMethod: External` and a `DeliveryUrl` for them, and its direct-play answer is left alone.
   - **Served:** through the usual subtitle endpoint. The subtitle store downloads a remote track once into its cache (at most 5 MB), so conversion (SRT/WebVTT/ASS, `startTicks` shift) and burn-in work as they do for a sidecar file. A request for an external track never resolves the video, so subtitles load even while a torrent is still downloading.
   - **Config:** `stremio.subtitles: { languages: [], per_language: 3 }`.
+- **Hardening from the first live test (2026-10-07, Torrentio with an RD key):**
+  - **Markers beat URLs.** A debrid-configured addon gives every stream a `url`. `[RD+]` marks one cached (`Info.Debrid`); `[RD download]` marks it uncached and ranked as such, because playing it starts a download and plays a placeholder video. Only an unmarked URL counts as ready.
+  - **Notice videos are failures.** Torrentio (and look-alikes) never return an error: a resolve URL redirects to `/videos/failed_access_v3.mp4`, `failed_infringement…`, `downloading…`. `resolve` treats an `.mp4` under `/video(s)/` or `/static/` named `failed…`, `error…`, `limit…`, `unavailable…`, `no_…` as `ErrPlaceholder`, and `downloading…` as `ErrDownloading`. These are never cached as links.
+  - **`User-Agent: blockbustr`** on following and proxying links: Torrentio's Cloudflare answers Go's default agent with 403.
+  - **Addon links are always proxied** for catalog titles, never redirected. A URL from a configured addon may carry its credentials (a debrid key in Torrentio's or AIOStreams' resolve URL), and a proxy host (StremThru, MediaFlow) isn't recognisable as debrid.
+  - **Fallback (`playLink`, stream and HLS).** When the player asks for the default source (no id, or the item id), versions are tried in ranked order and the first that resolves plays.
+    - A version that fails for good (anything but still downloading) is remembered in `streambad:{item}` for 6 h. It's skipped by the default and no longer offered by PlaybackInfo.
+    - A version picked by its own id fails as itself (502, or 503 while downloading).
+  - **Accounts:** adding a torrent falls through to the next account when one refuses (a revoked key, an outage), though not for a blocked torrent (RD `451 infringing_file`), which no account will take. Each account's key is checked at start (`AccountInfo`), and a refusal is logged as a warning.
 
 ### 7.4 In-client search and discovery (core feature)
 Every captured client searches through `GET /Items?searchTerm=…&recursive=true` (Jellyfin Android sends three in parallel, split by `includeItemTypes`/`excludeItemTypes`/`mediaTypes`; §3.5). blockbustr answers those with **library matches first, then remote matches**, so the app's normal search becomes "search everything".
@@ -597,6 +606,11 @@ The response carries a `PlaySessionId` (uuid). Remember the chosen decision in R
 - Remote (strm/debrid/stremio): **302 to the resolved URL** if the redirect is safe for this client, otherwise **reverse-proxy** with Range passthrough.
   - **Observed (recon, 2026-10-05):** Findroid 1.1.0 with **ExoPlayer** silently fails on `http://` → 302 → `https://` CDN. Its position stays at 0 and it reports "paused", because ExoPlayer refuses cross-protocol redirects by default. The same item plays with Findroid's **mpv** player. Most Android clients (Jellyfin Android, Android TV, Findroid default) use ExoPlayer/Media3.
   - **Rule:** only redirect when the scheme is kept (https → https, or http → http). When blockbustr is reached over plain `http` and the target is `https`, proxy by default. Override per client with `compat.redirect_clients` / `compat.proxy_clients` (matched on the `Client` auth field).
+- **Private links never leave the server (P3.10, AGENTS Safety):** a link resolved through a debrid account (`Debrid`/`Torrent` sources, jellybird targets resolved directly), or a followed URL that ends on a debrid download host (`real-debrid.com`, `rdeb.io`, `torbox.app`, `tb-cdn.st`, AllDebrid, Premiumize, Debrid-Link, Offcloud…), is **always proxied**. `compat.redirect_clients` can't override this. `resolve.IsPrivate` checks the host too, so links cached before the flag existed are caught.
+- **Signed stream URLs (P3.10, `internal/urlsign`):** a remote source's `Path` is `{server}/Videos/{id}/stream?static=true&MediaSourceId={ms}&Expires={unix}&Signature={HMAC-SHA256 over item, source and expiry, base64url}`, valid for `server.stream_url_ttl` (48 h; 1 h–30 d).
+  - **Key:** 32 random bytes generated on first start in `server_settings` (`stream_url_key`), so signatures survive restarts.
+  - **Checking:** a request **with** a `Signature` must match and must not have expired, or it gets 403. The source id may be in any spelling.
+  - **Unsigned requests:** still served, because Jellyfin serves `/Videos/{id}/stream` anonymously and Findroid 1.1.0 builds its own URL with no credentials (captures). A signed URL therefore can't be altered to reach another source, or used after it expires; the unsigned endpoint stays as open as Jellyfin's.
   - Recommended deployment: put blockbustr behind https (Tailscale `serve`, Caddy). Then redirects work for every client and the CDN bytes never pass through the server.
 
 ### 8.3 HLS (remux and transcode)
@@ -701,7 +715,7 @@ Publish `UserDataChanged`.
 ## 10. Configuration
 Implemented in `internal/config`. Annotated example: `config.example.yaml`. Precedence is defaults < YAML < `BLOCKBUSTR_*` env vars (an empty env var doesn't override). Unknown YAML keys are an error, so typos fail fast, and `Validate` reports every problem at once.
 ```yaml
-server:    { listen: ":8096", external_url: "", server_name: blockbustr, shutdown_timeout: 10s }
+server:    { listen: ":8096", external_url: "", server_name: blockbustr, shutdown_timeout: 10s, stream_url_ttl: 48h }
 database:  { url: "postgres://blockbustr:…@postgres:5432/blockbustr?sslmode=disable" }   # BLOCKBUSTR_DATABASE_URL
 redis:     { url: "redis://redis:6379/0" }                                                # BLOCKBUSTR_REDIS_URL
 paths:     { cache: /cache }        # transcode/ and images/ default to subdirs of cache

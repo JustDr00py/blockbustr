@@ -111,14 +111,21 @@ func (r *Resolver) torrent(ctx context.Context, src Source) (Link, time.Duration
 		}
 	}
 	v, err, _ := r.flight.Do("add\x00"+src.InfoHash, func() (any, error) {
-		p := r.pickProvider(ctx, src.InfoHash)
-		id, _, err := p.AddMagnet(ctx, "magnet:?xt=urn:btih:"+src.InfoHash)
-		if err != nil {
-			return nil, fmt.Errorf("resolve: %s: add torrent: %w", p.Name(), err)
+		// An account that refuses (a revoked key, a full queue, an outage)
+		// hands the torrent to the next one.
+		var errs []error
+		for _, p := range r.addOrder(ctx, src.InfoHash) {
+			id, _, err := p.AddMagnet(ctx, "magnet:?xt=urn:btih:"+src.InfoHash)
+			if err != nil {
+				r.warn(ctx, "debrid account refused a torrent; trying the next", "provider", p.Name(), "err", err)
+				errs = append(errs, fmt.Errorf("%s: %w", p.Name(), err))
+				continue
+			}
+			k := KnownTorrent{Provider: p.Name(), Hash: src.InfoHash, TorrentID: id, Status: provider.StatusDownloading}
+			r.save(ctx, k)
+			return k, nil
 		}
-		k := KnownTorrent{Provider: p.Name(), Hash: src.InfoHash, TorrentID: id, Status: provider.StatusDownloading}
-		r.save(ctx, k)
-		return k, nil
+		return nil, fmt.Errorf("resolve: add torrent: %w", errors.Join(errs...))
 	})
 	if err != nil {
 		return Link{}, 0, err
@@ -198,26 +205,38 @@ func (r *Resolver) rank(n provider.Name) int {
 	return len(r.Providers)
 }
 
-// pickProvider is the account to add a torrent to: the first (by priority)
-// that reports it cached, else the first.
-func (r *Resolver) pickProvider(ctx context.Context, hash string) provider.Provider {
+// addOrder is the accounts to try adding a torrent to: the first (by
+// priority) that reports it cached, then the rest by priority.
+func (r *Resolver) addOrder(ctx context.Context, hash string) []provider.Provider {
 	order := r.order()
+	first := -1
 	if len(order) > 1 {
 		ictx, cancel := context.WithTimeout(ctx, instantBudget)
 		defer cancel()
-		for _, n := range order {
+	find:
+		for i, n := range order {
 			res, err := r.Providers[n].InstantCheck(ictx, []string{hash})
 			if err != nil {
 				continue
 			}
 			for _, ir := range res {
 				if ir.Cached && strings.EqualFold(ir.Hash, hash) {
-					return r.Providers[n]
+					first = i
+					break find
 				}
 			}
 		}
 	}
-	return r.Providers[order[0]]
+	out := make([]provider.Provider, 0, len(order))
+	if first >= 0 {
+		out = append(out, r.Providers[order[first]])
+	}
+	for i, n := range order {
+		if i != first {
+			out = append(out, r.Providers[n])
+		}
+	}
+	return out
 }
 
 var videoExts = map[string]bool{".mkv": true, ".mp4": true, ".m4v": true, ".avi": true, ".webm": true, ".ts": true, ".m2ts": true, ".mov": true, ".wmv": true, ".mpg": true}

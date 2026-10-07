@@ -6,6 +6,7 @@ server:
   server_name: blockbustr
   shutdown_timeout: 10s
   discovery: true              # answer LAN discovery on UDP 7359 (containers: publish 7359/udp, set external_url)
+  stream_url_ttl: 48h          # how long signed stream URLs handed to clients stay valid
   # admin_username / admin_password: better set via BLOCKBUSTR_ADMIN_USERNAME/_PASSWORD in .env
 database:
   url: postgres://blockbustr:blockbustr@postgres:5432/blockbustr?sslmode=disable

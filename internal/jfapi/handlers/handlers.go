@@ -21,6 +21,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/stremio"
 	"github.com/sysadmin/blockbustr/internal/subtitles"
+	"github.com/sysadmin/blockbustr/internal/urlsign"
 )
 
 // Deps is what the handlers need from the rest of the server.
@@ -67,6 +68,9 @@ type Deps struct {
 	// Streams collects addon streams for catalog titles at PlaybackInfo
 	// (stremio.Collector); nil leaves them with a placeholder source.
 	Streams StreamCollector
+	// StreamSigner signs remote sources' stream URLs; nil leaves them
+	// unsigned.
+	StreamSigner *urlsign.Signer
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.

@@ -1,6 +1,7 @@
 package pg
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"io"
@@ -292,5 +293,17 @@ func TestDebridAccounts(t *testing.T) {
 	rows, err = q.ListDebridAccounts(ctx)
 	if err != nil || len(rows) != 1 || rows[0].Provider != "realdebrid" {
 		t.Fatalf("after delete: %v %v", rows, err)
+	}
+}
+
+func TestEnsureStreamKeyIsStable(t *testing.T) {
+	q, _ := newTestQueries(t)
+	first, err := EnsureStreamKey(t.Context(), q)
+	if err != nil || len(first) != 32 {
+		t.Fatalf("first: %x %v", first, err)
+	}
+	second, err := EnsureStreamKey(t.Context(), q)
+	if err != nil || !bytes.Equal(first, second) {
+		t.Errorf("second: %x %v, want %x", second, err, first)
 	}
 }
