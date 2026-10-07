@@ -338,7 +338,7 @@ var runFFmpegSession = func(ctx context.Context, args []string, stderr *bytes.Bu
 }
 
 // urlRE finds URLs in ffmpeg's messages, to keep them out of logs.
-var urlRE = regexp.MustCompile(`https?://\S+`)
+var urlRE = regexp.MustCompile(`https?://\S*[^\s:,]`)
 
 // pollInterval is a var so tests can shrink it.
 var pollInterval = 100 * time.Millisecond
