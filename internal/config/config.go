@@ -63,6 +63,12 @@ type Stremio struct {
 	CatalogPages int           `yaml:"catalog_pages"` // pages fetched per catalog (Cinemeta pages hold 50 titles)
 	Streams      Streams       `yaml:"streams"`
 	Subtitles    Subtitles     `yaml:"subtitles"`
+	// RedirectHosts are stream proxies (MediaFlow Proxy, StremThru) apps
+	// may fetch from themselves: an addon link resolving to one of these
+	// hosts (or a subdomain) is redirected to instead of proxied, so its
+	// bytes skip this server. Empty (the default): every addon stream is
+	// proxied. A debrid link is never redirected to.
+	RedirectHosts []string `yaml:"redirect_hosts"`
 }
 
 // Subtitles configures which addon subtitles catalog titles offer (DESIGN
@@ -290,6 +296,7 @@ var envOverrides = []struct {
 	{"BLOCKBUSTR_CACHE_DIR", func(c *Config, v string) { c.Paths.Cache = v }},
 	{"BLOCKBUSTR_REPORTED_VERSION", func(c *Config, v string) { c.Compat.ReportedVersion = v }},
 	{"BLOCKBUSTR_HWACCEL", func(c *Config, v string) { c.Transcode.HWAccel = v }},
+	{"BLOCKBUSTR_REDIRECT_HOSTS", func(c *Config, v string) { c.Stremio.RedirectHosts = splitHosts(v) }},
 	{"BLOCKBUSTR_TRANSCODE_SOFTWARE", func(c *Config, v string) { c.Transcode.Software = parseBool(v, c.Transcode.Software) }},
 	{"BLOCKBUSTR_LEGACY_AUTH", func(c *Config, v string) { c.Compat.LegacyAuth = parseBool(v, c.Compat.LegacyAuth) }},
 	{"BLOCKBUSTR_DISCOVERY", func(c *Config, v string) { c.Server.Discovery = parseBool(v, c.Server.Discovery) }},
@@ -413,6 +420,11 @@ func (c *Config) Validate() error {
 	if s := c.Stremio.Streams; s.UHDSlots < 0 || s.UHDSlots > 10 || s.HDSlots < 0 || s.HDSlots > 10 || s.UHDSlots+s.HDSlots < 1 {
 		add("stremio.streams.uhd_slots and hd_slots must be 0-10 each, at least one above 0")
 	}
+	for _, h := range c.Stremio.RedirectHosts {
+		if h == "" || strings.ContainsAny(h, "/:@?# ") {
+			add("stremio.redirect_hosts: %q must be a host name alone (mfp.example.com), no scheme, port or path", h)
+		}
+	}
 	for _, l := range c.Stremio.Streams.Languages {
 		if len(l) != 2 {
 			add("stremio.streams.languages must be ISO 639-1 codes (\"en\"), got %q", l)
@@ -453,4 +465,14 @@ func parseBool(v string, def bool) bool {
 func hasScheme(raw string, schemes ...string) bool {
 	u, err := url.Parse(raw)
 	return err == nil && u.Host != "" && slices.Contains(schemes, u.Scheme)
+}
+
+// splitHosts reads a comma- or space-separated host list
+// (BLOCKBUSTR_REDIRECT_HOSTS).
+func splitHosts(v string) []string {
+	var out []string
+	for _, h := range strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == ' ' }) {
+		out = append(out, h)
+	}
+	return out
 }

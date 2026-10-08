@@ -1177,3 +1177,53 @@ func TestPlaySourcesUseEarlierChoiceProbes(t *testing.T) {
 		}
 	}
 }
+
+// With stremio.redirect_hosts, an addon link on a stream proxy the admin
+// runs is redirected to, so its bytes skip blockbustr; a link blockbustr
+// resolved through a debrid account still isn't.
+func TestCatalogStreamRedirectHosts(t *testing.T) {
+	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "video/x-matroska")
+		_, _ = w.Write([]byte("matroska bytes"))
+	}))
+	t.Cleanup(proxy.Close)
+	proxied := proxy.URL + "/proxy/stream?d=https%3A%2F%2Fcdn.example%2Fm.mkv&api_password=pw"
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "AIOStreams", Stream: stremio.Stream{Name: "1080p", Title: "The Matrix 1080p x264 💾 1.5 GB", URL: proxied}},
+		{Addon: "Torrentio", Stream: stremio.Stream{Name: "Torrentio\n720p", Title: "The.Matrix.1999.720p.BluRay.x264-GRP\n💾 1.1 GB", InfoHash: "bbbb"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard(),
+			Providers: map[provider.Name]provider.Provider{provider.RealDebrid: &fakeAccount{cdn: proxy.URL}}}
+		d.Config.Stremio.RedirectHosts = []string{"127.0.0.1"}
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
+	rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`)
+	var got playbackSources
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); rec.Code != 200 || err != nil || len(got.MediaSources) != 2 {
+		t.Fatalf("PlaybackInfo: %d %v %s", rec.Code, err, rec.Body)
+	}
+	for _, src := range got.MediaSources {
+		if strings.Contains(src.Path, "api_password") {
+			t.Errorf("%s: PlaybackInfo leaks the proxy link: %s", src.Name, src.Path)
+		}
+	}
+	stream := func(ms string) *httptest.ResponseRecorder {
+		return call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+ms, "", "")
+	}
+	for _, src := range got.MediaSources {
+		rec := stream(src.Id)
+		switch src.Name {
+		case "1080p H.264 • 1.5 GB":
+			if rec.Code != 302 || rec.Header().Get("Location") != proxied {
+				t.Errorf("proxy link: %d, Location %q; want a redirect to it", rec.Code, rec.Header().Get("Location"))
+			}
+		default: // the torrent, resolved through the debrid account (still downloading there: 503)
+			if rec.Code == 302 || rec.Header().Get("Location") != "" {
+				t.Errorf("%s: %d, Location %q; a debrid link must not be redirected to", src.Name, rec.Code, rec.Header().Get("Location"))
+			}
+		}
+	}
+}

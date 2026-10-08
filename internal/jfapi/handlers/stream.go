@@ -150,9 +150,11 @@ func (a *api) serveSource(w http.ResponseWriter, r *http.Request, it db.Item, sr
 // remoteStream sends a remote source (DESIGN §8.2): a redirect to the
 // resolved link when the client can follow it, else a proxy with Range
 // passthrough. A link that stopped working is resolved again once. A
-// catalog title's addon links are always proxied: they may carry the
-// addon's credentials (a debrid key in a resolve URL), and a version that
-// fails falls back to the next (playLink).
+// catalog title's addon links are proxied: they may carry the addon's
+// credentials (a debrid key in a resolve URL), and a version that fails
+// falls back to the next (playLink). The exception is a link on one of
+// stremio.redirect_hosts, a stream proxy the admin runs for apps to fetch
+// from themselves.
 func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, src db.MediaSource, sources []db.MediaSource, want, contentType string) {
 	if a.Resolver == nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -166,7 +168,7 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, s
 		return
 	}
 	_, _, catalog := stremioRef(it)
-	if !catalog && !resolve.IsPrivate(link) && a.mayRedirect(r, link.URL) {
+	if !resolve.IsPrivate(link) && (!catalog || a.redirectHost(link.URL)) && a.mayRedirect(r, link.URL) {
 		http.Redirect(w, r, link.URL, http.StatusFound)
 		return
 	}
@@ -341,6 +343,20 @@ func linkExpired(status int) bool {
 		return true
 	}
 	return false
+}
+
+// redirectHost says whether link is on one of stremio.redirect_hosts (or a
+// subdomain of one).
+func (a *api) redirectHost(link string) bool {
+	u, err := url.Parse(link)
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	return host != "" && slices.ContainsFunc(a.Config.Stremio.RedirectHosts, func(h string) bool {
+		h = strings.ToLower(h)
+		return host == h || strings.HasSuffix(host, "."+h)
+	})
 }
 
 // mayRedirect says whether to send the client to link instead of proxying:

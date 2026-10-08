@@ -49,6 +49,8 @@ scan:
 stremio:                       # addons themselves are managed through /blockbustr/addons
   sync_interval: 6h            # re-sync enabled catalogs; "0s" = only at start and on changes
   catalog_pages: 2             # pages fetched per catalog
+  redirect_hosts: []           # stream proxies apps fetch from themselves (e.g. [mfp.example.com],
+                               # see deploy/proxy/); empty = every addon stream goes through blockbustr
   streams:
     timeout: 6s                # per addon, when collecting streams for playback
     uhd_slots: 3               # versions offered at 2160p and up

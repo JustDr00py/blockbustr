@@ -1,0 +1,35 @@
+# A stream proxy for a VPS (or any box with a fast uplink): MediaFlow Proxy
+# behind Caddy, which gets a TLS certificate for PROXY_DOMAIN by itself.
+# Apps then stream from here instead of through blockbustr:
+#   1. Point PROXY_DOMAIN's DNS (an A record) at this machine; open 80/443.
+#   2. cp .env.example .env, fill it in, then: docker compose up -d
+#   3. In AIOStreams, set the proxy to MediaFlow Proxy at
+#      https://PROXY_DOMAIN with API_PASSWORD.
+#   4. On blockbustr: BLOCKBUSTR_REDIRECT_HOSTS=PROXY_DOMAIN in deploy/.env.
+# blockbustr must be reached over https too (a reverse proxy or Tailscale
+# Serve): Android players refuse an http -> https redirect, and blockbustr
+# then proxies those streams itself.
+services:
+  mediaflow-proxy:
+    image: mhdzumair/mediaflow-proxy:latest
+    restart: unless-stopped
+    environment:
+      API_PASSWORD: ${API_PASSWORD:?set API_PASSWORD in .env}
+    expose:
+      - "8888"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [mediaflow-proxy]
+    environment:
+      PROXY_DOMAIN: ${PROXY_DOMAIN:?set PROXY_DOMAIN in .env}
+    command: caddy reverse-proxy --from ${PROXY_DOMAIN} --to mediaflow-proxy:8888
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+
+volumes:
+  caddy-data:

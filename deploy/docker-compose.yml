@@ -31,6 +31,7 @@ services:
       BLOCKBUSTR_EXTERNAL_URL: ${BLOCKBUSTR_EXTERNAL_URL:-}
       BLOCKBUSTR_LOG_LEVEL: ${BLOCKBUSTR_LOG_LEVEL:-info}
       BLOCKBUSTR_TRANSCODE_SOFTWARE: ${BLOCKBUSTR_TRANSCODE_SOFTWARE:-true}   # false: hardware transcodes only
+      BLOCKBUSTR_REDIRECT_HOSTS: ${BLOCKBUSTR_REDIRECT_HOSTS:-}   # stream proxy hosts apps fetch from (deploy/proxy/)
     ports:
       - "${BLOCKBUSTR_PORT:-8096}:8096"
       - "${BLOCKBUSTR_DISCOVERY_PORT:-7359}:7359/udp"   # LAN server discovery (needs BLOCKBUSTR_EXTERNAL_URL)
