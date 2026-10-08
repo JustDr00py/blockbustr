@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
 	"syscall"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/provider/torbox"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/secret"
+	"github.com/sysadmin/blockbustr/internal/settings"
 	"github.com/sysadmin/blockbustr/internal/store/pg"
 	sqlcdb "github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/stremio"
@@ -115,16 +117,25 @@ func run() error {
 	if err := bootstrapDebrid(ctx, queries, cfg, log); err != nil {
 		return err
 	}
+	// The admin UI's settings, over config.yaml and the environment: what
+	// the admin set applies from the start, and changes apply live
+	// (OnChange below).
+	settingsKey, _ := secret.ParseKey(cfg.SecretKey) // nil when unset or invalid (validated at load)
+	settingsStore := settings.New(cfg, queries, settingsKey, log)
+	if err := settingsStore.Load(ctx); err != nil {
+		return err
+	}
+	cfg = settingsStore.Config()
 	debrid, debridOrder, err := loadProviders(ctx, queries, cfg, log)
 	if err != nil {
 		return err
 	}
 	scanner := library.NewScanner(pool, rc, media.Prober{}, cfg.Scan, log)
-	var tmdbClient *tmdb.Client
-	if cfg.Metadata.TMDBAPIKey != "" {
-		tmdbClient = tmdb.New(cfg.Metadata.TMDBAPIKey, cfg.Metadata.Language)
-	} else {
-		log.Info("no TMDB API key (BLOCKBUSTR_TMDB_API_KEY); metadata comes from .nfo files only")
+	// Without a key it's off (metadata from .nfo files only) until one is
+	// set on the Settings page.
+	tmdbClient := tmdb.New(cfg.Metadata.TMDBAPIKey, cfg.Metadata.Language)
+	if !tmdbClient.Enabled() {
+		log.Info("no TMDB API key (Settings page or BLOCKBUSTR_TMDB_API_KEY); metadata comes from .nfo files only")
 	}
 	refresher := metadata.NewRefresher(pool, tmdbClient, log)
 	scanner.SetMetadata(refresher)
@@ -192,9 +203,7 @@ func run() error {
 			Registry: addons, Cache: rc, Log: log, Timeout: cfg.Search.Timeout, Retention: cfg.Search.Retention,
 			Refresh: refresher.Refresh,
 		}
-		if tmdbClient != nil {
-			discover.TMDB = &stremio.TMDBSearch{Client: tmdbClient, Cache: rc}
-		}
+		discover.TMDB = &stremio.TMDBSearch{Client: tmdbClient, Cache: rc}
 		if cfg.Search.CinemetaFallback {
 			discover.Fallback = stremio.CinemetaURL
 		}
@@ -205,10 +214,23 @@ func run() error {
 	metrics.Gauge("blockbustr_debrid_accounts_active", "Debrid accounts in use.", func() float64 { return float64(accounts.Len()) })
 	metrics.Gauge("blockbustr_db_connections_in_use", "Postgres connections in use.", func() float64 { return float64(pool.Stat().AcquiredConns()) })
 	metrics.Gauge("blockbustr_db_connections_idle", "Idle Postgres connections.", func() float64 { return float64(pool.Stat().IdleConns()) })
+	transcoding := &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds}
+	transcoding.NoCPU.Store(!cfg.Transcode.Software)
+	settingsStore.OnChange(func(c config.Config) {
+		tmdbClient.SetKey(c.Metadata.TMDBAPIKey)
+		transcoder.SetMaxSessions(c.Transcode.MaxSessions)
+		transcoding.NoCPU.Store(!c.Transcode.Software)
+		if encoder == transcode.CapSoftware && !c.Transcode.Software {
+			log.Warn("no hardware encoder and transcode.software is off: video plays as is or not at all")
+		}
+		catalogs.SetPages(c.Stremio.CatalogPages)
+		catalogs.SetInterval(c.Stremio.SyncInterval)
+	})
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
 		Resolver: &resolve.Resolver{Cache: rc, Accounts: accounts, Torrents: torrents, Log: log}, Probe: scanner,
-		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds, NoCPU: !cfg.Transcode.Software},
+		Transcoding: transcoding,
+		Settings:    settingsStore,
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
 		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams, RemoteSearch: remote,
 		StreamSigner: &urlsign.Signer{Key: streamKey, TTL: cfg.Server.StreamURLTTL},
@@ -274,13 +296,20 @@ func run() error {
 	return nil
 }
 
-// bootstrapDebrid upserts the configured debrid API keys, sealed with
-// AES-256-GCM under secret_key, into debrid_accounts (DESIGN §4). With no
-// key configured nothing is written; removing a key leaves the row in place.
+// bootstrapDebrid adds the configured debrid API keys, sealed with
+// AES-256-GCM under secret_key, to debrid_accounts (DESIGN §4) for
+// providers that have no account yet. An existing account keeps its key
+// (the Debrid page changes it); a different one in the environment is
+// logged. With no key configured nothing is written; removing a key
+// leaves the row in place.
 func bootstrapDebrid(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, log *slog.Logger) error {
 	accounts := map[string]string{
 		"realdebrid": cfg.Debrid.RealDebridAPIKey,
 		"torbox":     cfg.Debrid.TorBoxAPIKey,
+	}
+	stored, err := q.ListDebridAccounts(ctx)
+	if err != nil {
+		return err
 	}
 	var key []byte
 	for provider, apiKey := range accounts {
@@ -294,6 +323,15 @@ func bootstrapDebrid(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, 
 			}
 			key = parsed
 		}
+		// The variable only adds an account: once stored, the Debrid page
+		// owns its key, so a key changed there survives restarts.
+		if i := slices.IndexFunc(stored, func(a sqlcdb.ListDebridAccountsRow) bool { return a.Provider == provider }); i >= 0 {
+			if plain, err := secret.Open(key, stored[i].ApiKeyEnc); err != nil || string(plain) != apiKey {
+				log.Warn("debrid API key in the environment differs from the stored one; keeping the stored one (change it on the Debrid page, and remove the variable)",
+					"provider", provider)
+			}
+			continue
+		}
 		enc, err := secret.Seal(key, []byte(apiKey))
 		if err != nil {
 			return err
@@ -301,7 +339,7 @@ func bootstrapDebrid(ctx context.Context, q *sqlcdb.Queries, cfg config.Config, 
 		if err := q.UpsertDebridAccount(ctx, sqlcdb.UpsertDebridAccountParams{Provider: provider, ApiKeyEnc: enc}); err != nil {
 			return err
 		}
-		log.Info("debrid account stored", "provider", provider)
+		log.Info("debrid account added from the environment", "provider", provider)
 	}
 	return nil
 }

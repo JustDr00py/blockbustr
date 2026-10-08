@@ -193,3 +193,17 @@ export interface DebridStatus {
   PremiumUntil?: string;
   Error?: string;
 }
+
+// A row of GET /blockbustr/settings. Value is absent for a secret (IsSet
+// says whether it has one); Locked ones are set in config.yaml or the
+// environment (Source names which).
+export interface Setting {
+  Key: string;
+  Label: string;
+  Help: string;
+  Kind: "int" | "bool" | "list" | "duration" | "secret";
+  Value?: unknown;
+  IsSet: boolean;
+  Source: string;
+  Locked: boolean;
+}

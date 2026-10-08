@@ -39,7 +39,7 @@ const (
 type Refresher struct {
 	q    *db.Queries
 	pool *pgxpool.Pool
-	tmdb *tmdb.Client // nil: nfo files only
+	tmdb *tmdb.Client // nil or without a key: nfo files only
 	log  *slog.Logger
 }
 
@@ -111,7 +111,7 @@ func (r *Refresher) Refresh(ctx context.Context, lib db.Library) error {
 		}
 	}
 	r.log.Info("metadata refreshed", "library", lib.Name, "matched", st.Matched, "unmatched", st.Unmatched,
-		"failed", st.Failed, "tmdb", r.tmdb != nil, "took", time.Since(now).Round(time.Millisecond))
+		"failed", st.Failed, "tmdb", r.tmdb.Enabled(), "took", time.Since(now).Round(time.Millisecond))
 	return nil
 }
 
@@ -139,7 +139,7 @@ func (u *run) movie(ctx context.Context, row db.ItemsNeedingMetadataRow) (Meta, 
 	path := deref(row.Path)
 	local := readNFO(stemPath(path)+".nfo", filepath.Join(filepath.Dir(path), "movie.nfo"))
 	var m Meta
-	if c := u.r.tmdb; c != nil {
+	if c := u.r.tmdb; c.Enabled() {
 		id := atoi(providerID(row.ProviderIds, "Tmdb"))
 		if local != nil && id == 0 {
 			id = atoi(local.TMDBID)
@@ -181,7 +181,7 @@ func (u *run) movie(ctx context.Context, row db.ItemsNeedingMetadataRow) (Meta, 
 func (u *run) series(ctx context.Context, row db.ItemsNeedingMetadataRow) (Meta, error) {
 	local := readNFO(filepath.Join(deref(row.Path), "tvshow.nfo"))
 	var m Meta
-	if c := u.r.tmdb; c != nil {
+	if c := u.r.tmdb; c.Enabled() {
 		id := atoi(providerID(row.ProviderIds, "Tmdb"))
 		if local != nil && id == 0 {
 			id = atoi(local.TMDBID)
@@ -268,7 +268,7 @@ func (u *run) episode(ctx context.Context, row db.ItemsNeedingMetadataRow) (Meta
 
 // showID is the TMDB id of the series item seriesID (0 if unmatched).
 func (u *run) showID(ctx context.Context, seriesID *uuid.UUID) (int, error) {
-	if seriesID == nil || u.r.tmdb == nil {
+	if seriesID == nil || !u.r.tmdb.Enabled() {
 		return 0, nil
 	}
 	s, err := u.parent(ctx, *seriesID)

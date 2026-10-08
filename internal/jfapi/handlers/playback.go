@@ -197,7 +197,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		// re-encoding video: a version that plays as is (or remuxed) is
 		// offered first, and the rest only with their video copied.
 		NoVideoEncode: s.NoTranscode || !a.Transcoding.encodes(),
-		NoCPUFilters:  a.Transcoding != nil && a.Transcoding.NoCPU,
+		NoCPUFilters:  a.Transcoding != nil && a.Transcoding.NoCPU.Load(),
 	}
 	opts.MaxBitrate = maxBitrate
 

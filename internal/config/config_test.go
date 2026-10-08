@@ -181,3 +181,27 @@ scan: {interval: 10s}
 		}
 	}
 }
+
+// Explicit records the keys config.yaml and the environment set, which
+// the admin UI's settings can't override.
+func TestLoadRecordsExplicitKeys(t *testing.T) {
+	path := writeConfig(t, "stremio:\n  streams:\n    uhd_slots: 1\ntranscode:\n  max_sessions: 2\n")
+	t.Setenv("BLOCKBUSTR_REDIRECT_HOSTS", "a.example.com, b.example.com")
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for key, want := range map[string]string{
+		"stremio.streams.uhd_slots": "config.yaml",
+		"transcode.max_sessions":    "config.yaml",
+		"stremio.redirect_hosts":    "BLOCKBUSTR_REDIRECT_HOSTS",
+		"stremio.streams.hd_slots":  "",
+	} {
+		if got := cfg.Explicit[key]; got != want {
+			t.Errorf("%s: %q, want %q", key, got, want)
+		}
+	}
+	if strings.Join(cfg.Stremio.RedirectHosts, "|") != "a.example.com|b.example.com" {
+		t.Errorf("hosts: %q", cfg.Stremio.RedirectHosts)
+	}
+}

@@ -359,7 +359,7 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	if err != nil {
 		return streamSet{}, err
 	}
-	cfg := a.Config.Stremio.Streams
+	cfg := a.live().Stremio.Streams
 	prefs.Languages, prefs.Allow, prefs.Deny = a.preferredLanguages(), cfg.AllowGroups, cfg.DenyGroups
 	if prefs.Runtime == 0 && it.RuntimeTicks != nil {
 		prefs.Runtime = time.Duration(*it.RuntimeTicks) * 100 // ticks are 100 ns

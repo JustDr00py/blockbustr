@@ -353,7 +353,7 @@ func (a *api) redirectHost(link string) bool {
 		return false
 	}
 	host := strings.ToLower(u.Hostname())
-	return host != "" && slices.ContainsFunc(a.Config.Stremio.RedirectHosts, func(h string) bool {
+	return host != "" && slices.ContainsFunc(a.live().Stremio.RedirectHosts, func(h string) bool {
 		h = strings.ToLower(h)
 		return host == h || strings.HasSuffix(host, "."+h)
 	})

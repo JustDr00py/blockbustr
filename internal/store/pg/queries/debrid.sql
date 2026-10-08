@@ -1,7 +1,7 @@
 -- name: UpsertDebridAccount :exec
--- Config bootstrap (P3.1): one account per provider. The key is sealed by
--- internal/secret before it gets here; a changed key re-seals on the next
--- start, and enabling again is implicit.
+-- One account per provider: added by the config bootstrap (P3.1) when a
+-- provider has none, and replaced from the Debrid page. The key is sealed
+-- by internal/secret before it gets here; enabling again is implicit.
 INSERT INTO debrid_accounts (provider, api_key_enc)
 VALUES ($1, $2)
 ON CONFLICT (provider) DO UPDATE

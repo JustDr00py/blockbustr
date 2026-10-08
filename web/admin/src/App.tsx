@@ -7,6 +7,7 @@ import Users from "./pages/Users";
 import Addons from "./pages/Addons";
 import Debrid from "./pages/Debrid";
 import Stats from "./pages/Stats";
+import Settings from "./pages/Settings";
 
 const pages = {
   dashboard: { label: "Dashboard", Component: Dashboard },
@@ -15,6 +16,7 @@ const pages = {
   addons: { label: "Addons", Component: Addons },
   debrid: { label: "Debrid", Component: Debrid },
   stats: { label: "Stats", Component: Stats },
+  settings: { label: "Settings", Component: Settings },
 } as const;
 type Page = keyof typeof pages;
 

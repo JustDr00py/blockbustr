@@ -12,7 +12,8 @@ import (
 )
 
 // Configured keys land in debrid_accounts sealed, never in plain text, and
-// open again with the same secret_key.
+// open again with the same secret_key. They only add accounts: a stored
+// key (the Debrid page's) isn't overwritten by a different one.
 func TestBootstrapDebrid(t *testing.T) {
 	q, _ := testutil.Queries(t)
 	keyHex := strings.Repeat("ab", secret.KeyLen)
@@ -21,7 +22,7 @@ func TestBootstrapDebrid(t *testing.T) {
 	if err := bootstrapDebrid(t.Context(), q, cfg, testutil.Discard()); err != nil {
 		t.Fatal(err)
 	}
-	// A changed key re-seals; TorBox added on the next start.
+	// A changed key leaves the stored one; TorBox is added on the next start.
 	cfg.Debrid.RealDebridAPIKey = "rd-test-key-2"
 	cfg.Debrid.TorBoxAPIKey = "tb-test-key"
 	if err := bootstrapDebrid(t.Context(), q, cfg, testutil.Discard()); err != nil {
@@ -32,7 +33,7 @@ func TestBootstrapDebrid(t *testing.T) {
 		t.Fatal(err)
 	}
 	key, _ := secret.ParseKey(keyHex)
-	want := map[string]string{"realdebrid": "rd-test-key-2", "torbox": "tb-test-key"}
+	want := map[string]string{"realdebrid": "rd-test-key", "torbox": "tb-test-key"}
 	if len(rows) != len(want) {
 		t.Fatalf("rows: %d", len(rows))
 	}

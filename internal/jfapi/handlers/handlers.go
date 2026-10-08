@@ -21,6 +21,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/resolve"
+	"github.com/sysadmin/blockbustr/internal/settings"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/stremio"
 	"github.com/sysadmin/blockbustr/internal/subtitles"
@@ -80,11 +81,24 @@ type Deps struct {
 	// ChoiceProber probes addon stream choices for their tracks; nil
 	// leaves them unprobed.
 	ChoiceProber ChoiceProber
+	// Settings holds the admin UI's settings over Config, and serves
+	// /blockbustr/settings; nil uses Config as it is and leaves those
+	// routes out.
+	Settings *settings.Store
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.
 type RemoteProber interface {
 	ProbeRemote(ctx context.Context, item uuid.UUID) (bool, error)
+}
+
+// live is the configuration with the admin UI's settings applied, for the
+// settings they cover (stream preferences, proxy hosts); Config otherwise.
+func (a *api) live() config.Config {
+	if a.Settings != nil {
+		return a.Settings.Config()
+	}
+	return a.Config
 }
 
 type api struct {
@@ -135,6 +149,7 @@ func Register(rt *jfapi.Router, d Deps) {
 	a.registerPlayback(rt)
 	a.registerStream(rt)
 	a.registerDownload(rt)
+	a.registerSettings(rt)
 	a.registerHLS(rt)
 	a.registerSubtitles(rt)
 	a.registerSessions(rt)

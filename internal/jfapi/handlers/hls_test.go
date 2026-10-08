@@ -464,7 +464,7 @@ func TestHLSTranscodeRefused(t *testing.T) {
 	if rec := c.replay(t, h); rec.Code != 200 {
 		t.Errorf("allowed again: %d", rec.Code)
 	}
-	d.Transcoding.NoCPU = true // the test server's encoder is the software one
+	d.Transcoding.NoCPU.Store(true) // the test server's encoder is the software one
 	if rec := c.replay(t, h); rec.Code != 403 {
 		t.Errorf("software transcode with transcode.software off: %d", rec.Code)
 	}

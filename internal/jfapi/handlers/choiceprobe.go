@@ -263,7 +263,7 @@ func preferAudio(streams []db.MediaStream, lang string) {
 // preferredLanguages are the audio languages wanted (ISO 639-1): the
 // configured ones, else metadata.language's ("en-US" → en).
 func (a *api) preferredLanguages() []string {
-	if l := a.Config.Stremio.Streams.Languages; len(l) > 0 {
+	if l := a.live().Stremio.Streams.Languages; len(l) > 0 {
 		return l
 	}
 	base, _, _ := strings.Cut(a.Config.Metadata.Language, "-")

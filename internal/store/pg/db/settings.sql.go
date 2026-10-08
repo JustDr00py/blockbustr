@@ -10,6 +10,15 @@ import (
 	"encoding/json"
 )
 
+const deleteSetting = `-- name: DeleteSetting :exec
+DELETE FROM server_settings WHERE key = $1
+`
+
+func (q *Queries) DeleteSetting(ctx context.Context, key string) error {
+	_, err := q.db.Exec(ctx, deleteSetting, key)
+	return err
+}
+
 const getSetting = `-- name: GetSetting :one
 SELECT value FROM server_settings WHERE key = $1
 `
@@ -34,5 +43,50 @@ type InsertSettingIfMissingParams struct {
 // First writer wins, so concurrent starts agree on generated values.
 func (q *Queries) InsertSettingIfMissing(ctx context.Context, arg InsertSettingIfMissingParams) error {
 	_, err := q.db.Exec(ctx, insertSettingIfMissing, arg.Key, arg.Value)
+	return err
+}
+
+const listAdminSettings = `-- name: ListAdminSettings :many
+SELECT key, value FROM server_settings WHERE key = ANY ($1::text[]) ORDER BY key
+`
+
+type ListAdminSettingsRow struct {
+	Key   string
+	Value json.RawMessage
+}
+
+// The admin UI's settings (internal/settings), by their config keys.
+func (q *Queries) ListAdminSettings(ctx context.Context, keys []string) ([]ListAdminSettingsRow, error) {
+	rows, err := q.db.Query(ctx, listAdminSettings, keys)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAdminSettingsRow{}
+	for rows.Next() {
+		var i ListAdminSettingsRow
+		if err := rows.Scan(&i.Key, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const upsertSetting = `-- name: UpsertSetting :exec
+INSERT INTO server_settings (key, value) VALUES ($1, $2)
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+`
+
+type UpsertSettingParams struct {
+	Key   string
+	Value json.RawMessage
+}
+
+func (q *Queries) UpsertSetting(ctx context.Context, arg UpsertSettingParams) error {
+	_, err := q.db.Exec(ctx, upsertSetting, arg.Key, arg.Value)
 	return err
 }

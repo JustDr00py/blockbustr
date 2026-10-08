@@ -136,7 +136,7 @@ func (d *Discover) sources(ctx context.Context, kinds []string) []searchSource {
 				break // one search catalog per addon and kind
 			}
 		}
-		if n == 0 && d.TMDB == nil && d.Fallback != "" {
+		if n == 0 && !d.TMDB.enabled() && d.Fallback != "" {
 			out = append(out, searchSource{base: d.Fallback, catalog: "top", kind: k})
 		}
 	}
@@ -177,7 +177,7 @@ func (d *Discover) search(ctx context.Context, term string, kinds []string) []fo
 		}()
 	}
 	pending := len(sources)
-	if d.TMDB != nil {
+	if d.TMDB.enabled() {
 		pending++
 		run(0, "tmdb", func(ctx context.Context) ([]found, error) {
 			res, err := d.TMDB.Search(ctx, term)
@@ -202,7 +202,7 @@ func (d *Discover) search(ctx context.Context, term string, kinds []string) []fo
 		case a := <-answers:
 			per[a.i] = a.list
 			pending--
-			if a.i == 0 && d.TMDB != nil && grace == nil {
+			if a.i == 0 && d.TMDB.enabled() && grace == nil {
 				grace = time.After(primaryGrace)
 			}
 		case <-grace:

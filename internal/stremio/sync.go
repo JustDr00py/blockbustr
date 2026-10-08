@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -62,11 +63,31 @@ type Syncer struct {
 	// Events announces changed libraries; nil drops them.
 	Events *events.Bus
 
-	once    sync.Once
-	trigger chan struct{}
+	once     sync.Once
+	trigger  chan struct{}
+	reset    chan struct{}
+	pages    atomic.Int64 // SetPages; 0: Pages
+	interval atomic.Int64 // Run's period (a time.Duration)
 }
 
-func (s *Syncer) init() { s.once.Do(func() { s.trigger = make(chan struct{}, 1) }) }
+func (s *Syncer) init() {
+	s.once.Do(func() { s.trigger, s.reset = make(chan struct{}, 1), make(chan struct{}, 1) })
+}
+
+// SetPages changes the pages synced per catalog from the next sync on.
+func (s *Syncer) SetPages(n int) { s.pages.Store(int64(n)) }
+
+// SetInterval changes Run's period (0: never on a timer), counted from now.
+func (s *Syncer) SetInterval(d time.Duration) {
+	s.init()
+	if time.Duration(s.interval.Swap(int64(d))) == d {
+		return
+	}
+	select {
+	case s.reset <- struct{}{}:
+	default:
+	}
+}
 
 // Trigger asks Run for a sync soon (after an addon or catalog changed).
 func (s *Syncer) Trigger() {
@@ -77,26 +98,39 @@ func (s *Syncer) Trigger() {
 	}
 }
 
-// Run syncs at start, every interval (0: never on a timer), and on
-// Trigger, until ctx ends.
+// Run syncs at start, every interval (0: never on a timer; SetInterval
+// changes it), and on Trigger, until ctx ends.
 func (s *Syncer) Run(ctx context.Context, interval time.Duration) {
 	s.init()
-	var tick <-chan time.Time
-	if interval > 0 {
-		t := time.NewTicker(interval)
-		defer t.Stop()
-		tick = t.C
-	}
+	s.interval.Store(int64(interval))
 	for {
 		if err := s.SyncAll(ctx); err != nil && ctx.Err() == nil {
 			s.Log.Warn("catalog sync failed", "err", err)
 		}
+	wait:
+		var tick <-chan time.Time
+		var t *time.Timer
+		if d := time.Duration(s.interval.Load()); d > 0 {
+			t = time.NewTimer(d)
+			tick = t.C
+		}
 		select {
 		case <-ctx.Done():
+			stopTimer(t)
 			return
 		case <-tick:
 		case <-s.trigger:
+			stopTimer(t)
+		case <-s.reset:
+			stopTimer(t)
+			goto wait
 		}
+	}
+}
+
+func stopTimer(t *time.Timer) {
+	if t != nil {
+		t.Stop()
 	}
 }
 
@@ -312,6 +346,9 @@ func (s *Syncer) page(ctx context.Context, ad addonInfo, row db.ListSyncCatalogs
 		}
 	}
 	pages := s.Pages
+	if n := s.pages.Load(); n > 0 {
+		pages = int(n)
+	}
 	if pages <= 0 {
 		pages = DefaultPages
 	}

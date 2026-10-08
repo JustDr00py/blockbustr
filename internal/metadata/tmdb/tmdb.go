@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/sysadmin/blockbustr/internal/ratelimit"
@@ -24,7 +25,7 @@ const baseURL = "https://api.themoviedb.org/3"
 
 // Client talks to TMDB. Safe for concurrent use.
 type Client struct {
-	apiKey   string
+	apiKey   atomic.Pointer[string] // SetKey changes it
 	language string
 	baseURL  string
 	http     *http.Client
@@ -42,13 +43,14 @@ func New(apiKey, language string) *Client {
 	if language == "" {
 		language = "en-US"
 	}
-	return &Client{
-		apiKey:   apiKey,
+	c := &Client{
 		language: language,
 		baseURL:  baseURL,
 		http:     &http.Client{Timeout: 20 * time.Second},
 		limiter:  ratelimit.New(RequestsPerMinute),
 	}
+	c.SetKey(apiKey)
+	return c
 }
 
 // Language is the metadata language, e.g. "en-US".
@@ -290,11 +292,17 @@ func (c *Client) Details(ctx context.Context, mediaType string, tmdbID int) (Res
 	return r, nil
 }
 
+// SetKey changes the API key ("" turns the client off: Enabled is false).
+func (c *Client) SetKey(key string) { c.apiKey.Store(&key) }
+
+// Enabled says whether c can be used: not nil, with a key.
+func (c *Client) Enabled() bool { return c != nil && *c.apiKey.Load() != "" }
+
 func (c *Client) get(ctx context.Context, path string, q url.Values, out any) error {
 	if q == nil {
 		q = url.Values{}
 	}
-	q.Set("api_key", c.apiKey)
+	q.Set("api_key", *c.apiKey.Load())
 	for attempt := 0; ; attempt++ {
 		if err := c.limiter.Wait(ctx); err != nil {
 			return err

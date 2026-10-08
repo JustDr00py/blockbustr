@@ -638,6 +638,14 @@ func (m *Manager) Count() int {
 }
 
 // Close stops session id and deletes its directory.
+// SetMaxSessions changes how many sessions may run at once (0 = unlimited);
+// running ones are kept.
+func (m *Manager) SetMaxSessions(n int) {
+	m.mu.Lock()
+	m.maxSessions = n
+	m.mu.Unlock()
+}
+
 func (m *Manager) Close(id string) {
 	m.mu.Lock()
 	s := m.sessions[id]

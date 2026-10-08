@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,7 +41,8 @@ type Transcoding struct {
 	SegmentSeconds int
 	// NoCPU (transcode.software: false) refuses video work on the CPU:
 	// encoding with the software encoder, HDR tonemapping, subtitle burn-in.
-	NoCPU bool
+	// The admin UI's settings change it while the server runs.
+	NoCPU atomic.Bool
 
 	locks sync.Map // play session id → *sync.Mutex: one start/restart at a time
 }
@@ -53,7 +55,7 @@ func (t *Transcoding) lock(id string) *sync.Mutex {
 // encodes says whether video can be re-encoded at all: false when only the
 // software encoder is left and the CPU may not be used.
 func (t *Transcoding) encodes() bool {
-	return t == nil || !(t.NoCPU && t.Encoder == transcode.CapSoftware)
+	return t == nil || !(t.NoCPU.Load() && t.Encoder == transcode.CapSoftware)
 }
 
 // errTranscodeRefused: the request needs a video transcode this user or
@@ -248,7 +250,7 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 			return o, fmt.Errorf("%w for this user", errTranscodeRefused)
 		case !t.encodes():
 			return o, fmt.Errorf("%w: no hardware encoder, and transcode.software is off", errTranscodeRefused)
-		case t.NoCPU && (o.Tonemap || o.BurnText != "" || o.BurnImage != nil):
+		case t.NoCPU.Load() && (o.Tonemap || o.BurnText != "" || o.BurnImage != nil):
 			return o, fmt.Errorf("%w: HDR tonemapping and subtitle burn-in run on the CPU, and transcode.software is off", errTranscodeRefused)
 		}
 	}

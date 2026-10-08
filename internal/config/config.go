@@ -40,6 +40,11 @@ type Config struct {
 	Stremio   Stremio   `yaml:"stremio"`
 	Search    Search    `yaml:"search"`
 	Metrics   Metrics   `yaml:"metrics"`
+
+	// Explicit names the keys config.yaml or the environment set, dotted
+	// as in the file ("stremio.redirect_hosts"), with where from: the file
+	// name or the variable. The admin UI's settings can't override these.
+	Explicit map[string]string `yaml:"-"`
 }
 
 // Metrics configures the Prometheus endpoint (TASKS P4.4).
@@ -273,6 +278,11 @@ func Load(path string) (Config, error) {
 			if err := dec.Decode(&cfg); err != nil && !errors.Is(err, io.EOF) {
 				return cfg, fmt.Errorf("parse config %s: %w", path, err)
 			}
+			var doc yaml.Node
+			if yaml.Unmarshal(data, &doc) == nil && len(doc.Content) > 0 {
+				cfg.Explicit = map[string]string{}
+				collectKeys(doc.Content[0], "", filepath.Base(path), cfg.Explicit)
+			}
 		}
 	}
 	applyEnv(&cfg)
@@ -313,7 +323,37 @@ func applyEnv(cfg *Config) {
 	for _, o := range envOverrides {
 		if v, ok := os.LookupEnv(o.env); ok && v != "" {
 			o.apply(cfg, v)
+			if key := envKeys[o.env]; key != "" {
+				if cfg.Explicit == nil {
+					cfg.Explicit = map[string]string{}
+				}
+				cfg.Explicit[key] = o.env
+			}
 		}
+	}
+}
+
+// envKeys are the config keys of the variables whose settings the admin
+// UI also offers, so a variable set locks the setting there.
+var envKeys = map[string]string{
+	"BLOCKBUSTR_REDIRECT_HOSTS":     "stremio.redirect_hosts",
+	"BLOCKBUSTR_TMDB_API_KEY":       "metadata.tmdb_api_key",
+	"BLOCKBUSTR_TRANSCODE_SOFTWARE": "transcode.software",
+}
+
+// collectKeys records every key path under n (a YAML mapping) in out, the
+// leaves and the mappings holding them.
+func collectKeys(n *yaml.Node, prefix, source string, out map[string]string) {
+	if n.Kind != yaml.MappingNode {
+		return
+	}
+	for i := 0; i+1 < len(n.Content); i += 2 {
+		key := n.Content[i].Value
+		if prefix != "" {
+			key = prefix + "." + key
+		}
+		out[key] = source
+		collectKeys(n.Content[i+1], key, source, out)
 	}
 }
 

@@ -23,6 +23,9 @@ type TMDBSearch struct {
 	Max int
 }
 
+// enabled: t can search (a client with a key; the key can be set later).
+func (t *TMDBSearch) enabled() bool { return t != nil && t.Client.Enabled() }
+
 // imdbTTL caches TMDB→IMDb mappings; a missing one is retried after a day
 // (TMDB fills them in for new titles).
 const (
