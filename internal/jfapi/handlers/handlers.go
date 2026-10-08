@@ -134,6 +134,7 @@ func Register(rt *jfapi.Router, d Deps) {
 	a.registerUserData(rt)
 	a.registerPlayback(rt)
 	a.registerStream(rt)
+	a.registerDownload(rt)
 	a.registerHLS(rt)
 	a.registerSubtitles(rt)
 	a.registerSessions(rt)

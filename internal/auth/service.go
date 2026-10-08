@@ -45,18 +45,20 @@ type Session struct {
 	DeviceName string
 	AppName    string
 	AppVersion string
-	// Access and NoPlayback come from the user's policy (P4.1): what they
-	// may see, and whether they may play anything.
+	// Access, NoPlayback and NoDownload come from the user's policy (P4.1):
+	// what they may see, and whether they may play or download anything.
 	Access     pg.Access `json:",omitempty"`
 	NoPlayback bool      `json:",omitempty"`
+	NoDownload bool      `json:",omitempty"`
 }
 
 // policySession fills s's policy fields from a stored users.policy.
 func policySession(s Session, policy []byte) Session {
 	s.Access = pg.AccessFromPolicy(policy)
-	var p struct{ EnableMediaPlayback *bool }
-	if json.Unmarshal(policy, &p) == nil && p.EnableMediaPlayback != nil {
-		s.NoPlayback = !*p.EnableMediaPlayback
+	var p struct{ EnableMediaPlayback, EnableContentDownloading *bool }
+	if json.Unmarshal(policy, &p) == nil {
+		s.NoPlayback = p.EnableMediaPlayback != nil && !*p.EnableMediaPlayback
+		s.NoDownload = p.EnableContentDownloading != nil && !*p.EnableContentDownloading
 	}
 	return s
 }

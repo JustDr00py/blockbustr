@@ -32,6 +32,7 @@ func (a *api) requireUser(h sessionHandler) http.HandlerFunc {
 		// Every item query of the request sees only what the user's policy
 		// allows (P4.1).
 		r = r.WithContext(pg.WithAccess(r.Context(), s.Access))
+		r = r.WithContext(context.WithValue(r.Context(), mayDownloadKey{}, !s.NoPlayback && !s.NoDownload))
 		a.touchSession(r, s) // GET /Sessions lists recently active devices
 		h(w, r, s)
 	}
@@ -44,6 +45,15 @@ type baseURLKey struct{}
 func baseURL(ctx context.Context) string {
 	s, _ := ctx.Value(baseURLKey{}).(string)
 	return s
+}
+
+type mayDownloadKey struct{}
+
+// mayDownload says whether the user of the request in ctx may download
+// media (set by requireUser; false elsewhere).
+func mayDownload(ctx context.Context) bool {
+	ok, _ := ctx.Value(mayDownloadKey{}).(bool)
+	return ok
 }
 
 // requireAdmin is requireUser plus an administrator check (403 otherwise).

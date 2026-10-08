@@ -28,6 +28,7 @@ type dtoOptions struct {
 	imageTypeLimit int             // -1 = unlimited
 	imageTypes     map[string]bool // nil = all
 	enableUserData bool
+	canDownload    bool // the user may download (set by itemDtos)
 }
 
 // dtoOptionsFrom reads fields, enableImages, imageTypeLimit,
@@ -372,6 +373,7 @@ func (a *api) itemDtos(ctx context.Context, user *uuid.UUID, items []db.Item, o 
 	if err != nil {
 		return nil, err
 	}
+	o.canDownload = mayDownload(ctx)
 	out := make([]dto.BaseItemDto, len(items))
 	for i, it := range items {
 		out[i] = a.itemDto(b, it, user != nil && o.enableUserData, o)
@@ -545,7 +547,7 @@ func applyItemFields(d *dto.BaseItemDto, b *itemBatch, it db.Item, series *db.It
 		d.CanDelete = ptr(false) // blockbustr never deletes media files
 	}
 	if o.has("candownload") {
-		d.CanDownload = ptr(false)
+		d.CanDownload = ptr(o.canDownload && (it.Type == "Movie" || it.Type == "Episode"))
 	}
 	if o.has("childcount") && folder {
 		d.ChildCount = ptr(int32(b.children[it.ID]))

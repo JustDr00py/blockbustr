@@ -89,6 +89,7 @@ export interface UserPolicy {
   MaxParentalRating?: number | null;
   BlockUnratedItems?: string[];
   EnableMediaPlayback?: boolean;
+  EnableContentDownloading?: boolean;
 }
 
 export interface User {

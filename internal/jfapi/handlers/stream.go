@@ -119,9 +119,16 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 	if c := jfapi.URLParam(r, "container"); c != "" {
 		container = c
 	}
+	a.serveSource(w, r, it, src, b.sources[it.ID], q.Get("mediaSourceId"), container)
+}
+
+// serveSource sends src as it is: a local file with Range and HEAD, a
+// remote one through remoteStream. container names the client's expected
+// container ("" for the source's own).
+func (a *api) serveSource(w http.ResponseWriter, r *http.Request, it db.Item, src db.MediaSource, sources []db.MediaSource, want, container string) {
 	contentType := streamContentType(container, deref(src.Container), src.PathOrUrl)
 	if src.IsRemote || !strings.EqualFold(src.Protocol, "File") {
-		a.remoteStream(w, r, it, src, b.sources[it.ID], q.Get("mediaSourceId"), contentType)
+		a.remoteStream(w, r, it, src, sources, want, contentType)
 		return
 	}
 	f, err := os.Open(src.PathOrUrl)
