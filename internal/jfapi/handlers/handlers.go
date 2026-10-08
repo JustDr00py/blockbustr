@@ -20,6 +20,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/images"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
+	"github.com/sysadmin/blockbustr/internal/logbuf"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/settings"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
@@ -85,6 +86,9 @@ type Deps struct {
 	// /blockbustr/settings; nil uses Config as it is and leaves those
 	// routes out.
 	Settings *settings.Store
+	// Logs holds recent log records for /blockbustr/logs; nil leaves
+	// those routes out.
+	Logs *logbuf.Buffer
 }
 
 // RemoteProber probes a remote (.strm) item's source and stores it.
@@ -150,6 +154,7 @@ func Register(rt *jfapi.Router, d Deps) {
 	a.registerStream(rt)
 	a.registerDownload(rt)
 	a.registerSettings(rt)
+	a.registerLogs(rt)
 	a.registerHLS(rt)
 	a.registerSubtitles(rt)
 	a.registerSessions(rt)

@@ -28,6 +28,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/jfapi/handlers"
 	"github.com/sysadmin/blockbustr/internal/library"
+	"github.com/sysadmin/blockbustr/internal/logbuf"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/metadata"
 	"github.com/sysadmin/blockbustr/internal/metadata/tmdb"
@@ -73,7 +74,8 @@ func run() error {
 	if *healthCheck {
 		return healthcheck(cfg.Server.Listen)
 	}
-	log := newLogger(os.Stdout, cfg.Log)
+	logs := logbuf.New(logBufferSize, slog.LevelInfo)
+	log := newLogger(os.Stdout, cfg.Log, logs)
 	slog.SetDefault(log)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -236,6 +238,7 @@ func run() error {
 		StreamSigner: &urlsign.Signer{Key: streamKey, TTL: cfg.Server.StreamURLTTL},
 		Debrid:       debridAdmin,
 		ChoiceProber: media.Prober{},
+		Logs:         logs,
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -444,12 +447,19 @@ func healthURL(listen string) (string, error) {
 	return "http://" + net.JoinHostPort(host, port) + "/healthz", nil
 }
 
-func newLogger(w io.Writer, c config.Log) *slog.Logger {
+// logBufferSize is how many recent records the admin UI's Logs page keeps.
+const logBufferSize = 5000
+
+// newLogger logs to w at the configured level, and into buf (the Logs
+// page) at buf's level, which starts at the configured one too.
+func newLogger(w io.Writer, c config.Log, buf *logbuf.Buffer) *slog.Logger {
 	var level slog.Level
 	_ = level.UnmarshalText([]byte(c.Level)) // validated by config.Validate
 	opts := &slog.HandlerOptions{Level: level}
+	var h slog.Handler = slog.NewTextHandler(w, opts)
 	if c.Format == "json" {
-		return slog.New(slog.NewJSONHandler(w, opts))
+		h = slog.NewJSONHandler(w, opts)
 	}
-	return slog.New(slog.NewTextHandler(w, opts))
+	buf.SetLevel(level)
+	return slog.New(buf.Handler(h))
 }

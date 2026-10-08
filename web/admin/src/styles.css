@@ -96,6 +96,11 @@ input[type=number] { width: 80px; }
 .login h1 { margin-bottom: 14px; }
 .login input { width: 100%; }
 
+.logs { font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 8px 12px; overflow-wrap: anywhere; }
+.log-line { padding: 3px 0; border-bottom: 1px solid var(--border); white-space: pre-wrap; }
+.log-line:last-child { border-bottom: none; }
+.log-line .badge { font-family: system-ui, sans-serif; }
+
 details > summary { cursor: pointer; color: var(--accent); }
 .catalogs { margin-top: 8px; display: grid; gap: 4px; }
 

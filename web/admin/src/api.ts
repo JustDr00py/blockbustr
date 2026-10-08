@@ -207,3 +207,18 @@ export interface Setting {
   Source: string;
   Locked: boolean;
 }
+
+// GET /blockbustr/logs: recent log records, oldest first, and the level the
+// server captures them at (DEBUG, INFO, WARN or ERROR).
+export interface LogEntry {
+  Seq: number;
+  Time: string;
+  Level: string;
+  Message: string;
+  Attrs?: { Key: string; Value: string }[];
+}
+
+export interface LogsResponse {
+  Level: string;
+  Entries: LogEntry[];
+}
