@@ -90,6 +90,7 @@ export interface UserPolicy {
   BlockUnratedItems?: string[];
   EnableMediaPlayback?: boolean;
   EnableContentDownloading?: boolean;
+  EnableVideoPlaybackTranscoding?: boolean;
 }
 
 export interface User {

@@ -24,6 +24,8 @@ transcode:
   hwaccel: auto                # auto | none | qsv | vaapi
   segment_seconds: 3
   max_sessions: 4
+  software: true               # false: the CPU never transcodes video (no libx264 fallback,
+                               # no HDR tonemapping or subtitle burn-in); hardware only
 metadata:
   language: en-US
 log:

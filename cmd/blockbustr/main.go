@@ -142,7 +142,10 @@ func run() error {
 	// and reap idle ffmpeg sessions.
 	hw := transcode.Probe(ctx, "")
 	encoder := transcode.Choose(hw, cfg.Transcode.HWAccel)
-	log.Info("transcoding", "encoder", encoder, "available", hw.Available, "device", hw.Device)
+	log.Info("transcoding", "encoder", encoder, "available", hw.Available, "device", hw.Device, "software", cfg.Transcode.Software)
+	if encoder == transcode.CapSoftware && !cfg.Transcode.Software {
+		log.Warn("no hardware encoder and transcode.software is off: video plays as is or not at all")
+	}
 	transcoder := transcode.NewManager(cfg.Paths.TranscodeDir(), cfg.Transcode.MaxSessions)
 	transcoder.Log = log
 	if err := transcoder.RemoveStale(); err != nil {
@@ -205,7 +208,7 @@ func run() error {
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
 		Resolver: &resolve.Resolver{Cache: rc, Accounts: accounts, Torrents: torrents, Log: log}, Probe: scanner,
-		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds},
+		Transcoding: &handlers.Transcoding{Sessions: transcoder, Encoder: encoder, Device: hw.Device, SegmentSeconds: cfg.Transcode.SegmentSeconds, NoCPU: !cfg.Transcode.Software},
 		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
 		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams, RemoteSearch: remote,
 		StreamSigner: &urlsign.Signer{Key: streamKey, TTL: cfg.Server.StreamURLTTL},

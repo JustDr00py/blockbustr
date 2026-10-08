@@ -188,6 +188,11 @@ type Transcode struct {
 	HWAccel        string `yaml:"hwaccel"`
 	SegmentSeconds int    `yaml:"segment_seconds"`
 	MaxSessions    int    `yaml:"max_sessions"`
+	// Software lets the CPU transcode video: encode with libx264 when no
+	// hardware encoder works, and tonemap HDR or burn in subtitles before a
+	// hardware encoder. Off, only hardware transcodes run; anything else
+	// plays as is or not at all.
+	Software bool `yaml:"software"`
 }
 
 // Metadata configures external metadata lookups.
@@ -229,7 +234,7 @@ func Defaults() Config {
 			ProductName:     "Jellyfin Server",
 			LegacyAuth:      true,
 		},
-		Transcode: Transcode{HWAccel: "auto", SegmentSeconds: 3, MaxSessions: 4},
+		Transcode: Transcode{HWAccel: "auto", SegmentSeconds: 3, MaxSessions: 4, Software: true},
 		Metadata:  Metadata{Language: "en-US"},
 		Log:       Log{Level: "info", Format: "text"},
 		Stremio: Stremio{
@@ -285,6 +290,7 @@ var envOverrides = []struct {
 	{"BLOCKBUSTR_CACHE_DIR", func(c *Config, v string) { c.Paths.Cache = v }},
 	{"BLOCKBUSTR_REPORTED_VERSION", func(c *Config, v string) { c.Compat.ReportedVersion = v }},
 	{"BLOCKBUSTR_HWACCEL", func(c *Config, v string) { c.Transcode.HWAccel = v }},
+	{"BLOCKBUSTR_TRANSCODE_SOFTWARE", func(c *Config, v string) { c.Transcode.Software = parseBool(v, c.Transcode.Software) }},
 	{"BLOCKBUSTR_LEGACY_AUTH", func(c *Config, v string) { c.Compat.LegacyAuth = parseBool(v, c.Compat.LegacyAuth) }},
 	{"BLOCKBUSTR_DISCOVERY", func(c *Config, v string) { c.Server.Discovery = parseBool(v, c.Server.Discovery) }},
 	{"BLOCKBUSTR_TMDB_API_KEY", func(c *Config, v string) { c.Metadata.TMDBAPIKey = v }},

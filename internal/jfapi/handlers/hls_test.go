@@ -436,3 +436,36 @@ func TestHLSRemuxRealFFmpeg(t *testing.T) {
 		t.Errorf("segment 7 starts at %s, want ≈ 21s", start)
 	}
 }
+
+// A video transcode is refused for a user whose policy forbids it, and on
+// a server left with only the software encoder and transcode.software off.
+func TestHLSTranscodeRefused(t *testing.T) {
+	h, d := hlsServer(t)
+	caps := hlsCaptures(t, "*-GET-videos-id-master-m3u8.json")
+	if len(caps) == 0 {
+		t.Skip("no captures")
+	}
+	c := caps[0]
+	if rec := c.replay(t, h); rec.Code != 200 {
+		t.Fatalf("baseline: %d", rec.Code)
+	}
+	admin := `MediaBrowser Token="` + captureToken + `"`
+	setPolicy := func(body string) {
+		t.Helper()
+		if rec := call(t, h, "POST", "/Users/"+captureUserID+"/Policy", admin, body); rec.Code != 204 {
+			t.Fatalf("policy: %d %s", rec.Code, rec.Body)
+		}
+	}
+	setPolicy(`{"EnableVideoPlaybackTranscoding":false}`)
+	if rec := c.replay(t, h); rec.Code != 403 {
+		t.Errorf("transcode for a user without it: %d", rec.Code)
+	}
+	setPolicy(`{}`)
+	if rec := c.replay(t, h); rec.Code != 200 {
+		t.Errorf("allowed again: %d", rec.Code)
+	}
+	d.Transcoding.NoCPU = true // the test server's encoder is the software one
+	if rec := c.replay(t, h); rec.Code != 403 {
+		t.Errorf("software transcode with transcode.software off: %d", rec.Code)
+	}
+}

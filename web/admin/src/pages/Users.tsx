@@ -80,7 +80,10 @@ function accessSummary(p: UserPolicy, folders: MediaFolder[]): string {
   if (p.MaxParentalRating != null) parts.push(`rated ≤ ${ratings.find((r) => r.value === p.MaxParentalRating)?.label ?? p.MaxParentalRating}`);
   if (p.BlockUnratedItems?.length) parts.push(`no unrated ${p.BlockUnratedItems.join("/").toLowerCase()}`);
   if (p.EnableMediaPlayback === false) parts.push("can't play");
-  else if (p.EnableContentDownloading === false) parts.push("can't download");
+  else {
+    if (p.EnableContentDownloading === false) parts.push("can't download");
+    if (p.EnableVideoPlaybackTranscoding === false) parts.push("no transcoding");
+  }
   return parts.join(" · ");
 }
 
@@ -124,6 +127,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
   const [blockUnrated, setBlockUnrated] = useState<string[]>(p.BlockUnratedItems ?? []);
   const [playback, setPlayback] = useState(p.EnableMediaPlayback !== false);
   const [downloads, setDownloads] = useState(p.EnableContentDownloading !== false);
+  const [transcoding, setTranscoding] = useState(p.EnableVideoPlaybackTranscoding !== false);
   const [pw, setPw] = useState("");
   const act = useAction();
 
@@ -139,6 +143,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
           BlockUnratedItems: blockUnrated,
           EnableMediaPlayback: playback,
           EnableContentDownloading: downloads,
+          EnableVideoPlaybackTranscoding: transcoding,
         }),
       onChanged,
     );
@@ -151,6 +156,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
         <Toggle label="Disabled" checked={disabled} onChange={setDisabled} />
         <Toggle label="Can play media" checked={playback} onChange={setPlayback} />
         <Toggle label="Can download" checked={playback && downloads} disabled={!playback} onChange={setDownloads} />
+        <Toggle label="Can transcode video" checked={playback && transcoding} disabled={!playback} onChange={setTranscoding} />
       </div>
       <div className="field">
         <span>Libraries</span>

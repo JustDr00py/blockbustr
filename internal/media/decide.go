@@ -101,6 +101,14 @@ type PlayOptions struct {
 	DisableDirectPlay   bool
 	DisableDirectStream bool
 	DisableTranscoding  bool
+	// NoVideoEncode: the video may not be re-encoded (the user's policy, or
+	// no encoder this server may use). Copying it while the container or
+	// audio changes is still offered, as a remux.
+	NoVideoEncode bool
+	// NoCPUFilters rules out re-encoding that needs video work on the CPU
+	// before the encoder: tonemapping an HDR source, burning in the chosen
+	// subtitle (transcode.software off).
+	NoCPUFilters bool
 }
 
 // Transcode is the target of a remux or transcode (what the HLS URL asks for).
@@ -561,12 +569,22 @@ func Decide(p DeviceProfile, src Source, o PlayOptions) Decision {
 		len(codecConditions(p, src, tp.Container, video, nil)) == 0
 	remuxOnly := len(dpReasons) == 1 && dpReasons[0] == "ContainerNotSupported" && copyVideo
 	d.SupportsDirectStream = (d.SupportsDirectPlay || remuxOnly) && !o.DisableDirectStream
-	d.SupportsTranscoding = tp != nil && !o.DisableTranscoding
+	cpuWork := video != nil && ((video.VideoRangeType != "" && !strings.EqualFold(video.VideoRangeType, "SDR")) ||
+		(sub != nil && subtitleMethod(p, *sub, false) == "Encode"))
+	encodeVideo := !o.NoVideoEncode && !(o.NoCPUFilters && cpuWork)
+	d.SupportsTranscoding = tp != nil && !o.DisableTranscoding && encodeVideo
+	// With the video encoder ruled out, a source whose video the client
+	// takes still plays with only its container or audio converted.
+	audioOnly := tp != nil && !o.DisableTranscoding && !encodeVideo && copyVideo &&
+		!d.SupportsDirectPlay && !d.SupportsDirectStream && onlyAudioOrContainer(dpReasons)
+	if audioOnly {
+		d.SupportsTranscoding = true
+	}
 
 	switch {
 	case d.SupportsDirectPlay:
 		d.Mode = ModeDirect
-	case d.SupportsDirectStream:
+	case d.SupportsDirectStream, audioOnly:
 		d.Mode = ModeRemux
 	case d.SupportsTranscoding:
 		d.Mode = ModeTranscode
@@ -601,6 +619,18 @@ func Decide(p DeviceProfile, src Source, o PlayOptions) Decision {
 		}
 	}
 	return d
+}
+
+// onlyAudioOrContainer: none of the reasons concern the video or the
+// subtitles, so copying the video into the transcoding container, with
+// the audio converted, plays.
+func onlyAudioOrContainer(reasons []string) bool {
+	for _, r := range reasons {
+		if r != "ContainerNotSupported" && r != "SecondaryAudioNotSupported" && !strings.HasPrefix(r, "Audio") {
+			return false
+		}
+	}
+	return true
 }
 
 // transcodeTarget fills in what the transcode produces. Audio is copied

@@ -193,6 +193,11 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		DisableDirectPlay:   req.EnableDirectPlay != nil && !*req.EnableDirectPlay,
 		DisableDirectStream: req.EnableDirectStream != nil && !*req.EnableDirectStream,
 		DisableTranscoding:  req.EnableTranscoding != nil && !*req.EnableTranscoding,
+		// The user's policy or the server's encoders may rule out
+		// re-encoding video: a version that plays as is (or remuxed) is
+		// offered first, and the rest only with their video copied.
+		NoVideoEncode: s.NoTranscode || !a.Transcoding.encodes(),
+		NoCPUFilters:  a.Transcoding != nil && a.Transcoding.NoCPU,
 	}
 	opts.MaxBitrate = maxBitrate
 

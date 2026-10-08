@@ -38,6 +38,9 @@ type Transcoding struct {
 	Encoder        transcode.Capability
 	Device         string
 	SegmentSeconds int
+	// NoCPU (transcode.software: false) refuses video work on the CPU:
+	// encoding with the software encoder, HDR tonemapping, subtitle burn-in.
+	NoCPU bool
 
 	locks sync.Map // play session id → *sync.Mutex: one start/restart at a time
 }
@@ -46,6 +49,16 @@ func (t *Transcoding) lock(id string) *sync.Mutex {
 	m, _ := t.locks.LoadOrStore(id, &sync.Mutex{})
 	return m.(*sync.Mutex)
 }
+
+// encodes says whether video can be re-encoded at all: false when only the
+// software encoder is left and the CPU may not be used.
+func (t *Transcoding) encodes() bool {
+	return t == nil || !(t.NoCPU && t.Encoder == transcode.CapSoftware)
+}
+
+// errTranscodeRefused: the request needs a video transcode this user or
+// this server doesn't allow.
+var errTranscodeRefused = errors.New("video transcoding not allowed")
 
 func (t *Transcoding) segmentSeconds() int {
 	if t.SegmentSeconds > 0 {
@@ -78,6 +91,7 @@ type hlsJob struct {
 	audio       *db.MediaStream
 	q           jfapi.Query
 	playSession string
+	noTranscode bool // the user's policy forbids re-encoding video
 }
 
 // runtimeTicks is the source's duration (0 = unknown).
@@ -103,6 +117,7 @@ func (a *api) hlsRequest(w http.ResponseWriter, r *http.Request, s auth.Session)
 	}
 	j.q = jfapi.QueryOf(r)
 	j.playSession = j.q.Get("PlaySessionId")
+	j.noTranscode = s.NoTranscode
 	if j.playSession == "" {
 		errorText(w, http.StatusBadRequest)
 		return j, false
@@ -228,6 +243,14 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 	if !o.CopyVideo && j.video != nil {
 		o.Tonemap = isHDR(deref(j.video.VideoRangeType))
 		o.SourceCodec = deref(j.video.Codec)
+		switch {
+		case j.noTranscode:
+			return o, fmt.Errorf("%w for this user", errTranscodeRefused)
+		case !t.encodes():
+			return o, fmt.Errorf("%w: no hardware encoder, and transcode.software is off", errTranscodeRefused)
+		case t.NoCPU && (o.Tonemap || o.BurnText != "" || o.BurnImage != nil):
+			return o, fmt.Errorf("%w: HDR tonemapping and subtitle burn-in run on the CPU, and transcode.software is off", errTranscodeRefused)
+		}
 	}
 	o.Input = j.src.PathOrUrl
 	if j.src.IsRemote || !strings.EqualFold(j.src.Protocol, "File") {
@@ -300,6 +323,11 @@ func (a *api) hlsMaster(w http.ResponseWriter, r *http.Request, s auth.Session) 
 		return
 	}
 	o, err := a.startOptions(r, j, s.DeviceID)
+	if errors.Is(err, errTranscodeRefused) {
+		a.Log.InfoContext(r.Context(), "transcode refused", "item", j.item.ID, "user", s.UserName, "err", err)
+		errorText(w, http.StatusForbidden)
+		return
+	}
 	if err != nil {
 		a.Log.WarnContext(r.Context(), "hls source unavailable", "item", j.item.ID, "err", err)
 		sourceUnavailable(w, err, http.StatusInternalServerError)

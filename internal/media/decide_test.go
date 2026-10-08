@@ -352,3 +352,59 @@ func TestDecideRemoteEmbeddedSubtitles(t *testing.T) {
 		t.Errorf("a local file's tracks stay files: %v", d.Subtitles)
 	}
 }
+
+// With the video encoder ruled out (a user's policy, or no encoder the
+// server may use), a source still plays when its video can be copied;
+// one that needs its video re-encoded doesn't.
+func TestDecideNoVideoEncode(t *testing.T) {
+	idx := func(n int) *int { return &n }
+	src := Source{Container: "mp4", Bitrate: 5_000_000, Streams: []Stream{
+		{Index: 0, Type: StreamVideo, Codec: "h264", Bitrate: 4_800_000, RealFrameRate: 23.976},
+		{Index: 1, Type: StreamAudio, Codec: "aac", Channels: 2, Bitrate: 128_000, IsDefault: true},
+		{Index: 2, Type: StreamAudio, Codec: "truehd", Channels: 8},
+		{Index: 3, Type: StreamSubtitle, Codec: "hdmv_pgs_subtitle"},
+	}}
+	no := PlayOptions{NoVideoEncode: true}
+	if d := Decide(browser, src, no); d.Mode != ModeDirect {
+		t.Errorf("playable as is: %s", d.Mode)
+	}
+	// TrueHD: the video is copied, only the audio converted.
+	no.AudioStreamIndex = idx(2)
+	if d := Decide(browser, src, no); d.Mode != ModeRemux || !d.SupportsTranscoding || d.SupportsDirectStream ||
+		d.Transcode == nil || !d.Transcode.CopyVideo || strings.Join(d.Reasons, ",") != "AudioCodecNotSupported" {
+		t.Errorf("truehd without the video encoder: %s %+v %v", d.Mode, d.Transcode, d.Reasons)
+	}
+	// Without the restriction it's a full transcode, as Jellyfin does.
+	if d := Decide(browser, src, PlayOptions{AudioStreamIndex: idx(2)}); d.Mode != ModeTranscode {
+		t.Errorf("truehd: %s", d.Mode)
+	}
+	// The client turning transcoding off rules out converting audio too.
+	if d := Decide(browser, src, PlayOptions{AudioStreamIndex: idx(2), DisableTranscoding: true, NoVideoEncode: true}); d.Mode != ModeNone {
+		t.Errorf("truehd, client disabled transcoding: %s", d.Mode)
+	}
+	// Burning in a subtitle needs the video re-encoded.
+	if d := Decide(browser, src, PlayOptions{SubtitleStreamIndex: idx(3), NoVideoEncode: true}); d.Mode != ModeNone || d.SupportsTranscoding {
+		t.Errorf("pgs burn-in without the video encoder: %s", d.Mode)
+	}
+	// A codec the client can't take, too.
+	hevc := src
+	hevc.Streams = append([]Stream{{Index: 0, Type: StreamVideo, Codec: "hevc", Bitrate: 4_800_000}}, src.Streams[1:]...)
+	if d := Decide(browser, hevc, PlayOptions{NoVideoEncode: true}); d.Mode != ModeNone {
+		t.Errorf("hevc to a browser without the video encoder: %s", d.Mode)
+	}
+
+	// No CPU filters: a transcode is fine, unless it tonemaps or burns in.
+	cpu := PlayOptions{NoCPUFilters: true}
+	if d := Decide(browser, hevc, cpu); d.Mode != ModeTranscode {
+		t.Errorf("SDR hevc, no CPU filters: %s", d.Mode)
+	}
+	hdr := hevc
+	hdr.Streams = append([]Stream{{Index: 0, Type: StreamVideo, Codec: "hevc", Bitrate: 4_800_000, VideoRangeType: "HDR10"}}, src.Streams[1:]...)
+	if d := Decide(browser, hdr, cpu); d.Mode != ModeNone {
+		t.Errorf("HDR hevc, no CPU filters: %s", d.Mode)
+	}
+	cpu.SubtitleStreamIndex = idx(3)
+	if d := Decide(browser, src, cpu); d.Mode != ModeNone {
+		t.Errorf("pgs burn-in, no CPU filters: %s", d.Mode)
+	}
+}
