@@ -129,11 +129,14 @@ export interface MediaFolder {
   CollectionType?: string;
 }
 
-export interface VirtualFolder {
+// A row of GET /blockbustr/libraries, in the order users get them.
+export interface AdminLibrary {
+  Id: string;
   Name: string;
-  CollectionType?: string;
-  ItemId: string;
+  CollectionType: string;
   Locations: string[];
+  Catalog: boolean;
+  Hidden: boolean;
 }
 
 export interface Session {

@@ -388,7 +388,19 @@ func (a *api) getLatestMedia(w http.ResponseWriter, r *http.Request, s auth.Sess
 		a.internalError(w, r, err)
 		return
 	}
-	if p := q.Get("parentId"); p != "" {
+	parent := q.Get("parentId")
+	if parent == "" || sameID(parent, rootFolderID(a.ServerID).String()) {
+		// Every library's latest: not those the admin hid or the user
+		// excluded from Latest (LatestItemsExcludes).
+		cfg, err := a.userConfiguration(r.Context(), user)
+		if err != nil {
+			a.internalError(w, r, err)
+			return
+		}
+		excluded := idSet(cfg.LatestItemsExcludes)
+		fs = slices.DeleteFunc(fs, func(f folderView) bool { return f.row.Hidden || excluded[f.row.ID] })
+	}
+	if p := parent; p != "" {
 		id, err := dto.ParseID(p)
 		if err != nil {
 			jfapi.WriteJSON(w, r, http.StatusOK, []dto.BaseItemDto{})

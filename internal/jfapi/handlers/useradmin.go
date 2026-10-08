@@ -28,8 +28,10 @@ func (a *api) registerUserAdmin(rt *jfapi.Router) {
 	// 12.1.0 names the user in the query (?userId=, default the caller);
 	// the path forms are the older routes, still sent by some clients.
 	rt.Post("/Users/Password", a.requireUser(a.updatePassword))
+	rt.Post("/Users/Configuration", a.requireUser(a.updateConfiguration))
 	rt.Post("/Users", a.requireUser(a.updateUser))
 	rt.Post("/Users/{userId}/Password", a.requireUser(a.updatePassword))
+	rt.Post("/Users/{userId}/Configuration", a.requireUser(a.updateConfiguration))
 	rt.Post("/Users/{userId}", a.requireUser(a.updateUser))
 }
 
@@ -241,6 +243,32 @@ func (a *api) updatePassword(w http.ResponseWriter, r *http.Request, s auth.Sess
 		return
 	}
 	a.Log.InfoContext(r.Context(), "user password changed", "user", u.Name, "by_admin", adminForOther)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// updateConfiguration stores the user's own settings, which apps save
+// whole from their settings pages: library order and exclusions (applied
+// by /UserViews and /Items/Latest), audio and subtitle preferences. Only
+// the keys the body set are kept, over Jellyfin's defaults.
+func (a *api) updateConfiguration(w http.ResponseWriter, r *http.Request, s auth.Session) {
+	u, ok := a.targetUser(w, r, s)
+	if !ok {
+		return
+	}
+	var cfg dto.UserConfiguration
+	if err := jfapi.DecodeJSON(w, r, &cfg); err != nil {
+		errorText(w, http.StatusBadRequest)
+		return
+	}
+	stored, err := json.Marshal(cfg)
+	if err != nil {
+		a.internalError(w, r, err)
+		return
+	}
+	if err := a.Queries.UpdateUserConfiguration(r.Context(), db.UpdateUserConfigurationParams{ID: u.ID, Configuration: stored}); err != nil {
+		a.internalError(w, r, err)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

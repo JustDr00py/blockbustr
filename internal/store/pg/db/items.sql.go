@@ -107,7 +107,7 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, e
 const createLibrary = `-- name: CreateLibrary :one
 INSERT INTO libraries (name, kind, paths)
 VALUES ($1, $2, $3)
-RETURNING id, name, kind, paths, options, created_at, enabled
+RETURNING id, name, kind, paths, options, created_at, enabled, position, hidden
 `
 
 type CreateLibraryParams struct {
@@ -127,6 +127,8 @@ func (q *Queries) CreateLibrary(ctx context.Context, arg CreateLibraryParams) (L
 		&i.Options,
 		&i.CreatedAt,
 		&i.Enabled,
+		&i.Position,
+		&i.Hidden,
 	)
 	return i, err
 }
@@ -249,7 +251,7 @@ func (q *Queries) ListChildren(ctx context.Context, arg ListChildrenParams) ([]I
 }
 
 const listLibraries = `-- name: ListLibraries :many
-SELECT id, name, kind, paths, options, created_at, enabled FROM libraries ORDER BY name
+SELECT id, name, kind, paths, options, created_at, enabled, position, hidden FROM libraries ORDER BY name
 `
 
 func (q *Queries) ListLibraries(ctx context.Context) ([]Library, error) {
@@ -269,6 +271,8 @@ func (q *Queries) ListLibraries(ctx context.Context) ([]Library, error) {
 			&i.Options,
 			&i.CreatedAt,
 			&i.Enabled,
+			&i.Position,
+			&i.Hidden,
 		); err != nil {
 			return nil, err
 		}

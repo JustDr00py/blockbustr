@@ -218,6 +218,22 @@ func (q *Queries) SetUserPassword(ctx context.Context, arg SetUserPasswordParams
 	return err
 }
 
+const updateUserConfiguration = `-- name: UpdateUserConfiguration :exec
+UPDATE users SET configuration = $1 WHERE id = $2
+`
+
+type UpdateUserConfigurationParams struct {
+	Configuration json.RawMessage
+	ID            uuid.UUID
+}
+
+// The user's own settings (library order, hidden libraries, subtitle and
+// audio preferences), stored as overrides of Jellyfin's defaults.
+func (q *Queries) UpdateUserConfiguration(ctx context.Context, arg UpdateUserConfigurationParams) error {
+	_, err := q.db.Exec(ctx, updateUserConfiguration, arg.Configuration, arg.ID)
+	return err
+}
+
 const updateUserPolicy = `-- name: UpdateUserPolicy :one
 UPDATE users SET is_admin = $1, is_disabled = $2, policy = $3
 WHERE id = $4

@@ -28,10 +28,10 @@ const listCollectionFolders = `-- name: ListCollectionFolders :many
 SELECT i.id, i.name, i.sort_name, i.date_created, i.date_modified, i.etag,
        l.id AS library_id,
        (CASE WHEN l.kind = 'stremio' THEN coalesce(l.options ->> 'collectionType', 'movies') ELSE l.kind END)::text AS kind,
-       l.paths
+       l.paths, l.hidden
 FROM items i JOIN libraries l ON l.id = i.library_id
 WHERE i.type = 'CollectionFolder' AND l.enabled
-ORDER BY i.sort_name, i.id
+ORDER BY l.position, i.sort_name, i.id
 `
 
 type ListCollectionFoldersRow struct {
@@ -44,12 +44,14 @@ type ListCollectionFoldersRow struct {
 	LibraryID    uuid.UUID
 	Kind         string
 	Paths        []string
+	Hidden       bool
 }
 
 // Library views (TASKS P1.18).
-// The top-level folder of every enabled library, in browse order. A Stremio
-// catalog library reports the collection type of its catalog (movies or
-// tvshows), which is what clients and handlers switch on.
+// The top-level folder of every enabled library, in the admin's order
+// (position, then name). A Stremio catalog library reports the collection
+// type of its catalog (movies or tvshows), which is what clients and
+// handlers switch on.
 func (q *Queries) ListCollectionFolders(ctx context.Context) ([]ListCollectionFoldersRow, error) {
 	rows, err := q.db.Query(ctx, listCollectionFolders)
 	if err != nil {
@@ -69,6 +71,7 @@ func (q *Queries) ListCollectionFolders(ctx context.Context) ([]ListCollectionFo
 			&i.LibraryID,
 			&i.Kind,
 			&i.Paths,
+			&i.Hidden,
 		); err != nil {
 			return nil, err
 		}
@@ -114,6 +117,59 @@ func (q *Queries) ListUserData(ctx context.Context, arg ListUserDataParams) ([]U
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const setLibraryHidden = `-- name: SetLibraryHidden :one
+UPDATE libraries SET hidden = $1
+WHERE id = (SELECT f.library_id FROM items f WHERE f.id = $2 AND f.type = 'CollectionFolder')
+RETURNING id
+`
+
+type SetLibraryHiddenParams struct {
+	Hidden   bool
+	FolderID uuid.UUID
+}
+
+// Hides a library from every user's views (or shows it again), found by its
+// folder's item id.
+func (q *Queries) SetLibraryHidden(ctx context.Context, arg SetLibraryHiddenParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, setLibraryHidden, arg.Hidden, arg.FolderID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const setLibraryOrder = `-- name: SetLibraryOrder :many
+UPDATE libraries l SET position = o.pos
+FROM (
+    SELECT f.library_id, t.ord::integer AS pos
+    FROM unnest($1::uuid[]) WITH ORDINALITY AS t(fid, ord)
+    JOIN items f ON f.id = t.fid AND f.type = 'CollectionFolder'
+) o
+WHERE l.id = o.library_id
+RETURNING l.id
+`
+
+// Puts libraries in the order of their folder ids; libraries not listed
+// keep their position.
+func (q *Queries) SetLibraryOrder(ctx context.Context, folderIds []uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, setLibraryOrder, folderIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

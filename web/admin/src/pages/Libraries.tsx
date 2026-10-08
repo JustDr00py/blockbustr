@@ -1,12 +1,8 @@
 import { useState } from "react";
-import { api, type VirtualFolder } from "../api";
-import { ErrorNote, PageHeader, useAction, useLoad } from "../ui";
+import { api, type AdminLibrary } from "../api";
+import { ErrorNote, PageHeader, Toggle, useAction, useLoad } from "../ui";
 
-const load = () => api<VirtualFolder[]>("GET", "/Library/VirtualFolders");
-
-// A catalog library has no folders on disk; only those can be renamed here
-// (file libraries are named in config.yaml).
-const isCatalog = (l: VirtualFolder) => l.Locations.length === 0;
+const load = () => api<AdminLibrary[]>("GET", "/blockbustr/libraries");
 
 export default function Libraries() {
   const { data, error, reload } = useLoad(load);
@@ -22,6 +18,16 @@ export default function Libraries() {
     );
     if (ok) setEditing(undefined);
   };
+  // move swaps library i with its neighbour (-1 up, +1 down) and saves the
+  // whole order.
+  const move = (i: number, by: -1 | 1) => {
+    if (!data) return;
+    const ids = data.map((l) => l.Id);
+    [ids[i], ids[i + by]] = [ids[i + by], ids[i]];
+    void act.run(() => api("POST", "/blockbustr/libraries/order", { Ids: ids }), reload);
+  };
+  const setHidden = (l: AdminLibrary, hidden: boolean) =>
+    void act.run(() => api("POST", `/blockbustr/libraries/${l.Id}`, { Hidden: hidden }), reload);
 
   return (
     <>
@@ -37,21 +43,27 @@ export default function Libraries() {
       {scanNote && <p className="muted">{scanNote}</p>}
       <div className="card">
         <p className="muted small">
-          File and .strm libraries come from <code>config.yaml</code>. Catalog libraries are created by enabling an addon's
-          catalog on the Addons page, and can be renamed here: the name is what the apps show.
+          Users get their libraries in this order, unless they set their own in their app's home settings. A hidden library
+          leaves every user's library list and Latest rows, but keeps syncing and stays searchable. File and .strm libraries
+          come from <code>config.yaml</code>; catalog libraries are created by enabling an addon's catalog on the Addons page,
+          and can be renamed here.
         </p>
         <table>
-          <thead><tr><th>Name</th><th>Type</th><th>Source</th><th></th></tr></thead>
+          <thead><tr><th>Order</th><th>Name</th><th>Type</th><th>Source</th><th>Visibility</th><th></th></tr></thead>
           <tbody>
-            {data?.map((l) => (
-              <tr key={l.ItemId}>
+            {data?.map((l, i) => (
+              <tr key={l.Id} className={l.Hidden ? "muted" : undefined}>
                 <td>
-                  {editing?.id === l.ItemId ? (
+                  <button className="link small" aria-label={`Move ${l.Name} up`} disabled={act.busy || i === 0} onClick={() => move(i, -1)}>↑</button>{" "}
+                  <button className="link small" aria-label={`Move ${l.Name} down`} disabled={act.busy || i === data.length - 1} onClick={() => move(i, 1)}>↓</button>
+                </td>
+                <td>
+                  {editing?.id === l.Id ? (
                     <input
                       aria-label={`New name for ${l.Name}`}
                       value={editing.name}
                       autoFocus
-                      onChange={(e) => setEditing({ id: l.ItemId, name: e.target.value })}
+                      onChange={(e) => setEditing({ id: l.Id, name: e.target.value })}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") void save();
                         if (e.key === "Escape") setEditing(undefined);
@@ -61,11 +73,12 @@ export default function Libraries() {
                     l.Name
                   )}
                 </td>
-                <td>{l.CollectionType ?? "mixed"}</td>
-                <td className="muted small">{isCatalog(l) ? "Stremio catalog" : l.Locations.join(", ")}</td>
+                <td>{l.CollectionType || "mixed"}</td>
+                <td className="muted small">{l.Catalog ? "Stremio catalog" : l.Locations.join(", ")}</td>
+                <td><Toggle label="Hidden" checked={l.Hidden} disabled={act.busy} onChange={(on) => setHidden(l, on)} /></td>
                 <td>
-                  {isCatalog(l) &&
-                    (editing?.id === l.ItemId ? (
+                  {l.Catalog &&
+                    (editing?.id === l.Id ? (
                       <>
                         <button disabled={act.busy || !editing.name.trim()} onClick={() => void save()}>Save</button>{" "}
                         <button className="link small" onClick={() => setEditing(undefined)}>Cancel</button>
@@ -76,7 +89,7 @@ export default function Libraries() {
                         disabled={act.busy}
                         onClick={() => {
                           act.clearError();
-                          setEditing({ id: l.ItemId, name: l.Name });
+                          setEditing({ id: l.Id, name: l.Name });
                         }}
                       >
                         Rename

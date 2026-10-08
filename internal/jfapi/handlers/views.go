@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"cmp"
+	"context"
 	_ "embed"
 	"encoding/json"
 	"net/http"
@@ -72,19 +74,78 @@ func (a *api) folders(r *http.Request, user *uuid.UUID) ([]folderView, error) {
 	return out, nil
 }
 
-// userViews lists the libraries the user can see (all of them until per-user
-// library access lands in P4.1).
+// userViews lists the libraries the user can see, arranged as they set
+// them: never one the admin hid, nor one the user excluded from My Media
+// (MyMediaExcludes) unless includeHidden=true (their home settings page
+// asks so, to list it); those in the user's OrderedViews first, in that
+// order, then the rest in the admin's.
 func (a *api) userViews(w http.ResponseWriter, r *http.Request, s auth.Session) {
 	fs, err := a.folders(r, &s.UserID)
 	if err != nil {
 		a.internalError(w, r, err)
 		return
 	}
+	cfg, err := a.userConfiguration(r.Context(), s.UserID)
+	if err != nil {
+		a.internalError(w, r, err)
+		return
+	}
+	includeHidden, _ := jfapi.QueryOf(r).Bool("includeHidden")
+	fs = arrangeViews(fs, cfg, includeHidden)
 	items := make([]dto.BaseItemDto, len(fs))
 	for i, f := range fs {
 		items[i] = a.collectionFolderDto(f, true)
 	}
 	jfapi.WriteJSON(w, r, http.StatusOK, queryResult(items))
+}
+
+// userConfiguration is the user's UserConfiguration: Jellyfin's defaults
+// with their stored overrides.
+func (a *api) userConfiguration(ctx context.Context, user uuid.UUID) (dto.UserConfiguration, error) {
+	var cfg dto.UserConfiguration
+	u, err := a.Queries.GetUserByID(ctx, user)
+	if err != nil {
+		return cfg, err
+	}
+	return cfg, mergeJSON(&cfg, defaultUserConfiguration, u.Configuration)
+}
+
+// arrangeViews drops the libraries the admin hid and, unless
+// includeHidden, those the user excluded, then puts the user's
+// OrderedViews first. fs is reused.
+func arrangeViews(fs []folderView, cfg dto.UserConfiguration, includeHidden bool) []folderView {
+	excluded := idSet(cfg.MyMediaExcludes)
+	fs = slices.DeleteFunc(fs, func(f folderView) bool {
+		return f.row.Hidden || (!includeHidden && excluded[f.row.ID])
+	})
+	rank := map[uuid.UUID]int{}
+	for i, id := range deref(cfg.OrderedViews) {
+		if _, dup := rank[id.UUID()]; !dup {
+			rank[id.UUID()] = i
+		}
+	}
+	slices.SortStableFunc(fs, func(a, b folderView) int {
+		ra, oka := rank[a.row.ID]
+		rb, okb := rank[b.row.ID]
+		switch {
+		case oka && okb:
+			return cmp.Compare(ra, rb)
+		case oka:
+			return -1
+		case okb:
+			return 1
+		}
+		return 0
+	})
+	return fs
+}
+
+func idSet(ids *[]dto.ID) map[uuid.UUID]bool {
+	out := map[uuid.UUID]bool{}
+	for _, id := range deref(ids) {
+		out[id.UUID()] = true
+	}
+	return out
 }
 
 func (a *api) mediaFolders(w http.ResponseWriter, r *http.Request, _ auth.Session) {

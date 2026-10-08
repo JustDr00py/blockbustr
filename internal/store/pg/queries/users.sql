@@ -31,6 +31,11 @@ UPDATE users SET is_admin = @is_admin, is_disabled = @is_disabled, policy = @pol
 WHERE id = @id
 RETURNING *;
 
+-- name: UpdateUserConfiguration :exec
+-- The user's own settings (library order, hidden libraries, subtitle and
+-- audio preferences), stored as overrides of Jellyfin's defaults.
+UPDATE users SET configuration = @configuration WHERE id = @id;
+
 -- name: SetUserPassword :exec
 UPDATE users SET password_hash = $2 WHERE id = $1;
 

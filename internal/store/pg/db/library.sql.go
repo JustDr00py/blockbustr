@@ -628,7 +628,7 @@ const upsertLibrary = `-- name: UpsertLibrary :one
 
 INSERT INTO libraries (name, kind, paths) VALUES ($1, $2, $3)
 ON CONFLICT (name) DO UPDATE SET kind = EXCLUDED.kind, paths = EXCLUDED.paths, enabled = true
-RETURNING id, name, kind, paths, options, created_at, enabled
+RETURNING id, name, kind, paths, options, created_at, enabled, position, hidden
 `
 
 type UpsertLibraryParams struct {
@@ -649,6 +649,8 @@ func (q *Queries) UpsertLibrary(ctx context.Context, arg UpsertLibraryParams) (L
 		&i.Options,
 		&i.CreatedAt,
 		&i.Enabled,
+		&i.Position,
+		&i.Hidden,
 	)
 	return i, err
 }

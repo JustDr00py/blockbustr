@@ -147,6 +147,8 @@ type Library struct {
 	Options   json.RawMessage
 	CreatedAt time.Time
 	Enabled   bool
+	Position  int32
+	Hidden    bool
 }
 
 type MediaSource struct {

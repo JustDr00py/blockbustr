@@ -25,7 +25,7 @@ WHERE id = (
     LIMIT 1
     FOR UPDATE
 )
-RETURNING id, name, kind, paths, options, created_at, enabled
+RETURNING id, name, kind, paths, options, created_at, enabled, position, hidden
 `
 
 type AdoptStremioLibraryParams struct {
@@ -49,6 +49,8 @@ func (q *Queries) AdoptStremioLibrary(ctx context.Context, arg AdoptStremioLibra
 		&i.Options,
 		&i.CreatedAt,
 		&i.Enabled,
+		&i.Position,
+		&i.Hidden,
 	)
 	return i, err
 }
@@ -56,7 +58,7 @@ func (q *Queries) AdoptStremioLibrary(ctx context.Context, arg AdoptStremioLibra
 const createStremioLibrary = `-- name: CreateStremioLibrary :one
 INSERT INTO libraries (name, kind, options) VALUES ($1, 'stremio', $2)
 ON CONFLICT (name) DO NOTHING
-RETURNING id, name, kind, paths, options, created_at, enabled
+RETURNING id, name, kind, paths, options, created_at, enabled, position, hidden
 `
 
 type CreateStremioLibraryParams struct {
@@ -76,6 +78,8 @@ func (q *Queries) CreateStremioLibrary(ctx context.Context, arg CreateStremioLib
 		&i.Options,
 		&i.CreatedAt,
 		&i.Enabled,
+		&i.Position,
+		&i.Hidden,
 	)
 	return i, err
 }
@@ -163,7 +167,7 @@ func (q *Queries) DisableOrphanStremioLibraries(ctx context.Context) ([]string, 
 const ensureDiscoverLibrary = `-- name: EnsureDiscoverLibrary :one
 INSERT INTO libraries (name, kind) VALUES ('blockbustr:discover', 'discover')
 ON CONFLICT (name) DO UPDATE SET kind = 'discover', enabled = true
-RETURNING id, name, kind, paths, options, created_at, enabled
+RETURNING id, name, kind, paths, options, created_at, enabled, position, hidden
 `
 
 // The hidden library search results are stored in (P3.13); its name can't
@@ -179,12 +183,14 @@ func (q *Queries) EnsureDiscoverLibrary(ctx context.Context) (Library, error) {
 		&i.Options,
 		&i.CreatedAt,
 		&i.Enabled,
+		&i.Position,
+		&i.Hidden,
 	)
 	return i, err
 }
 
 const getLibrary = `-- name: GetLibrary :one
-SELECT id, name, kind, paths, options, created_at, enabled FROM libraries WHERE id = $1
+SELECT id, name, kind, paths, options, created_at, enabled, position, hidden FROM libraries WHERE id = $1
 `
 
 func (q *Queries) GetLibrary(ctx context.Context, id uuid.UUID) (Library, error) {
@@ -198,6 +204,8 @@ func (q *Queries) GetLibrary(ctx context.Context, id uuid.UUID) (Library, error)
 		&i.Options,
 		&i.CreatedAt,
 		&i.Enabled,
+		&i.Position,
+		&i.Hidden,
 	)
 	return i, err
 }
