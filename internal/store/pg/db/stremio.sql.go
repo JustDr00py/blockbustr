@@ -13,6 +13,46 @@ import (
 	"github.com/google/uuid"
 )
 
+const adoptStremioLibrary = `-- name: AdoptStremioLibrary :one
+UPDATE libraries SET options = $1
+WHERE id = (
+    SELECT l.id FROM libraries l
+    WHERE l.kind = 'stremio'
+      AND l.options->>'catalogType' = $2::text
+      AND l.options->>'catalogId' = $3::text
+      AND NOT EXISTS (SELECT 1 FROM stremio_catalogs c WHERE c.library_id = l.id)
+    ORDER BY l.created_at
+    LIMIT 1
+    FOR UPDATE
+)
+RETURNING id, name, kind, paths, options, created_at, enabled
+`
+
+type AdoptStremioLibraryParams struct {
+	Options     json.RawMessage
+	CatalogType string
+	CatalogID   string
+}
+
+// An addon removed and added again (or a catalog dropped from its manifest
+// and back) left its library behind, linked to no catalog. The returning
+// catalog takes the oldest such library of the same type and id, with its
+// name, items and watch history, instead of making a "(2)".
+func (q *Queries) AdoptStremioLibrary(ctx context.Context, arg AdoptStremioLibraryParams) (Library, error) {
+	row := q.db.QueryRow(ctx, adoptStremioLibrary, arg.Options, arg.CatalogType, arg.CatalogID)
+	var i Library
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Kind,
+		&i.Paths,
+		&i.Options,
+		&i.CreatedAt,
+		&i.Enabled,
+	)
+	return i, err
+}
+
 const createStremioLibrary = `-- name: CreateStremioLibrary :one
 INSERT INTO libraries (name, kind, options) VALUES ($1, 'stremio', $2)
 ON CONFLICT (name) DO NOTHING
@@ -88,6 +128,36 @@ type DeleteStremioCatalogsExceptParams struct {
 func (q *Queries) DeleteStremioCatalogsExcept(ctx context.Context, arg DeleteStremioCatalogsExceptParams) error {
 	_, err := q.db.Exec(ctx, deleteStremioCatalogsExcept, arg.AddonID, arg.Keep)
 	return err
+}
+
+const disableOrphanStremioLibraries = `-- name: DisableOrphanStremioLibraries :many
+UPDATE libraries l SET enabled = false
+WHERE l.kind = 'stremio' AND l.enabled
+  AND NOT EXISTS (SELECT 1 FROM stremio_catalogs c WHERE c.library_id = l.id)
+RETURNING l.name
+`
+
+// Switches off catalog libraries no catalog links to any more (their
+// addon was removed, or the manifest dropped the catalog), so they leave
+// clients' views. They stay to be adopted if the catalog comes back.
+func (q *Queries) DisableOrphanStremioLibraries(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, disableOrphanStremioLibraries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const ensureDiscoverLibrary = `-- name: EnsureDiscoverLibrary :one

@@ -108,10 +108,17 @@ type addonInfo struct {
 }
 
 // SyncAll syncs every enabled catalog and switches off the libraries of
-// catalogs (or addons) that were disabled. One catalog failing doesn't
-// stop the others.
+// catalogs (or addons) that were disabled or removed. One catalog failing
+// doesn't stop the others.
 func (s *Syncer) SyncAll(ctx context.Context) error {
 	q := s.Registry.q()
+	orphans, err := q.DisableOrphanStremioLibraries(ctx)
+	if err != nil {
+		return err
+	}
+	if len(orphans) > 0 {
+		s.Log.Info("stremio libraries of removed catalogs switched off", "libraries", orphans)
+	}
 	rows, err := q.ListSyncCatalogs(ctx)
 	if err != nil || len(rows) == 0 {
 		return err
@@ -181,9 +188,23 @@ func (s *Syncer) ensureLibrary(ctx context.Context, ad addonInfo, row db.ListSyn
 	if label == "" {
 		label = row.CatalogID
 	}
+	lib, err := q.AdoptStremioLibrary(ctx, db.AdoptStremioLibraryParams{Options: opts, CatalogType: row.CatalogType, CatalogID: row.CatalogID})
+	switch {
+	case err == nil:
+		if err := q.SetLibraryEnabled(ctx, db.SetLibraryEnabledParams{ID: lib.ID, Enabled: true}); err != nil {
+			return lib, uuid.Nil, err
+		}
+		if err := q.SetStremioCatalogLibrary(ctx, db.SetStremioCatalogLibraryParams{
+			AddonID: row.AddonID, CatalogType: row.CatalogType, CatalogID: row.CatalogID, LibraryID: &lib.ID,
+		}); err != nil {
+			return lib, uuid.Nil, err
+		}
+		s.Log.Info("stremio library adopted", "library", lib.Name, "host", ad.row.Host, "catalog", row.CatalogType+"/"+row.CatalogID)
+		return folder(lib)
+	case !errors.Is(err, pgx.ErrNoRows):
+		return lib, uuid.Nil, err
+	}
 	name := LibraryName(row.CatalogType, label)
-	var lib db.Library
-	var err error
 	for i := 1; ; i++ {
 		try := name
 		if i > 1 {

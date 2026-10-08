@@ -56,6 +56,33 @@ INSERT INTO libraries (name, kind, options) VALUES (@name, 'stremio', @options)
 ON CONFLICT (name) DO NOTHING
 RETURNING *;
 
+-- name: AdoptStremioLibrary :one
+-- An addon removed and added again (or a catalog dropped from its manifest
+-- and back) left its library behind, linked to no catalog. The returning
+-- catalog takes the oldest such library of the same type and id, with its
+-- name, items and watch history, instead of making a "(2)".
+UPDATE libraries SET options = @options
+WHERE id = (
+    SELECT l.id FROM libraries l
+    WHERE l.kind = 'stremio'
+      AND l.options->>'catalogType' = @catalog_type::text
+      AND l.options->>'catalogId' = @catalog_id::text
+      AND NOT EXISTS (SELECT 1 FROM stremio_catalogs c WHERE c.library_id = l.id)
+    ORDER BY l.created_at
+    LIMIT 1
+    FOR UPDATE
+)
+RETURNING *;
+
+-- name: DisableOrphanStremioLibraries :many
+-- Switches off catalog libraries no catalog links to any more (their
+-- addon was removed, or the manifest dropped the catalog), so they leave
+-- clients' views. They stay to be adopted if the catalog comes back.
+UPDATE libraries l SET enabled = false
+WHERE l.kind = 'stremio' AND l.enabled
+  AND NOT EXISTS (SELECT 1 FROM stremio_catalogs c WHERE c.library_id = l.id)
+RETURNING l.name;
+
 -- name: GetLibrary :one
 SELECT * FROM libraries WHERE id = $1;
 

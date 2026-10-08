@@ -95,6 +95,7 @@ type syncFixture struct {
 	sync *stremio.Syncer
 	id   string // the addon's id
 	f    *fakeCinemeta
+	url  string // its manifest URL
 }
 
 // newSyncFixture builds the server with a fake Cinemeta added and both its
@@ -112,7 +113,7 @@ func newSyncFixture(t *testing.T, opts ...func(*Deps)) *syncFixture {
 	}
 	rt := jfapi.NewRouter(testutil.Discard(), jfapi.Options{LegacyAuth: true})
 	Register(rt, d)
-	sf := &syncFixture{h: rt, sync: s, f: f}
+	sf := &syncFixture{h: rt, sync: s, f: f, url: manifestURL}
 	ad, err := reg.Add(t.Context(), manifestURL, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -324,6 +325,55 @@ func TestCatalogSyncChanges(t *testing.T) {
 
 // TestCatalogSyncLive syncs the real Cinemeta's popular catalogs into the
 // test database. Only with BLOCKBUSTR_LIVE_STREMIO=1.
+// An addon removed and added again gets its libraries back, with their
+// items' ids, instead of a "(2)" beside the left-behind ones.
+func TestCatalogSyncReaddedAddon(t *testing.T) {
+	sf := newSyncFixture(t)
+	admin := `MediaBrowser Token="` + captureToken + `"`
+	sf.syncAll(t)
+	before := sf.views(t)
+	movies := before["Popular Movies"]
+	if movies.Id == "" {
+		t.Fatalf("views: %v", before)
+	}
+	titles := itemNames(sf.children(t, movies.Id))
+	firstID := sf.children(t, movies.Id)[0].Id
+
+	// Removed: its libraries leave the views at the next sync.
+	if rec := call(t, sf.h, "DELETE", "/blockbustr/addons/"+sf.id, admin, ""); rec.Code != 204 {
+		t.Fatalf("delete: %d %s", rec.Code, rec.Body)
+	}
+	sf.syncAll(t)
+	if v := sf.views(t); len(v) != len(before)-2 {
+		t.Errorf("views after removing the addon: %v", v)
+	}
+
+	// Added again: the same libraries come back, under their names.
+	ad, err := sf.sync.Registry.Add(t.Context(), sf.url, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sf.id = strings.ReplaceAll(ad.ID.String(), "-", "")
+	for _, c := range []string{"movie/top", "series/top"} {
+		if rec := call(t, sf.h, "POST", "/blockbustr/addons/"+sf.id+"/catalogs/"+c, admin, `{"Enabled":true}`); rec.Code != 200 {
+			t.Fatalf("enable %s: %d", c, rec.Code)
+		}
+	}
+	sf.syncAll(t)
+	after := sf.views(t)
+	if len(after) != len(before) || after["Popular Movies"].Id != movies.Id || after["Popular Shows"].Id != before["Popular Shows"].Id {
+		t.Errorf("views after adding the addon again: %v, before %v", after, before)
+	}
+	kids := sf.children(t, movies.Id)
+	if got := itemNames(kids); got != titles || kids[0].Id != firstID {
+		t.Errorf("movies after adding the addon again: %s (first %s), before %s (first %s)", got, kids[0].Id, titles, firstID)
+	}
+	var n int
+	if err := testPool.QueryRow(t.Context(), `SELECT count(*) FROM libraries WHERE kind = 'stremio'`).Scan(&n); err != nil || n != 2 {
+		t.Errorf("catalog libraries: %d (%v), want 2", n, err)
+	}
+}
+
 func TestCatalogSyncLive(t *testing.T) {
 	if os.Getenv("BLOCKBUSTR_LIVE_STREMIO") == "" {
 		t.Skip("BLOCKBUSTR_LIVE_STREMIO not set")
