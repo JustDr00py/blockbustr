@@ -147,6 +147,18 @@ func TestUserPolicy(t *testing.T) {
 		t.Errorf("change password: %d", rec.Code)
 	}
 	kid = userClient(t, sf, "kid", "pw2") // a new login replaces the device's session
+	// 12.1.0's route: the user in the query, or none for the caller.
+	if rec := call(t, sf.h, "POST", "/Users/Password", kid, `{"CurrentPw":"pw2","NewPw":"pw3"}`); rec.Code != 204 {
+		t.Errorf("change own password via /Users/Password: %d %s", rec.Code, rec.Body)
+	}
+	kid = userClient(t, sf, "kid", "pw3")
+	if rec := call(t, sf.h, "POST", "/Users/Password?userId="+created.Id, kid, `{"CurrentPw":"pw3","NewPw":"pw2"}`); rec.Code != 204 {
+		t.Errorf("change password via ?userId=: %d %s", rec.Code, rec.Body)
+	}
+	kid = userClient(t, sf, "kid", "pw2")
+	if rec := call(t, sf.h, "POST", "/Users/Password?userId="+captureUserID, kid, `{"NewPw":"x"}`); rec.Code != 403 {
+		t.Errorf("non-admin changing another's password: %d", rec.Code)
+	}
 	if rec := call(t, sf.h, "POST", "/Users/"+created.Id+"/Password", kid, `{"ResetPassword":true}`); rec.Code != 403 {
 		t.Errorf("non-admin reset: %d", rec.Code)
 	}
@@ -158,6 +170,9 @@ func TestUserPolicy(t *testing.T) {
 	// Rename (by the user).
 	if rec := call(t, sf.h, "POST", "/Users/"+created.Id, kid, `{"Name":"junior"}`); rec.Code != 204 {
 		t.Errorf("rename: %d", rec.Code)
+	}
+	if rec := call(t, sf.h, "POST", "/Users?userId="+created.Id, kid, `{"Name":"junior"}`); rec.Code != 204 {
+		t.Errorf("rename via ?userId=: %d", rec.Code)
 	}
 	var me struct{ Name string }
 	_ = json.Unmarshal(call(t, sf.h, "GET", "/Users/Me", kid, "").Body.Bytes(), &me)

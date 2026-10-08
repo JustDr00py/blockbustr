@@ -25,17 +25,29 @@ func (a *api) registerUserAdmin(rt *jfapi.Router) {
 	rt.Post("/Users/New", a.requireAdmin(a.createUser))
 	rt.Delete("/Users/{userId}", a.requireAdmin(a.deleteUser))
 	rt.Post("/Users/{userId}/Policy", a.requireAdmin(a.updatePolicy))
+	// 12.1.0 names the user in the query (?userId=, default the caller);
+	// the path forms are the older routes, still sent by some clients.
+	rt.Post("/Users/Password", a.requireUser(a.updatePassword))
+	rt.Post("/Users", a.requireUser(a.updateUser))
 	rt.Post("/Users/{userId}/Password", a.requireUser(a.updatePassword))
 	rt.Post("/Users/{userId}", a.requireUser(a.updateUser))
 }
 
-// targetUser reads the {userId} the request is about; a non-admin may only
-// name themselves.
+// targetUser reads the user the request is about: the {userId} path
+// segment, else the userId query parameter, else the caller. A non-admin
+// may only name themselves.
 func (a *api) targetUser(w http.ResponseWriter, r *http.Request, s auth.Session) (db.User, bool) {
-	id, err := dto.ParseID(jfapi.URLParam(r, "userId"))
-	if err != nil {
-		errorText(w, http.StatusBadRequest)
-		return db.User{}, false
+	raw := jfapi.URLParam(r, "userId")
+	if raw == "" {
+		raw = jfapi.QueryOf(r).Get("userId")
+	}
+	id := dto.IDFromUUID(s.UserID)
+	if raw != "" {
+		var err error
+		if id, err = dto.ParseID(raw); err != nil {
+			errorText(w, http.StatusBadRequest)
+			return db.User{}, false
+		}
 	}
 	if id.UUID() != s.UserID && !s.IsAdmin {
 		errorText(w, http.StatusForbidden)
