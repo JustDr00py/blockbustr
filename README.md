@@ -12,6 +12,47 @@ What it adds:
 
 **Status: pre-1.0.** Daily use with Streamyfin, Findroid and Moonfin works: browsing, direct play, transcoding, seeking, subtitles, audio switching and resume across devices. The other clients are still being checked (`Plan/TASKS.md`). There is no web client yet: browsers and apps built on `jellyfin-web` can't connect.
 
+## What it is, and what it isn't
+
+blockbustr **is** a server for movies and shows, for people who stream from debrid services and Stremio addons alongside, or instead of, files they own, and who want to keep using the Jellyfin apps on their phones and TVs. It picks the version each device can play (resolution, codec, HDR and Dolby Vision, bitrate, language, cached on debrid), keeps debrid links on the server, and logs who played what.
+
+It **isn't**:
+
+- **Jellyfin.** It's a separate server that speaks the same client API, not a fork or a plugin. Jellyfin server plugins don't run on it.
+- **A web player.** There's an admin UI, but no in-browser client; you watch in the Jellyfin apps.
+- **A music, photo, book or live TV server.** Movies and shows only.
+- **A downloader.** It doesn't fetch files into your library (that's what Sonarr/Radarr do), and it doesn't run a BitTorrent client: a torrent from an addon is played only through a debrid account.
+- **A content source.** It finds nothing by itself. What it can play comes from your files, your debrid accounts and the addons you add, and what you stream is your responsibility.
+
+## How it compares
+
+These projects overlap with blockbustr. The table is from each project's README and docs as of October 2026, and they all move fast, so check them for anything that matters to you.
+
+| | blockbustr | [Remux](https://github.com/lostb1t/remux) | [Silo](https://github.com/Silo-Server/silo-server) | Jellyfin + [Gelato](https://github.com/faggiolina/gelato) |
+|---|---|---|---|---|
+| What it is | Standalone server, Jellyfin API | Standalone server, Jellyfin API | Standalone server, Jellyfin/Emby API and its own apps | Jellyfin server with a plugin |
+| Written in | Go | Rust | Go, React web UI | C# (.NET) |
+| Stremio addons | Any, several at once | Any, several at once | No (proposed in [#287](https://github.com/Silo-Server/silo-server/issues/287)) | AIOStreams only |
+| Debrid | Real-Debrid and TorBox accounts built in: cache checks, one torrent per hash, links never reach the apps | Through addons | No | Through AIOStreams |
+| Torrents | Only through a debrid account | Built-in torrent engine | No | Through AIOStreams |
+| Other sources | Local files, `.strm` | Local files, WebDAV, IPTV | Local files | Local files, `.strm` |
+| Choosing a version | Ranked per device: resolution, codec, HDR/DV, bitrate, language, cached; per-user resolution cap | Not documented | n/a | AIOStreams' own ordering |
+| Transcoding | Quick Sync, VAAPI or software | Not documented (ElfHosted's build: direct play only) | VAAPI, Quick Sync, NVENC | Jellyfin's (all hardware types) |
+| Web client | No | Not documented | Yes | Yes (jellyfin-web) |
+| Music and more | No | Music | Audiobooks, ebooks, podcasts, manga (beta) | Jellyfin's music, photos, live TV |
+| Libraries | Folders, plus addon catalogs | Rule-based (tags, catalogs, popularity, year) | Folders | Folders, plus catalogs as libraries |
+| Storage | PostgreSQL + Redis | Not documented | PostgreSQL + Redis | SQLite |
+| License | MIT or Apache-2.0 | AGPL-3.0 | AGPL-3.0 | GPL-2.0 (Jellyfin) |
+
+Some other options:
+
+- **Stremio itself, with a debrid service:** the simplest setup if you watch on one or two devices and don't need your own library, accounts or the Jellyfin apps.
+- **AIOStreams' Jellyfin mode** and **JellyStreams** (ElfHosted, closed source) serve addon results to Jellyfin apps without a server of your own. Neither transcodes or serves your own files.
+- **[Stremfin](https://github.com/hfip/Stremfin)** and **[Polyfin](https://github.com/moodiness/polyfin)** are smaller bridges of the same kind, both early work in progress.
+- **Plain Jellyfin, Emby or Plex** with Sonarr/Radarr if you'd rather download and own the files than stream them.
+
+Choose something else when you need a web player, music or books (Silo, Jellyfin), WebDAV or rule-based libraries (Remux), Jellyfin's plugins (Jellyfin + Gelato), or NVIDIA hardware transcoding (Silo, Jellyfin).
+
 ## Quick start
 
 Requires Docker or Podman with compose. The compose file builds from source; tagged releases also publish `linux/amd64` and `linux/arm64` images to `ghcr.io/justdr00py/blockbustr`.
