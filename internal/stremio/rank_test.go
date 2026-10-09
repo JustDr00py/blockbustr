@@ -235,3 +235,71 @@ func TestRankEmpty(t *testing.T) {
 		t.Errorf("Rank(nil) = %v", got)
 	}
 }
+
+// AIOStreams' formatter output (the user's own, 2026-10-08).
+func TestParseAIOStreamsFormatter(t *testing.T) {
+	s := Stream{
+		Name: "🔥4K UHD",
+		Description: "🎬 Movie Title (2023) \n🎥 BluRay 📺 DV 🎞️ HEVC ⏱️ 2h:32m:0s \n🎧 Atmos | TrueHD 🔊 7.1 🗣️ 🇬🇧 / 🇮🇹\n" +
+			"📦 62.5 GB / 125 GB 📊 54.8 Mbps \n🔍Torrentio \nℹ️ This is a message",
+		URL: "https://x/play",
+	}
+	in := Parse(s)
+	if in.Height != 2160 || !in.DV || in.Codec != "hevc" || in.Audio != "Atmos TrueHD 7.1" ||
+		in.Duration != 2*time.Hour+32*time.Minute || in.Size != int64(62.5*(1<<30)) || !slices.Equal(in.Languages, []string{"en", "it"}) {
+		t.Errorf("Parse = %+v", in)
+	}
+	// Exact bytes (behaviorHints.videoSize) give AIOStreams' own figure.
+	in.Size = 62_500_000_000
+	if b := in.Bitrate(0); b/100_000 != 548 {
+		t.Errorf("bitrate over the addon's duration = %d", b)
+	}
+}
+
+func TestParseAudio(t *testing.T) {
+	for text, want := range map[string]string{
+		"Movie.2023.2160p.UHD.BluRay.TrueHD.Atmos.7.1.DV.HEVC-FLUX": "Atmos TrueHD 7.1",
+		"Movie 2023 1080p WEB-DL DDP5.1 H 264-NTb":                  "DD+ 5.1",
+		"Movie.2023.1080p.BluRay.DTS-HD.MA.5.1.x264":                "DTS-HD MA 5.1",
+		"Movie 2023 1080p BluRay DTS-X 7.1":                         "DTS:X 7.1",
+		"Movie.2023.720p.WEBRip.AAC2.0.x264":                        "AAC 2.0",
+		"Movie 2023 1080p WEB EAC3 5.1":                             "DD+ 5.1",
+		"Movie 2023 1080p x265 💾 2.0 GB":                            "",
+		"Movie.2023.1080p.WEB.h264-ADDS":                            "",
+	} {
+		if got := parseAudio(text); got != want {
+			t.Errorf("parseAudio(%q) = %q, want %q", text, got, want)
+		}
+	}
+}
+
+func TestParseDuration(t *testing.T) {
+	for text, want := range map[string]time.Duration{
+		"⏱️ 2h:32m:0s":    2*time.Hour + 32*time.Minute,
+		"⏱ 1h 05m":        time.Hour + 5*time.Minute,
+		"⏱️ 95m":          95 * time.Minute,
+		"⏱️ 0h:45m:30s":   45*time.Minute + 30*time.Second,
+		"2160p x265 3m":   0, // too short to be a runtime
+		"no runtime here": 0,
+	} {
+		if got := parseDuration(text); got != want {
+			t.Errorf("parseDuration(%q) = %v, want %v", text, got, want)
+		}
+	}
+}
+
+// With no runtime for the title, the bitrate cap uses the addon's duration.
+func TestScoreBitrateFromAddonDuration(t *testing.T) {
+	p := Prefs{MaxBitrate: 20_000_000, HEVC: true, AV1: true, HDR: true}
+	big := Info{Height: 2160, Size: 60_000_000_000, Duration: 2 * time.Hour}   // ~67 Mbps
+	small := Info{Height: 2160, Size: 10_000_000_000, Duration: 2 * time.Hour} // ~11 Mbps
+	sb, _ := Score(big, p)
+	ss, _ := Score(small, p)
+	if sb >= ss {
+		t.Errorf("over the cap %d, under it %d", sb, ss)
+	}
+	big.Duration = 0
+	if s, _ := Score(big, p); s != ss {
+		t.Errorf("no runtime at all: no penalty, got %d want %d", s, ss)
+	}
+}

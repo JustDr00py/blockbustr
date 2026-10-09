@@ -48,6 +48,9 @@ type StreamChoice struct {
 	Size      int64
 	Height    int    // from the labels (2160, 1080…); 0 when unknown
 	Addon     string `json:",omitempty"` // the addon that offered it, for the playback log
+	// Duration is the addon's runtime label in seconds, for a title whose
+	// metadata has none (its bitrate estimate needs one).
+	Duration int64 `json:",omitempty"`
 	// Ready: playable now (a direct URL, or cached on debrid), so it can be
 	// probed ahead of play without starting a download.
 	Ready bool
@@ -177,9 +180,14 @@ func choiceSources(it db.Item, choices []StreamChoice, subs []SubtitleChoice) ([
 		}
 		if c.Size > 0 {
 			src.Size = ptr(c.Size)
-			if it.RuntimeTicks != nil && *it.RuntimeTicks > 0 {
+			runtime := deref(it.RuntimeTicks)
+			if runtime <= 0 && c.Duration > 0 {
+				runtime = c.Duration * 10_000_000
+				src.RuntimeTicks = ptr(runtime)
+			}
+			if runtime > 0 {
 				// An estimate from the size; probing at first play replaces it.
-				src.Bitrate = ptr(int32(min(c.Size*8*10_000_000 / *it.RuntimeTicks, 1<<31-1)))
+				src.Bitrate = ptr(int32(min(c.Size*8*10_000_000/runtime, 1<<31-1)))
 			}
 		}
 		out = append(out, src)
@@ -384,7 +392,7 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	avail := make([]stremio.Ranked, 0, len(ranked))
 	bad := a.badChoices(ctx, it.ID)
 	for _, r := range ranked {
-		if bad[streamChoice(it.ID, r).ID] || (prefs.MaxHeight > 0 && r.Info.Height > prefs.MaxHeight) {
+		if bad[streamChoice(it.ID, r, prefs.Runtime).ID] || (prefs.MaxHeight > 0 && r.Info.Height > prefs.MaxHeight) {
 			continue
 		}
 		avail = append(avail, r)
@@ -417,7 +425,7 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	slices.SortStableFunc(picked, func(x, y stremio.Ranked) int { return cmp.Compare(y.Score, x.Score) })
 	choices := make([]StreamChoice, 0, len(picked))
 	for _, r := range picked {
-		choices = append(choices, streamChoice(it.ID, r))
+		choices = append(choices, streamChoice(it.ID, r, prefs.Runtime))
 	}
 	pick := streamSet{Choices: choices, Subtitles: pickSubtitles(subs, a.Config.Stremio.Subtitles.Languages, a.Config.Stremio.Subtitles.PerLanguage)}
 	if len(choices) == 0 || a.Cache == nil {
@@ -507,7 +515,9 @@ func hasChoice(list []StreamChoice, id uuid.UUID) bool {
 	return false
 }
 
-func streamChoice(item uuid.UUID, r stremio.Ranked) StreamChoice {
+// streamChoice is r as a choice of item, whose runtime (0: unknown) turns
+// its size into a bitrate for the label.
+func streamChoice(item uuid.UUID, r stremio.Ranked, runtime time.Duration) StreamChoice {
 	s := r.Stream
 	key, target := "url:"+s.URL, s.URL
 	if s.InfoHash != "" {
@@ -519,8 +529,9 @@ func streamChoice(item uuid.UUID, r stremio.Ranked) StreamChoice {
 		key = "bt:" + target
 	}
 	return StreamChoice{
-		ID: uuid.NewSHA1(item, []byte(key)), Name: streamLabel(r), Target: target,
+		ID: uuid.NewSHA1(item, []byte(key)), Name: streamLabel(r, runtime), Target: target,
 		Container: streamContainer(s), Size: r.Info.Size, Height: r.Info.Height, Ready: r.Info.Cached, Addon: r.Addon,
+		Duration: int64(r.Info.Duration / time.Second),
 	}
 }
 
@@ -541,10 +552,11 @@ func streamContainer(s stremio.Stream) string {
 	return ""
 }
 
-// streamLabel is a choice's name, e.g. "2160p DV HEVC Remux • 29.2 GB •
-// cached": the picture, the size and, when known, whether a debrid account
-// has it.
-func streamLabel(r stremio.Ranked) string {
+// streamLabel is a choice's name, e.g. "2160p DV HEVC Remux • Atmos
+// TrueHD 7.1 • 29.2 GB • ~26 Mbps • cached": the picture, the audio, the
+// size and its average bitrate over runtime (the title's, else the addon's)
+// and, when known, whether a debrid account has it.
+func streamLabel(r stremio.Ranked, runtime time.Duration) string {
 	in := r.Info
 	var pic []string
 	if in.Height > 0 {
@@ -566,8 +578,14 @@ func streamLabel(r stremio.Ranked) string {
 	if parts[0] == "" {
 		parts[0] = "Stream"
 	}
+	if in.Audio != "" {
+		parts = append(parts, in.Audio)
+	}
 	if in.Size > 0 {
 		parts = append(parts, fmt.Sprintf("%.1f GB", float64(in.Size)/(1<<30)))
+	}
+	if b := in.Bitrate(runtime); b > 0 {
+		parts = append(parts, fmt.Sprintf("~%d Mbps", (b+500_000)/1_000_000))
 	}
 	// No addon name: users found "AIOStreams | name" noise in the picker.
 	switch {

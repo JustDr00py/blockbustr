@@ -616,19 +616,28 @@ func TestStreamPrefs(t *testing.T) {
 
 func TestStreamLabel(t *testing.T) {
 	cases := []struct {
-		r    stremio.Ranked
-		want string
+		r       stremio.Ranked
+		runtime time.Duration
+		want    string
 	}{
 		{stremio.Ranked{Offer: stremio.Offer{Addon: "Torrentio", Stream: stremio.Stream{InfoHash: "a"}},
-			Info: stremio.Info{Height: 2160, DV: true, HDR: true, Codec: "hevc", Remux: true, Size: 29 << 30, Cached: true, Debrid: true}},
+			Info: stremio.Info{Height: 2160, DV: true, HDR: true, Codec: "hevc", Remux: true, Size: 29 << 30, Cached: true, Debrid: true}}, 0,
 			"2160p DV HEVC Remux • 29.0 GB • cached"},
-		{stremio.Ranked{Offer: stremio.Offer{Addon: "Torrentio", Stream: stremio.Stream{InfoHash: "a"}}, Info: stremio.Info{Height: 1080, Uncached: true}},
+		// The audio, and the bitrate over the title's runtime, else the
+		// addon's own duration.
+		{stremio.Ranked{Offer: stremio.Offer{Stream: stremio.Stream{InfoHash: "a"}},
+			Info: stremio.Info{Height: 2160, DV: true, Codec: "hevc", Audio: "Atmos TrueHD 7.1", Size: 62_500_000_000}}, 152 * time.Minute,
+			"2160p DV HEVC • Atmos TrueHD 7.1 • 58.2 GB • ~55 Mbps"},
+		{stremio.Ranked{Offer: stremio.Offer{Stream: stremio.Stream{InfoHash: "a"}},
+			Info: stremio.Info{Height: 1080, Size: 6_000_000_000, Duration: 100 * time.Minute}}, 0,
+			"1080p • 5.6 GB • ~8 Mbps"},
+		{stremio.Ranked{Offer: stremio.Offer{Addon: "Torrentio", Stream: stremio.Stream{InfoHash: "a"}}, Info: stremio.Info{Height: 1080, Uncached: true}}, 0,
 			"1080p • not cached"},
-		{stremio.Ranked{Offer: stremio.Offer{Addon: "Direct", Stream: stremio.Stream{URL: "https://x"}}, Info: stremio.Info{Cached: true}},
+		{stremio.Ranked{Offer: stremio.Offer{Addon: "Direct", Stream: stremio.Stream{URL: "https://x"}}, Info: stremio.Info{Cached: true}}, 0,
 			"Stream"},
 	}
 	for _, c := range cases {
-		if got := streamLabel(c.r); got != c.want {
+		if got := streamLabel(c.r, c.runtime); got != c.want {
 			t.Errorf("streamLabel = %q, want %q", got, c.want)
 		}
 	}

@@ -27,6 +27,8 @@ type Info struct {
 	Uncached  bool     // the addon says its debrid service doesn't have it
 	Cam       bool     // CAM/TS/screener rip
 	Remux     bool
+	Audio     string        // "Atmos TrueHD 7.1", "DD+ 5.1"; "" when unlabelled
+	Duration  time.Duration // the addon's runtime ("⏱️ 2h:32m:0s"), for when the title has none
 }
 
 var (
@@ -44,6 +46,12 @@ var (
 	reCam     = regexp.MustCompile(`(?i)\b(cam|camrip|hdcam|ts|hdts|telesync|tc|telecine|scr|screener|dvdscr)\b`)
 	reRemux   = regexp.MustCompile(`(?i)\bremux\b`)
 	reMulti   = regexp.MustCompile(`(?i)\b(multi|dual audio|dual-audio)\b`)
+	// Audio, on the raw text: separators matter ("DDP5.1", "DTS-HD MA").
+	reAtmos    = regexp.MustCompile(`(?i)\batmos\b`)
+	reAudio    = regexp.MustCompile(`(?i)\b(true[- ]?hd|dts[-: .]?x|dts[- .]?hd(?:[- .]?ma)?|dts|ddp|dd\+|e-?ac-?3|dd|ac-?3|aac|flac|opus)(?:\d|\b)`)
+	reChannels = regexp.MustCompile(`(?:^|\D)([1-9]\.[0-2])(?:\D|$)`)
+	// "⏱️ 2h:32m:0s", "2h 32m", "1h:05m"; minutes alone ("95m") too.
+	reDuration = regexp.MustCompile(`(?i)(?:\b(\d{1,2})\s*h[:\s]*)?\b(\d{1,3})\s*m(?:in)?\b(?:[:\s]*(\d{1,2})\s*s\b)?`)
 	// The release group trails the release name: "…x265-FLUX.mkv", "…-FLUX",
 	// "… - YIFY". A tracker tag may follow ("-PiRaTeS[TGx]").
 	reGroup    = regexp.MustCompile(`-\s?([A-Za-z0-9]{2,20})(?:\.[A-Za-z0-9]{2,4})?$`)
@@ -114,7 +122,79 @@ func Parse(s Stream) Info {
 	// Only the release name decides CAM: "ts" elsewhere is noise.
 	in.Cam = reCam.MatchString(wordSep.Replace(firstLine(details))) || reCam.MatchString(wordSep.Replace(s.Hints.Filename))
 	in.Remux = reRemux.MatchString(words)
+	raw := s.Name + "\n" + details + "\n" + s.Hints.Filename
+	in.Audio = parseAudio(raw)
+	in.Duration = parseDuration(s.Name + "\n" + details)
 	return in
+}
+
+// audioLabels name the codecs reAudio finds.
+var audioLabels = []struct{ prefix, label string }{
+	{"true", "TrueHD"}, {"dts-x", "DTS:X"}, {"dtsx", "DTS:X"}, {"dts:x", "DTS:X"}, {"dts x", "DTS:X"}, {"dts.x", "DTS:X"},
+	{"dts", "DTS"}, {"ddp", "DD+"}, {"dd+", "DD+"}, {"eac", "DD+"}, {"e-ac", "DD+"}, {"dd", "DD"}, {"ac", "DD"},
+	{"aac", "AAC"}, {"flac", "FLAC"}, {"opus", "Opus"},
+}
+
+// parseAudio is the best audio a release names: Atmos, the codec and the
+// channels ("Atmos TrueHD 7.1").
+func parseAudio(text string) string {
+	var parts []string
+	if reAtmos.MatchString(text) {
+		parts = append(parts, "Atmos")
+	}
+	if m := reAudio.FindStringSubmatch(text); m != nil {
+		c := strings.ToLower(m[1])
+		for _, l := range audioLabels {
+			if strings.HasPrefix(c, l.prefix) {
+				label := l.label
+				if label == "DTS" && strings.Contains(strings.ReplaceAll(c, "-", ""), "hd") {
+					label = "DTS-HD"
+					if strings.HasSuffix(c, "ma") {
+						label = "DTS-HD MA"
+					}
+				}
+				parts = append(parts, label)
+				break
+			}
+		}
+	}
+	if m := reChannels.FindStringSubmatchIndex(text); m != nil {
+		// Not a size ("2.0 GB").
+		rest := strings.TrimSpace(strings.ToLower(text[m[3]:]))
+		if !strings.HasPrefix(rest, "gb") && !strings.HasPrefix(rest, "mb") && !strings.HasPrefix(rest, "tb") && !strings.HasPrefix(rest, "gib") {
+			parts = append(parts, text[m[2]:m[3]])
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+// parseDuration reads a runtime label; 0 when there's none or it's not
+// plausibly a whole title (under 10 minutes).
+func parseDuration(text string) time.Duration {
+	m := reDuration.FindStringSubmatch(text)
+	if m == nil {
+		return 0
+	}
+	h, _ := strconv.Atoi(m[1])
+	mins, _ := strconv.Atoi(m[2])
+	sec, _ := strconv.Atoi(m[3])
+	d := time.Duration(h)*time.Hour + time.Duration(mins)*time.Minute + time.Duration(sec)*time.Second
+	if d < 10*time.Minute {
+		return 0
+	}
+	return d
+}
+
+// Bitrate is the stream's average bits/s from its size over runtime (the
+// title's, else the addon's own duration); 0 when either is unknown.
+func (in Info) Bitrate(runtime time.Duration) int64 {
+	if runtime <= 0 {
+		runtime = in.Duration
+	}
+	if in.Size <= 0 || runtime <= 0 {
+		return 0
+	}
+	return int64(float64(in.Size) * 8 / runtime.Seconds())
 }
 
 func firstLine(s string) string {
@@ -228,7 +308,7 @@ func Score(in Info, p Prefs) (score int, ok bool) {
 	if (in.HDR || in.DV) && !p.HDR {
 		score += scoreHDRMiss
 	}
-	if p.MaxBitrate > 0 && p.Runtime > 0 && in.Size > 0 {
+	if bitrate := in.Bitrate(p.Runtime); p.MaxBitrate > 0 && bitrate > 0 {
 		// The penalty grows with the multiple of the cap: a stream's
 		// transcode cost is its input bitrate (decode is software), so
 		// when every version is over budget the nearest one above the cap
@@ -236,7 +316,7 @@ func Score(in Info, p Prefs) (score int, ok bool) {
 		// The floor keeps scoreCached dominant: a cached stream however
 		// far over still outranks an uncached in-budget one (≤590 at the
 		// top of every other score, against 1000+400−800).
-		if ratio := (float64(in.Size) * 8 / p.Runtime.Seconds()) / float64(p.MaxBitrate); ratio > 1 {
+		if ratio := float64(bitrate) / float64(p.MaxBitrate); ratio > 1 {
 			score += max(int(float64(scoreOverBudget)*ratio), scoreOverBudgetFloor)
 		}
 	}
