@@ -260,6 +260,36 @@ func TestCatalogSyncBuildsLibraries(t *testing.T) {
 	}
 }
 
+// A streaming-service catalog lists IMDb ids, but an addon like AIOStreams
+// serves meta only for its own prefixes: its series got no seasons or
+// episodes until Cinemeta was tried as the fallback for "tt" ids.
+func TestCatalogSyncEpisodesFromFallback(t *testing.T) {
+	sf := newSyncFixture(t)
+	execSQL(t, `UPDATE stremio_addons SET manifest = jsonb_set(manifest, '{resources}',
+		'[{"name":"catalog"},{"name":"meta","types":["series"],"idPrefixes":["mf","tmdb:"]}]')`)
+	seasons := func() int {
+		t.Helper()
+		shows := sf.views(t)["Popular Shows"]
+		ss := sf.children(t, shows.Id)
+		if len(ss) != 1 {
+			t.Fatalf("series: %+v", ss)
+		}
+		var out struct{ Items []viewItem }
+		getJSON(t, sf.h, "/Shows/"+ss[0].Id+"/Seasons", &out)
+		return len(out.Items)
+	}
+
+	sf.syncAll(t)
+	if n := seasons(); n != 0 {
+		t.Fatalf("no addon serves this id, yet %d seasons", n)
+	}
+	sf.sync.MetaFallback = strings.TrimSuffix(sf.url, "/manifest.json")
+	sf.syncAll(t)
+	if n := seasons(); n != 2 {
+		t.Errorf("seasons with the fallback: %d", n)
+	}
+}
+
 func TestCatalogSyncChanges(t *testing.T) {
 	sf := newSyncFixture(t)
 	sf.syncAll(t)

@@ -58,7 +58,7 @@ type Search struct {
 	Enabled          bool          `yaml:"enabled"`           // search addons/Cinemeta from the clients' search
 	Timeout          time.Duration `yaml:"timeout"`           // budget for one search; late sources are left out
 	Retention        time.Duration `yaml:"retention"`         // found titles nobody played or favourited are dropped after this
-	CinemetaFallback bool          `yaml:"cinemeta_fallback"` // search Cinemeta when no enabled addon has a search catalog
+	CinemetaFallback bool          `yaml:"cinemeta_fallback"` // Cinemeta for search when no enabled addon has a search catalog, and for series episodes when none serves meta for a tt id
 }
 
 // Stremio configures the catalog sync (DESIGN §7.2). Addons themselves are

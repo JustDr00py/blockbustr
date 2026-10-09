@@ -403,11 +403,7 @@ func (d *Discover) EnsureEpisodes(ctx context.Context, series db.Item) error {
 		if err != nil {
 			return nil, err
 		}
-		if d.Fallback != "" {
-			cm := Manifest{Types: []string{"movie", "series"}, IDPrefixes: []string{"tt"}, Resources: []Resource{{Name: "meta"}}}
-			addons = append(addons, addonInfo{base: d.Fallback, manifest: cm})
-		}
-		w := &catalogWriter{s: &Syncer{Registry: d.Registry, Log: d.Log}, q: d.Registry.q(), lib: lib}
+		w := &catalogWriter{s: &Syncer{Registry: d.Registry, Log: d.Log, MetaFallback: d.Fallback}, q: d.Registry.q(), lib: lib}
 		meta, err := w.fetchMeta(ctx, id, addons)
 		if err != nil {
 			return nil, err

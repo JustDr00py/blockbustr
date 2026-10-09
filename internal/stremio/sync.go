@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -62,6 +63,10 @@ type Syncer struct {
 	Refresh func(context.Context, db.Library) error
 	// Events announces changed libraries; nil drops them.
 	Events *events.Bus
+	// MetaFallback (Cinemeta) is asked for a series' episodes when no
+	// enabled addon serves meta for its IMDb id: streaming-service
+	// catalogs list "tt…" ids, and AIOStreams' meta covers only its own.
+	MetaFallback string
 
 	once     sync.Once
 	trigger  chan struct{}
@@ -512,6 +517,10 @@ func (w *catalogWriter) episodes(ctx context.Context, series []Meta, ids []uuid.
 
 func (w *catalogWriter) fetchMeta(ctx context.Context, id string, sources []addonInfo) (Meta, error) {
 	last := ErrNotFound
+	if w.s.MetaFallback != "" && strings.HasPrefix(id, "tt") {
+		cm := Manifest{Types: []string{"movie", "series"}, IDPrefixes: []string{"tt"}, Resources: []Resource{{Name: "meta"}}}
+		sources = append(slices.Clone(sources), addonInfo{base: w.s.MetaFallback, manifest: cm})
+	}
 	for _, a := range sources {
 		if !a.manifest.Supports("meta", "series", id) {
 			continue

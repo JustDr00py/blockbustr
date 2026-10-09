@@ -190,6 +190,9 @@ func run() error {
 		Registry: addons, Cache: rc, Log: log, Pages: cfg.Stremio.CatalogPages,
 		MissingGrace: cfg.Scan.MissingGrace, Refresh: refresher.Refresh, Events: bus,
 	}
+	if cfg.Search.CinemetaFallback {
+		catalogs.MetaFallback = stremio.CinemetaURL
+	}
 	torrents := resolve.PGTorrents{Q: queries}
 	// The debrid accounts, live: the admin UI can change them (P4.3).
 	accounts := provider.NewSet(debrid, debridOrder)
