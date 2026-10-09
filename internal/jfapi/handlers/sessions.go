@@ -55,6 +55,7 @@ type nowPlaying struct {
 	RepeatMode          string
 	PlaybackOrder       string
 	LastSaved           time.Time
+	LogID               int64 `json:",omitempty"` // its playback log row; 0: not logged
 }
 
 // clientSession is a device's session as stored in Redis.
@@ -285,6 +286,9 @@ func (a *api) applyPlayback(r *http.Request, s auth.Session, ev playEvent, rep p
 		np := cs.NowPlaying
 		if np == nil || np.ItemID != rep.ItemID || ev == playStart {
 			np = &nowPlaying{ItemID: rep.ItemID, PlayMethod: "DirectPlay", RepeatMode: "RepeatNone", PlaybackOrder: "Default", CanSeek: true, LastSaved: time.Now()}
+			// A progress or stop for a play the session doesn't know (it
+			// expired, or the start report never came) is logged too.
+			np.LogID = a.logPlayStart(r.Context(), s, rep)
 		}
 		changed := false
 		if rep.PositionTicks != nil {
@@ -325,10 +329,12 @@ func (a *api) applyPlayback(r *http.Request, s auth.Session, ev playEvent, rep p
 		case playStop:
 			save = !rep.Failed
 			cs.NowPlaying = nil
+			a.logPlayProgress(r.Context(), np.LogID, rep, np.PositionTicks, true)
 		case playProgress:
 			save = changed || time.Since(np.LastSaved) >= progressSave
 			if save {
 				np.LastSaved = time.Now()
+				a.logPlayProgress(r.Context(), np.LogID, rep, np.PositionTicks, false)
 			}
 			cs.NowPlaying = np
 		default:

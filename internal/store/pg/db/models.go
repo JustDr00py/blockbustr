@@ -220,6 +220,28 @@ type Person struct {
 	UpdatedAt   time.Time
 }
 
+type PlaybackLog struct {
+	ID            int64
+	UserID        *uuid.UUID
+	UserName      string
+	DeviceName    string
+	Client        string
+	ItemID        uuid.UUID
+	ItemName      string
+	RuntimeTicks  *int64
+	PlaySessionID *string
+	PlayMethod    string
+	SourceName    string
+	Addon         string
+	Delivery      string
+	LinkHost      string
+	Bytes         int64
+	PositionTicks int64
+	StartedAt     time.Time
+	LastSeenAt    time.Time
+	StoppedAt     *time.Time
+}
+
 type ServerSetting struct {
 	Key       string
 	Value     json.RawMessage

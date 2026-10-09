@@ -177,6 +177,8 @@ func run() error {
 		}
 	}()
 
+	go prunePlaybackLog(ctx, queries, log)
+
 	router := jfapi.NewRouter(log, jfapi.Options{LegacyAuth: cfg.Compat.LegacyAuth})
 	addons := &stremio.Registry{Pool: pool, Client: &stremio.Client{Cache: rc}}
 	if cfg.SecretKey != "" {
@@ -462,4 +464,28 @@ func newLogger(w io.Writer, c config.Log, buf *logbuf.Buffer) *slog.Logger {
 	}
 	buf.SetLevel(level)
 	return slog.New(buf.Handler(h))
+}
+
+// playbackLogKeep is how long the playback log keeps a play.
+const playbackLogKeep = 365 * 24 * time.Hour
+
+// prunePlaybackLog drops plays older than playbackLogKeep, at start and
+// daily after.
+func prunePlaybackLog(ctx context.Context, q *sqlcdb.Queries, log *slog.Logger) {
+	t := time.NewTicker(24 * time.Hour)
+	defer t.Stop()
+	for {
+		if n, err := q.PrunePlaybackLog(ctx, time.Now().Add(-playbackLogKeep)); err != nil {
+			if ctx.Err() == nil {
+				log.Warn("pruning the playback log failed", "err", err)
+			}
+		} else if n > 0 {
+			log.Info("pruned the playback log", "plays", n)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
 }

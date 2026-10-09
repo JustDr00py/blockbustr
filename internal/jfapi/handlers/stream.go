@@ -146,6 +146,9 @@ func (a *api) serveSource(w http.ResponseWriter, r *http.Request, it db.Item, sr
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+	if r.Method != http.MethodHead {
+		a.logStream(r, it, src, deliveryLocal, "")
+	}
 	w.Header().Set("Content-Type", contentType)
 	http.ServeContent(w, r, "", fi.ModTime(), f)
 }
@@ -172,6 +175,9 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, s
 	}
 	_, _, catalog := stremioRef(it)
 	if !resolve.IsPrivate(link) && (!catalog || a.redirectHost(link.URL)) && a.mayRedirect(r, link.URL) {
+		if r.Method != http.MethodHead {
+			a.logStream(r, it, src, deliveryRedirected, link.URL)
+		}
 		http.Redirect(w, r, link.URL, http.StatusFound)
 		return
 	}
@@ -210,9 +216,11 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, s
 	}
 	w.WriteHeader(resp.StatusCode)
 	if r.Method != http.MethodHead {
+		cw := &countingWriter{w: w, a: a, ctx: ctx, playSession: a.logStream(r, it, src, deliveryProxied, link.URL), last: time.Now()}
 		metrics.ActiveProxies.Inc()
-		_, _ = io.Copy(countingWriter{w}, resp.Body) // ends when either side hangs up
+		_, _ = io.Copy(cw, resp.Body) // ends when either side hangs up
 		metrics.ActiveProxies.Dec()
+		cw.flush()
 	}
 }
 
@@ -296,15 +304,6 @@ func (a *api) markBadChoice(ctx context.Context, item, choice uuid.UUID) {
 	if a.Cache != nil {
 		_ = a.Cache.AddToSet(ctx, cache.StreamBadKey(item.String()), cache.StreamBadTTL, choice.String())
 	}
-}
-
-// countingWriter counts proxied bytes as they go (a stream can last hours).
-type countingWriter struct{ w io.Writer }
-
-func (c countingWriter) Write(p []byte) (int, error) {
-	n, err := c.w.Write(p)
-	metrics.ProxiedBytes.Add(float64(n))
-	return n, err
 }
 
 // signatureOK checks a signed stream URL (a remote source's Path, P3.10).

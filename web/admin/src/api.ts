@@ -224,3 +224,42 @@ export interface LogsResponse {
   Level: string;
   Entries: LogEntry[];
 }
+
+// GET /blockbustr/playback: plays, newest first (More: older ones exist, ask
+// with before = the last Id), and each user's totals over the last Days.
+export interface PlaybackEntry {
+  ID: number;
+  UserID?: string;
+  UserName: string;
+  DeviceName: string;
+  Client: string;
+  ItemID: string;
+  ItemName: string;
+  PlayMethod: string;
+  SourceName: string;
+  Addon: string;
+  Delivery: "" | "local" | "proxied" | "redirected";
+  LinkHost: string;
+  Bytes: number;
+  PositionTicks: number;
+  RuntimeTicks?: number;
+  StartedAt: string;
+  LastSeenAt: string;
+  StoppedAt?: string;
+}
+
+export interface PlaybackTotal {
+  UserID?: string;
+  UserName: string;
+  Plays: number;
+  Seconds: number;
+  Bytes: number;
+  LastPlayed: string;
+}
+
+export interface PlaybackResponse {
+  Entries: PlaybackEntry[];
+  Totals: PlaybackTotal[];
+  Days: number;
+  More: boolean;
+}

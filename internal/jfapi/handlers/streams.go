@@ -46,7 +46,8 @@ type StreamChoice struct {
 	Target    string    // for resolve.FromURL: the stream URL, or resolve.Magnet
 	Container string    // from the file name; "" when unknown
 	Size      int64
-	Height    int // from the labels (2160, 1080…); 0 when unknown
+	Height    int    // from the labels (2160, 1080…); 0 when unknown
+	Addon     string `json:",omitempty"` // the addon that offered it, for the playback log
 	// Ready: playable now (a direct URL, or cached on debrid), so it can be
 	// probed ahead of play without starting a download.
 	Ready bool
@@ -519,7 +520,7 @@ func streamChoice(item uuid.UUID, r stremio.Ranked) StreamChoice {
 	}
 	return StreamChoice{
 		ID: uuid.NewSHA1(item, []byte(key)), Name: streamLabel(r), Target: target,
-		Container: streamContainer(s), Size: r.Info.Size, Height: r.Info.Height, Ready: r.Info.Cached,
+		Container: streamContainer(s), Size: r.Info.Size, Height: r.Info.Height, Ready: r.Info.Cached, Addon: r.Addon,
 	}
 }
 

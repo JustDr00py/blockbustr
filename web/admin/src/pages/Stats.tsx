@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
-import { ErrorNote, PageHeader } from "../ui";
+import { bytes, ErrorNote, PageHeader } from "../ui";
 
 // GET /blockbustr/stats: the server's metrics, summarised (internal/metrics
 // Snapshot). Totals count since the server started; the page polls every
@@ -36,16 +36,6 @@ const POLL_MS = 5000;
 // timings say nothing about the server's speed; the admin UI's own files
 // and unrouted requests are noise.
 const HIDDEN_ROUTES = /\/(stream|hls|Videos|Audio)\b|^\/blockbustr\/ui|^unmatched$/i;
-
-function bytes(n: number): string {
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let i = 0;
-  while (n >= 1024 && i < units.length - 1) {
-    n /= 1024;
-    i++;
-  }
-  return `${n.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-}
 
 function uptime(s: number): string {
   const d = Math.floor(s / 86400);

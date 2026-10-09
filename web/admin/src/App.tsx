@@ -7,6 +7,7 @@ import Users from "./pages/Users";
 import Addons from "./pages/Addons";
 import Debrid from "./pages/Debrid";
 import Stats from "./pages/Stats";
+import Playback from "./pages/Playback";
 import Settings from "./pages/Settings";
 import Logs from "./pages/Logs";
 
@@ -16,6 +17,7 @@ const pages = {
   users: { label: "Users", Component: Users },
   addons: { label: "Addons", Component: Addons },
   debrid: { label: "Debrid", Component: Debrid },
+  playback: { label: "Playback", Component: Playback },
   stats: { label: "Stats", Component: Stats },
   settings: { label: "Settings", Component: Settings },
   logs: { label: "Logs", Component: Logs },
