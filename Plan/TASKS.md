@@ -4,6 +4,7 @@ Rules: work one item at a time (see `AGENTS.md`). Tick `[x]` when it meets the d
 
 ## Now
 - [x] AIOStreams fixes 2026-10-07 (user report): TMDB-keyed catalogs asked by IMDb id first (AIOStreams returned 0 streams for `tmdb:` ids; OpenSubtitles only knows IMDb); "FHD" read as 1080p; ready stream choices probed (tracks, audio switching, default audio in the preferred language, real play decisions); preferred language defaults to metadata.language. Follow-ups: rank by probed audio languages, not just the addon's flags; CAM rips filling an empty HD slot: decided 2026-10-07, CAM/TS/screener rips are never offered
+- [x] Debrid traffic controls 2026-10-08 (user request): per-user `MaxVideoHeight` (Users page, "Highest addon resolution") caps the addon versions a user is offered, listed, streamed and downloaded; `stremio.streams.probe_versions` (Settings page) bounds the versions probed ahead per title, and a picked version is always probed; README explains where debrid bytes flow [§7.3, P4.1]. Follow-ups: persist choice probes in Postgres (survive Redis restarts, and let ranking use probed audio languages); a stream request without a play session isn't height-capped.
 - [ ] First release tag (v0.1.0): needs the user's go-ahead (it publishes the image)
 
 ## Next

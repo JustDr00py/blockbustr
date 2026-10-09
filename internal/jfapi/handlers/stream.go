@@ -99,14 +99,17 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
-	if err := a.loadPlaySources(r.Context(), b, it); err != nil {
-		a.internalError(w, r, err)
-		return
-	}
 	q := jfapi.QueryOf(r)
 	if !a.signatureOK(r, q, it) {
 		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	// No token here: the user's height cap comes with their play session.
+	ps, _ := a.loadPlaySession(r.Context(), q.Get("PlaySessionId"))
+	r = r.WithContext(withMaxHeight(r.Context(), ps.MaxHeight))
+	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
+	if err := a.loadPlaySources(r.Context(), b, it); err != nil {
+		a.internalError(w, r, err)
 		return
 	}
 	b.sources[it.ID] = a.inPlayOrder(r.Context(), it, q.Get("PlaySessionId"), b.sources[it.ID])
@@ -385,20 +388,27 @@ func (a *api) mayRedirect(r *http.Request, link string) bool {
 	return strings.EqualFold(u.Scheme, scheme)
 }
 
+// loadPlaySession is the play session PlaybackInfo stored under id; ok is
+// false when there's none (no id, expired).
+func (a *api) loadPlaySession(ctx context.Context, id string) (ps PlaySession, ok bool) {
+	if id == "" || a.Cache == nil {
+		return ps, false
+	}
+	ok, err := a.Cache.GetJSON(ctx, cache.PlaySessionKey(id), &ps)
+	return ps, err == nil && ok
+}
+
 // inPlayOrder puts an addon title's sources in the order PlaybackInfo
 // offered them to playSession (playable first), so the item id, which
 // clients send for the default, names the same version here as there, and
 // the fallback tries them in that order. Without the session (or for other
 // items) they stay in rank order.
 func (a *api) inPlayOrder(ctx context.Context, it db.Item, playSession string, sources []db.MediaSource) []db.MediaSource {
-	if playSession == "" || a.Cache == nil {
-		return sources
-	}
 	if _, _, ok := stremioRef(it); !ok {
 		return sources
 	}
-	var ps PlaySession
-	if ok, err := a.Cache.GetJSON(ctx, cache.PlaySessionKey(playSession), &ps); err != nil || !ok || ps.ItemID != it.ID || len(ps.Order) == 0 {
+	ps, ok := a.loadPlaySession(ctx, playSession)
+	if !ok || ps.ItemID != it.ID || len(ps.Order) == 0 {
 		return sources
 	}
 	pos := make(map[uuid.UUID]int, len(ps.Order))

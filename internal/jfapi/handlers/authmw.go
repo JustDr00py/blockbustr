@@ -33,6 +33,7 @@ func (a *api) requireUser(h sessionHandler) http.HandlerFunc {
 		// allows (P4.1).
 		r = r.WithContext(pg.WithAccess(r.Context(), s.Access))
 		r = r.WithContext(context.WithValue(r.Context(), mayDownloadKey{}, !s.NoPlayback && !s.NoDownload))
+		r = r.WithContext(withMaxHeight(r.Context(), s.MaxHeight))
 		a.touchSession(r, s) // GET /Sessions lists recently active devices
 		h(w, r, s)
 	}
@@ -54,6 +55,22 @@ type mayDownloadKey struct{}
 func mayDownload(ctx context.Context) bool {
 	ok, _ := ctx.Value(mayDownloadKey{}).(bool)
 	return ok
+}
+
+type maxHeightKey struct{}
+
+// withMaxHeight is ctx with the user's cap on addon versions' height (0:
+// none).
+func withMaxHeight(ctx context.Context, h int) context.Context {
+	return context.WithValue(ctx, maxHeightKey{}, h)
+}
+
+// maxHeight is the cap on addon versions' height for the user of the
+// request in ctx (set by requireUser, or from the play session for a
+// stream request; 0: none).
+func maxHeight(ctx context.Context) int {
+	h, _ := ctx.Value(maxHeightKey{}).(int)
+	return h
 }
 
 // requireAdmin is requireUser plus an administrator check (403 otherwise).

@@ -91,6 +91,8 @@ export interface UserPolicy {
   EnableMediaPlayback?: boolean;
   EnableContentDownloading?: boolean;
   EnableVideoPlaybackTranscoding?: boolean;
+  /** blockbustr's own: caps the addon versions offered (1080: no 4K). */
+  MaxVideoHeight?: number;
 }
 
 export interface User {

@@ -91,6 +91,10 @@ type Streams struct {
 	Languages   []string      `yaml:"languages"`    // preferred audio, ISO 639-1 ("en", "de")
 	AllowGroups []string      `yaml:"allow_groups"` // release groups ranked higher
 	DenyGroups  []string      `yaml:"deny_groups"`  // release groups never offered
+	// ProbeVersions bounds the versions probed ahead of play per title,
+	// best first; 0 probes every ready one. A version a client picks is
+	// probed whatever its rank.
+	ProbeVersions int `yaml:"probe_versions"`
 }
 
 // Library is one media library (DESIGN §6). Libraries are matched to the
@@ -459,6 +463,9 @@ func (c *Config) Validate() error {
 	}
 	if s := c.Stremio.Streams; s.UHDSlots < 0 || s.UHDSlots > 10 || s.HDSlots < 0 || s.HDSlots > 10 || s.UHDSlots+s.HDSlots < 1 {
 		add("stremio.streams.uhd_slots and hd_slots must be 0-10 each, at least one above 0")
+	}
+	if n := c.Stremio.Streams.ProbeVersions; n < 0 || n > 20 {
+		add("stremio.streams.probe_versions must be 0 (all) to 20")
 	}
 	for _, h := range c.Stremio.RedirectHosts {
 		if h == "" || strings.ContainsAny(h, "/:@?# ") {

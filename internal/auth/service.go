@@ -47,11 +47,13 @@ type Session struct {
 	AppVersion string
 	// Access, NoPlayback, NoDownload and NoTranscode come from the user's
 	// policy (P4.1): what they may see, and whether they may play, download
-	// or have video transcoded.
+	// or have video transcoded. MaxHeight (MaxVideoHeight, blockbustr's
+	// own) caps the addon versions they're offered; 0: none.
 	Access      pg.Access `json:",omitempty"`
 	NoPlayback  bool      `json:",omitempty"`
 	NoDownload  bool      `json:",omitempty"`
 	NoTranscode bool      `json:",omitempty"`
+	MaxHeight   int       `json:",omitempty"`
 }
 
 // policySession fills s's policy fields from a stored users.policy.
@@ -59,11 +61,13 @@ func policySession(s Session, policy []byte) Session {
 	s.Access = pg.AccessFromPolicy(policy)
 	var p struct {
 		EnableMediaPlayback, EnableContentDownloading, EnableVideoPlaybackTranscoding *bool
+		MaxVideoHeight                                                                int
 	}
 	if json.Unmarshal(policy, &p) == nil {
 		s.NoPlayback = p.EnableMediaPlayback != nil && !*p.EnableMediaPlayback
 		s.NoDownload = p.EnableContentDownloading != nil && !*p.EnableContentDownloading
 		s.NoTranscode = p.EnableVideoPlaybackTranscoding != nil && !*p.EnableVideoPlaybackTranscoding
+		s.MaxHeight = max(p.MaxVideoHeight, 0)
 	}
 	return s
 }

@@ -8,7 +8,7 @@ What it adds:
 - **Search finds anything.** The search box in any client returns your library plus titles from your addons that you don't have yet; picking one plays it through the addon's streams.
 - **Built for large libraries.** PostgreSQL and Redis instead of SQLite. A 50,000-item library answers every list the apps ask for in under 50 ms at the 95th percentile (`make loadtest`).
 - **Transcoding** with Intel Quick Sync / VAAPI or software ffmpeg, HLS for clients that need it, direct play and remux otherwise.
-- **An admin web UI** at `/blockbustr/ui/` for libraries, users, addons, debrid accounts and what's playing.
+- **An admin web UI** at `/blockbustr/ui/` for libraries, users, addons, debrid accounts, server settings, logs and what's playing.
 
 **Status: pre-1.0.** Daily use with Streamyfin, Findroid and Moonfin works: browsing, direct play, transcoding, seeking, subtitles, audio switching and resume across devices. The other clients are still being checked (`Plan/TASKS.md`). There is no web client yet: browsers and apps built on `jellyfin-web` can't connect.
 
@@ -34,7 +34,18 @@ Then add a server in your Jellyfin app at `http://<host>:8096` and sign in with 
 
 - **Libraries** are folders of movies or shows. Folders of `.strm` files work too.
 - **Stremio addons and debrid accounts** are added in the admin UI. Their URLs and keys are stored encrypted with `BLOCKBUSTR_SECRET_KEY` (generate one with `openssl rand -hex 32`), so keep a copy of that key with your backups.
-- **Metadata** comes from TMDB when `BLOCKBUSTR_TMDB_API_KEY` is set, otherwise from `.nfo` files and the addons.
+- **Metadata** comes from TMDB when `BLOCKBUSTR_TMDB_API_KEY` is set (or the key is entered on the admin UI's Settings page), otherwise from `.nfo` files and the addons.
+- **Settings page.** Stream proxy hosts, the TMDB key, how many versions are offered and probed, preferred languages and release groups, transcoding limits and catalog sync can be changed in the admin UI and apply at once. A setting that `config.yaml` or the environment sets is locked there.
+
+### Debrid traffic and bandwidth
+
+Debrid links are never handed to the apps: blockbustr fetches a debrid or addon stream itself and passes it on, so the debrid service sees the server's address. From a VPS or a datacenter, that usually counts as the service's paid *remote traffic*; at home it uses your connection's download, and its upload for anyone watching from outside.
+
+- **Stream proxy hosts.** When an addon's links go through a stream proxy (MediaFlow Proxy, StremThru, or the built-in proxy of a hosted AIOStreams), list its host on the Settings page. Apps then fetch from the proxy themselves and the bytes skip blockbustr. The debrid service sees the proxy's address instead.
+- **Fewer, smaller versions.** *4K versions offered* set to 0 keeps 4K remuxes (often 20–60 GB a film) out of reach entirely. A user's *Highest addon resolution* (Users page) caps one user only: they're neither offered nor able to stream or download versions above it.
+- **Probing.** Before a version is played, blockbustr reads about 10 MB of it to learn its audio and subtitle tracks. *Versions probed ahead* limits this to the best few versions per title; a version someone picks is probed when it's picked. Results are cached in Redis for 30 days.
+- **Downloads** fetch the whole file at once. Turn off *Can download* for users who don't need it.
+- **Transcoding** pulls the full source through the server even when the stream comes from a proxy.
 
 ## Building and developing
 

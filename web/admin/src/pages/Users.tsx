@@ -11,6 +11,13 @@ async function load() {
 }
 
 // Jellyfin's parental rating scores (US).
+const heights: { label: string; value: number }[] = [
+  { label: "Any", value: 0 },
+  { label: "1080p", value: 1080 },
+  { label: "720p", value: 720 },
+  { label: "480p", value: 480 },
+];
+
 const ratings: { label: string; value: number | null }[] = [
   { label: "No limit", value: null },
   { label: "G / TV-Y / TV-G", value: 0 },
@@ -83,6 +90,7 @@ function accessSummary(p: UserPolicy, folders: MediaFolder[]): string {
   else {
     if (p.EnableContentDownloading === false) parts.push("can't download");
     if (p.EnableVideoPlaybackTranscoding === false) parts.push("no transcoding");
+    if (p.MaxVideoHeight) parts.push(`up to ${p.MaxVideoHeight}p`);
   }
   return parts.join(" · ");
 }
@@ -128,6 +136,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
   const [playback, setPlayback] = useState(p.EnableMediaPlayback !== false);
   const [downloads, setDownloads] = useState(p.EnableContentDownloading !== false);
   const [transcoding, setTranscoding] = useState(p.EnableVideoPlaybackTranscoding !== false);
+  const [height, setHeight] = useState(p.MaxVideoHeight ?? 0);
   const [pw, setPw] = useState("");
   const act = useAction();
 
@@ -144,6 +153,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
           EnableMediaPlayback: playback,
           EnableContentDownloading: downloads,
           EnableVideoPlaybackTranscoding: transcoding,
+          MaxVideoHeight: height,
         }),
       onChanged,
     );
@@ -174,6 +184,12 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
           <span>Highest rating allowed</span>
           <select value={rating ?? ""} onChange={(e) => setRating(e.target.value === "" ? null : Number(e.target.value))}>
             {ratings.map((r) => <option key={r.label} value={r.value ?? ""}>{r.label}</option>)}
+          </select>
+        </label>
+        <label className="field" title="Highest resolution of the addon versions this user is offered. Lower keeps 4K remuxes off the debrid service's remote traffic.">
+          <span>Highest addon resolution</span>
+          <select value={height} onChange={(e) => setHeight(Number(e.target.value))}>
+            {heights.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}
           </select>
         </label>
         <div className="field">

@@ -158,7 +158,7 @@ func (a *api) updatePolicy(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	if !ok {
 		return
 	}
-	var pol dto.UserPolicy
+	var pol userPolicy
 	if err := jfapi.DecodeJSON(w, r, &pol); err != nil {
 		errorText(w, http.StatusBadRequest)
 		return
@@ -176,6 +176,9 @@ func (a *api) updatePolicy(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	}
 	if (!isAdmin || disabled) && a.refuseLastAdmin(w, r, u) {
 		return
+	}
+	if pol.MaxVideoHeight != nil && *pol.MaxVideoHeight <= 0 {
+		pol.MaxVideoHeight = nil // no cap
 	}
 	// The database owns the two flags; the rest is stored as sent (only the
 	// keys the body set, in Jellyfin's casing).

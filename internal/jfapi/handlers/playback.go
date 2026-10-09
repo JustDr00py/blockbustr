@@ -42,6 +42,9 @@ type PlaySession struct {
 	// Order is an addon title's sources as offered, first (the item id,
 	// the default) first; stream and HLS requests of the session use it.
 	Order []uuid.UUID `json:",omitempty"`
+	// MaxHeight is the user's cap on addon versions (0: none), for stream
+	// requests, which carry no token.
+	MaxHeight int `json:",omitempty"`
 }
 
 // playbackRequest merges the PlaybackInfoDto body with the query string
@@ -181,7 +184,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		maxBitrate = int64(*req.MaxStreamingBitrate)
 	}
 	session := PlaySession{
-		UserID: user, DeviceID: s.DeviceID, ItemID: it.ID, Sources: map[string]media.Decision{},
+		UserID: user, DeviceID: s.DeviceID, ItemID: it.ID, Sources: map[string]media.Decision{}, MaxHeight: s.MaxHeight,
 		AudioStreamIndex: optInt(req.AudioStreamIndex), SubtitleStreamIndex: optInt(req.SubtitleStreamIndex),
 	}
 	if req.StartTimeTicks != nil {
@@ -204,7 +207,9 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	rows := b.sources[it.ID]
 	allSources := false
 	if _, _, ok := stremioRef(it); ok && len(rows) == 0 {
-		rows = a.offerStreams(r, b, it, streamPrefs(profile, maxBitrate), req.MediaSourceId)
+		prefs := streamPrefs(profile, maxBitrate)
+		prefs.MaxHeight = minCap(prefs.MaxHeight, s.MaxHeight)
+		rows = a.offerStreams(r, b, it, prefs, req.MediaSourceId)
 		// The item id stands for the best choice: a client asking for it
 		// (from the details' placeholder) gets every choice.
 		allSources = req.MediaSourceId != nil && sameID(*req.MediaSourceId, dto.IDFromUUID(it.ID).String())
@@ -282,7 +287,7 @@ func (a *api) offerStreams(r *http.Request, b *itemBatch, it db.Item, prefs stre
 	choices := pick.Choices
 	if want != nil && *want != "" && !sameID(*want, dto.IDFromUUID(it.ID).String()) {
 		if set, ok := a.loadStreamSet(r.Context(), it.ID); ok {
-			for _, c := range set.All() {
+			for _, c := range withinHeight(set.All(), maxHeight(r.Context())) {
 				if sameID(*want, dto.IDFromUUID(c.ID).String()) && !hasChoice(choices, c.ID) {
 					choices = append(choices, c)
 				}
@@ -290,14 +295,31 @@ func (a *api) offerStreams(r *http.Request, b *itemBatch, it db.Item, prefs stre
 		}
 	}
 	// Probe the ready choices (waiting a little): their tracks let the
-	// client switch audio, and start in the preferred language.
-	a.probeChoices(r.Context(), choices, probeWait)
+	// client switch audio, and start in the preferred language. The one
+	// the client asked for goes first, so a probe limit never skips it.
+	a.probeChoices(r.Context(), pickedFirst(choices, want), probeWait)
 	rows, streams := choiceSources(it, choices, pick.Subtitles)
 	applyProbes(rows, streams, a.loadChoiceProbes(r.Context(), choices), a.preferredAudio())
 	for id, st := range streams {
 		b.streams[id] = st
 	}
 	return rows
+}
+
+// pickedFirst is choices with the one want names (a choice id) moved to
+// the front; as they are when want names none.
+func pickedFirst(choices []StreamChoice, want *string) []StreamChoice {
+	if want == nil || *want == "" {
+		return choices
+	}
+	i := slices.IndexFunc(choices, func(c StreamChoice) bool { return sameID(*want, dto.IDFromUUID(c.ID).String()) })
+	if i <= 0 {
+		return choices
+	}
+	out := make([]StreamChoice, 0, len(choices))
+	out = append(out, choices[i])
+	out = append(out, choices[:i]...)
+	return append(out, choices[i+1:]...)
 }
 
 // playbackSources loads the item's sources, first probing a .strm that was

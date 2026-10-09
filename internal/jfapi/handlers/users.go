@@ -86,7 +86,7 @@ func (a *api) writeLogin(w http.ResponseWriter, r *http.Request, u db.User, dev 
 		info.RemoteEndPoint = nil
 	}
 	jfapi.WriteJSON(w, r, http.StatusOK, dto.AuthenticationResult{
-		User:        &ud,
+		User:        &ud.UserDto,
 		SessionInfo: &info,
 		AccessToken: &token,
 		ServerId:    ptr(a.ServerID.String()),
@@ -135,7 +135,7 @@ func (a *api) listUsers(w http.ResponseWriter, r *http.Request, _ auth.Session) 
 		a.internalError(w, r, err)
 		return
 	}
-	out := make([]dto.UserDto, 0, len(users))
+	out := make([]userDTO, 0, len(users))
 	for _, u := range users {
 		ud, err := a.userDto(u)
 		if err != nil {
@@ -155,16 +155,32 @@ func (a *api) logout(w http.ResponseWriter, r *http.Request, _ auth.Session) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// userPolicy is Jellyfin's UserPolicy with blockbustr's own fields, stored
+// with it in users.policy. A client that doesn't know them (Jellyfin's own
+// dashboard) drops them when it saves a policy.
+type userPolicy struct {
+	dto.UserPolicy
+	// MaxVideoHeight caps the height of the addon versions the user is
+	// offered (1080: no 4K); 0 or absent: no cap.
+	MaxVideoHeight *int32 `json:",omitempty"`
+}
+
+// userDTO is Jellyfin's UserDto with blockbustr's policy fields.
+type userDTO struct {
+	dto.UserDto
+	Policy *userPolicy `json:"Policy,omitempty"`
+}
+
 // userDto builds Jellyfin's UserDto: defaults, then the user's stored
 // overrides, then the fields the database owns (admin, disabled).
-func (a *api) userDto(u db.User) (dto.UserDto, error) {
+func (a *api) userDto(u db.User) (userDTO, error) {
 	var cfg dto.UserConfiguration
 	if err := mergeJSON(&cfg, defaultUserConfiguration, u.Configuration); err != nil {
-		return dto.UserDto{}, err
+		return userDTO{}, err
 	}
-	var pol dto.UserPolicy
+	var pol userPolicy
 	if err := mergeJSON(&pol, defaultUserPolicy, u.Policy); err != nil {
-		return dto.UserDto{}, err
+		return userDTO{}, err
 	}
 	pol.IsAdministrator, pol.IsDisabled = ptr(u.IsAdmin), ptr(u.IsDisabled)
 	hasPassword := u.PasswordHash != nil
@@ -172,7 +188,7 @@ func (a *api) userDto(u db.User) (dto.UserDto, error) {
 	if u.LastLoginAt != nil {
 		lastLogin = ptr(dto.NewTime(*u.LastLoginAt))
 	}
-	return dto.UserDto{
+	return userDTO{UserDto: dto.UserDto{
 		Name:                      ptr(u.Name),
 		ServerId:                  ptr(a.ServerID.String()),
 		Id:                        ptr(dto.IDFromUUID(u.ID)),
@@ -183,8 +199,8 @@ func (a *api) userDto(u db.User) (dto.UserDto, error) {
 		LastLoginDate:             lastLogin,
 		LastActivityDate:          lastLogin,
 		Configuration:             &cfg,
-		Policy:                    &pol,
-	}, nil
+		Policy:                    &pol.UserPolicy,
+	}, Policy: &pol}, nil
 }
 
 // sessionInfo is the SessionInfo returned with a login. Its shape follows

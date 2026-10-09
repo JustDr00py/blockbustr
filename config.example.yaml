@@ -56,6 +56,8 @@ stremio:                       # addons themselves are managed through /blockbus
     uhd_slots: 3               # versions offered at 2160p and up
     hd_slots: 4                # versions offered below 2160p; unfilled slots of
                                # either go to the best remaining ("best available")
+    probe_versions: 0          # versions probed ahead of play per title, best first
+                               # (~10 MB each through the debrid service); 0 = all
     languages: []              # preferred audio, ISO 639-1 (e.g. [en, de])
     allow_groups: []           # release groups ranked higher
     deny_groups: []            # release groups never offered

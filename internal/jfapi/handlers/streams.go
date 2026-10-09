@@ -46,6 +46,7 @@ type StreamChoice struct {
 	Target    string    // for resolve.FromURL: the stream URL, or resolve.Magnet
 	Container string    // from the file name; "" when unknown
 	Size      int64
+	Height    int // from the labels (2160, 1080…); 0 when unknown
 	// Ready: playable now (a direct URL, or cached on debrid), so it can be
 	// probed ahead of play without starting a download.
 	Ready bool
@@ -145,6 +146,15 @@ func imdbOf(it db.Item) string {
 	return ""
 }
 
+// withinHeight is choices without those above maxHeight (0: no cap). A
+// choice whose labels don't say its height stays.
+func withinHeight(choices []StreamChoice, maxHeight int) []StreamChoice {
+	if maxHeight <= 0 {
+		return choices
+	}
+	return slices.DeleteFunc(slices.Clone(choices), func(c StreamChoice) bool { return c.Height > maxHeight })
+}
+
 // choiceSources are the sources a set's choices stand for, in its order,
 // and their streams: the set's subtitles, as external text tracks.
 func choiceSources(it db.Item, choices []StreamChoice, subs []SubtitleChoice) ([]db.MediaSource, map[uuid.UUID][]db.MediaStream) {
@@ -202,7 +212,8 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 	if len(set.Choices) > 0 {
 		// Every choice offered gets its probe, earlier ones too: a source
 		// without tracks transcodes with software decode (no codec known).
-		all := set.All()
+		// Those above the user's height cap aren't theirs to see or play.
+		all := withinHeight(set.All(), maxHeight(ctx))
 		var streams map[uuid.UUID][]db.MediaStream
 		b.sources[it.ID], streams = choiceSources(it, all, set.Subtitles)
 		applyProbes(b.sources[it.ID], streams, a.loadChoiceProbes(ctx, all), a.preferredAudio())
@@ -508,7 +519,7 @@ func streamChoice(item uuid.UUID, r stremio.Ranked) StreamChoice {
 	}
 	return StreamChoice{
 		ID: uuid.NewSHA1(item, []byte(key)), Name: streamLabel(r), Target: target,
-		Container: streamContainer(s), Size: r.Info.Size, Ready: r.Info.Cached,
+		Container: streamContainer(s), Size: r.Info.Size, Height: r.Info.Height, Ready: r.Info.Cached,
 	}
 }
 

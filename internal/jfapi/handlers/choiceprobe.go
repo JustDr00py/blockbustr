@@ -66,17 +66,29 @@ func (a *api) loadChoiceProbes(ctx context.Context, choices []StreamChoice) map[
 
 // probeChoices probes the ready, unprobed choices in the background, the
 // best-ranked first (it takes a slot first), and waits up to wait for them
-// (0: doesn't wait). The channel closes when every probe it started ended.
+// (0: doesn't wait). Only the first stremio.streams.probe_versions ready
+// choices are probed (0: all), probed or not; callers put a choice the
+// client picked first. The channel closes when every probe it started
+// ended.
 func (a *api) probeChoices(ctx context.Context, choices []StreamChoice, wait time.Duration) <-chan struct{} {
 	done := make(chan struct{})
 	if a.ChoiceProber == nil || a.Resolver == nil || a.Cache == nil {
 		close(done)
 		return done
 	}
-	have := a.loadChoiceProbes(ctx, choices)
-	var todo []StreamChoice
+	var ready []StreamChoice
 	for _, c := range choices {
-		if _, ok := have[c.ID]; !ok && c.Ready && !strings.HasPrefix(c.Target, "magnet:") {
+		if c.Ready && !strings.HasPrefix(c.Target, "magnet:") {
+			ready = append(ready, c)
+		}
+	}
+	if n := a.live().Stremio.Streams.ProbeVersions; n > 0 && len(ready) > n {
+		ready = ready[:n]
+	}
+	have := a.loadChoiceProbes(ctx, ready)
+	var todo []StreamChoice
+	for _, c := range ready {
+		if _, ok := have[c.ID]; !ok {
 			todo = append(todo, c)
 		}
 	}

@@ -1227,3 +1227,126 @@ func TestCatalogStreamRedirectHosts(t *testing.T) {
 		}
 	}
 }
+
+// A user's MaxVideoHeight caps the addon versions they're offered, listed
+// and able to play, whichever device asks, even while another user's pick
+// keeps the 4K among the remembered versions; clearing it brings 4K back.
+func TestCatalogVersionsUserCapped(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("bytes")) }))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: cdn.URL + "/4a.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: cdn.URL + "/f1.mkv"}},
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: cdn.URL + "/f2.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
+	itemID, err := dto.ParseID(matrix.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uhd := dto.IDFromUUID(uuid.NewSHA1(itemID.UUID(), []byte("url:"+cdn.URL+"/4a.mkv"))).String()
+	admin := `MediaBrowser Token="` + captureToken + `"`
+	rec := call(t, sf.h, "POST", "/Users/New", admin, `{"Name":"guest","Password":"pw"}`)
+	var guest struct{ Id string }
+	if json.Unmarshal(rec.Body.Bytes(), &guest) != nil || guest.Id == "" {
+		t.Fatalf("create: %d %s", rec.Code, rec.Body)
+	}
+	setPolicy := func(body string) {
+		t.Helper()
+		if rec := call(t, sf.h, "POST", "/Users/"+guest.Id+"/Policy", admin, body); rec.Code != 204 {
+			t.Fatalf("policy: %d %s", rec.Code, rec.Body)
+		}
+	}
+	setPolicy(`{"MaxVideoHeight":1080,"EnableMediaPlayback":true}`)
+	auth := userClient(t, sf, "guest", "pw")
+	var u struct{ Policy struct{ MaxVideoHeight int } }
+	if rec := call(t, sf.h, "GET", "/Users/"+guest.Id, admin, ""); json.Unmarshal(rec.Body.Bytes(), &u) != nil || u.Policy.MaxVideoHeight != 1080 {
+		t.Errorf("stored cap reads back as %d: %s", u.Policy.MaxVideoHeight, rec.Body)
+	}
+
+	// The admin's pick remembers the 4K; the guest's leaves it among the
+	// earlier versions, where it stays hidden from them.
+	if names := versionNames(t, sf.h, matrix.Id, admin, `{}`); counted(names, "2160p") != 1 {
+		t.Fatalf("admin's versions: %v", names)
+	}
+	rec = call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", auth, `{}`)
+	var pb playbackSources
+	if json.Unmarshal(rec.Body.Bytes(), &pb) != nil || len(pb.MediaSources) != 2 {
+		t.Fatalf("guest's PlaybackInfo: %d %s", rec.Code, rec.Body)
+	}
+	for _, s := range pb.MediaSources {
+		if strings.HasPrefix(s.Name, "2160p") {
+			t.Errorf("guest offered %q", s.Name)
+		}
+	}
+	var details struct{ MediaSources []struct{ Id, Name string } }
+	if rec := call(t, sf.h, "GET", "/Items/"+matrix.Id, auth, ""); json.Unmarshal(rec.Body.Bytes(), &details) != nil || len(details.MediaSources) != 2 {
+		t.Errorf("guest's details: %d %s", rec.Code, rec.Body)
+	}
+	if rec := call(t, sf.h, "GET", "/Items/"+matrix.Id+"/Download?mediaSourceId="+uhd, auth, ""); rec.Code != 404 {
+		t.Errorf("guest's 4K download: %d", rec.Code)
+	}
+	stream := func(ps string) int {
+		return call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+uhd+"&PlaySessionId="+ps, "", "").Code
+	}
+	if code := stream(pb.PlaySessionId); code != 404 {
+		t.Errorf("4K stream in the guest's play session: %d", code)
+	}
+	// The admin isn't capped.
+	rec = call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", admin, `{}`)
+	var apb playbackSources
+	_ = json.Unmarshal(rec.Body.Bytes(), &apb)
+	if code := stream(apb.PlaySessionId); code != 200 {
+		t.Errorf("4K stream in the admin's play session: %d", code)
+	}
+	if names := versionNames(t, sf.h, matrix.Id, auth, `{"MediaSourceId":"`+uhd+`"}`); counted(names, "2160p") != 0 {
+		t.Errorf("4K offered to the guest asking for it: %v", names)
+	}
+
+	setPolicy(`{"MaxVideoHeight":0,"EnableMediaPlayback":true}`)
+	if names := versionNames(t, sf.h, matrix.Id, auth, `{}`); counted(names, "2160p") != 1 {
+		t.Errorf("guest's versions with the cap cleared: %v", names)
+	}
+}
+
+// stremio.streams.probe_versions bounds the versions probed ahead of play,
+// best first; a version the client picks is probed when it's asked for.
+func TestChoiceProbesLimited(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 4k", URL: cdn.URL + "/a.mkv"}},
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 1080p", URL: cdn.URL + "/b.mkv"}},
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 720p", URL: cdn.URL + "/c.mkv"}},
+	}}}
+	pr := &multiAudioProber{}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.ChoiceProber = pr
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+		d.Config.Stremio.Streams.ProbeVersions = 1
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
+	itemID, err := dto.ParseID(matrix.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	auth := `MediaBrowser Token="` + captureToken + `"`
+	if names := versionNames(t, sf.h, matrix.Id, auth, `{}`); len(names) != 3 {
+		t.Fatalf("versions: %v", names)
+	}
+	if n := pr.calls.Load(); n != 1 {
+		t.Errorf("probes = %d, want 1 (probe_versions)", n)
+	}
+	sd := dto.IDFromUUID(uuid.NewSHA1(itemID.UUID(), []byte("url:"+cdn.URL+"/c.mkv"))).String()
+	versionNames(t, sf.h, matrix.Id, auth, `{"MediaSourceId":"`+sd+`"}`)
+	if n := pr.calls.Load(); n != 2 {
+		t.Errorf("probes after picking the 720p = %d, want 2", n)
+	}
+}
