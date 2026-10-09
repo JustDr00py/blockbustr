@@ -303,3 +303,47 @@ func TestScoreBitrateFromAddonDuration(t *testing.T) {
 		t.Errorf("no runtime at all: no penalty, got %d want %d", s, ss)
 	}
 }
+
+func TestDolbyVisionOnly(t *testing.T) {
+	for name, want := range map[string]bool{
+		"Movie.2023.2160p.WEB-DL.DV.HEVC-FLUX":           true,
+		"Movie.2023.2160p.WEB-DL.DV.HDR10.HEVC-FLUX":     false,
+		"Movie.2023.2160p.WEB-DL.DV.HDR.H265-NTb":        false,
+		"Movie.2023.2160p.HYBRID.WEB-DL.DV.HEVC-x":       false,
+		"Movie.2023.2160p.BluRay.REMUX.DV.HEVC.TrueHD-x": false, // profile 7: HDR10 base
+		"Movie.2023.2160p.WEB-DL.HDR10.HEVC-FLUX":        false,
+	} {
+		if got := Parse(Stream{Hints: StreamHints{Filename: name + ".mkv"}}).DVOnly; got != want {
+			t.Errorf("%s: DVOnly = %v, want %v", name, got, want)
+		}
+	}
+}
+
+// On an HDR display without Dolby Vision, a DV-only release falls below
+// an equal one with an HDR10 base and, like a codec the client can't
+// decode, below a lower resolution it plays as is; never below an uncached
+// one. A DV display keeps them level.
+func TestScoreDolbyVisionOnly(t *testing.T) {
+	noDV := Prefs{HEVC: true, AV1: true, HDR: true}
+	dvOnly := Info{Height: 2160, DV: true, DVOnly: true, Codec: "hevc", Cached: true}
+	hdr10 := Info{Height: 2160, HDR: true, Codec: "hevc", Cached: true}
+	score := func(in Info, p Prefs) int { s, _ := Score(in, p); return s }
+	if score(dvOnly, noDV) >= score(hdr10, noDV) {
+		t.Error("DV-only should rank below HDR10 on a display without DV")
+	}
+	uncached := hdr10
+	uncached.Cached = false
+	hd := Info{Height: 1080, HDR: true, Codec: "hevc", Cached: true}
+	if score(dvOnly, noDV) <= score(uncached, noDV) {
+		t.Error("the DV penalty must not outweigh being cached")
+	}
+	hevcMiss := Info{Height: 2160, Codec: "hevc", Cached: true}
+	if score(dvOnly, noDV) >= score(hd, noDV) || score(dvOnly, noDV) != score(hevcMiss, Prefs{AV1: true, HDR: true}) {
+		t.Error("DV-only on a display without DV should weigh like an undecodable codec")
+	}
+	dv := noDV
+	dv.DV = true
+	if score(dvOnly, dv) != score(hdr10, dv) {
+		t.Error("a DV display shouldn't penalise DV-only")
+	}
+}

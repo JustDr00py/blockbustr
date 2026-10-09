@@ -563,6 +563,8 @@ func streamLabel(r stremio.Ranked, runtime time.Duration) string {
 		pic = append(pic, strconv.Itoa(in.Height)+"p")
 	}
 	switch {
+	case in.DV && in.HDR:
+		pic = append(pic, "DV HDR")
 	case in.DV:
 		pic = append(pic, "DV")
 	case in.HDR:
@@ -608,7 +610,7 @@ func streamPrefs(p media.DeviceProfile, maxBitrate int64) stremio.Prefs {
 		prefs.MaxBitrate = p.MaxStreamingBitrate
 	}
 	if len(p.DirectPlayProfiles) == 0 {
-		prefs.HEVC, prefs.AV1, prefs.HDR = true, true, true
+		prefs.HEVC, prefs.AV1, prefs.HDR, prefs.DV = true, true, true, true
 		return prefs
 	}
 	for _, dp := range p.DirectPlayProfiles {
@@ -618,7 +620,7 @@ func streamPrefs(p media.DeviceProfile, maxBitrate int64) stremio.Prefs {
 		prefs.HEVC = prefs.HEVC || dp.VideoCodec == "" || media.CodecIn(dp.VideoCodec, "hevc")
 		prefs.AV1 = prefs.AV1 || dp.VideoCodec == "" || media.CodecIn(dp.VideoCodec, "av1")
 	}
-	prefs.HDR = true
+	prefs.HDR, prefs.DV = true, true
 	sawRange := false
 	for _, cp := range p.CodecProfiles {
 		if !strings.EqualFold(cp.Type, "Video") {
@@ -629,11 +631,14 @@ func streamPrefs(p media.DeviceProfile, maxBitrate int64) stremio.Prefs {
 			switch {
 			case strings.EqualFold(c.Property, "VideoRangeType"):
 				// SDR-only clients list just "SDR"; HDR ones add HDR10, DOVI…
+				// Plain "DOVI" is Dolby Vision itself; "DOVIWithHDR10" only
+				// accepts such files, playing their HDR10 base.
 				if !sawRange {
-					sawRange, prefs.HDR = true, false
+					sawRange, prefs.HDR, prefs.DV = true, false, false
 				}
 				v := strings.ToUpper(c.Value)
 				prefs.HDR = prefs.HDR || strings.Contains(v, "HDR") || strings.Contains(v, "DOVI")
+				prefs.DV = prefs.DV || slices.Contains(strings.Split(v, "|"), "DOVI")
 			case strings.EqualFold(c.Condition, "LessThanEqual") && strings.EqualFold(c.Property, "Height"):
 				prefs.MaxHeight = minCap(prefs.MaxHeight, n)
 			case strings.EqualFold(c.Condition, "LessThanEqual") && strings.EqualFold(c.Property, "Width"):

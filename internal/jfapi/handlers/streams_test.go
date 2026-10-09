@@ -584,11 +584,11 @@ func TestStreamPrefs(t *testing.T) {
 		max  int64
 		want stremio.Prefs
 	}{
-		{"no profile plays anything", media.DeviceProfile{}, 0, stremio.Prefs{HEVC: true, AV1: true, HDR: true}},
+		{"no profile plays anything", media.DeviceProfile{}, 0, stremio.Prefs{HEVC: true, AV1: true, HDR: true, DV: true}},
 		{"h264 only", media.DeviceProfile{MaxStreamingBitrate: 8_000_000, DirectPlayProfiles: []media.DirectPlayProfile{{Type: "Video", VideoCodec: "h264"}, {Type: "Audio"}}},
-			0, stremio.Prefs{MaxBitrate: 8_000_000, HDR: true}},
+			0, stremio.Prefs{MaxBitrate: 8_000_000, HDR: true, DV: true}},
 		{"any codec", media.DeviceProfile{DirectPlayProfiles: []media.DirectPlayProfile{{Type: "Video", Container: "mkv"}}},
-			20_000_000, stremio.Prefs{MaxBitrate: 20_000_000, HEVC: true, AV1: true, HDR: true}},
+			20_000_000, stremio.Prefs{MaxBitrate: 20_000_000, HEVC: true, AV1: true, HDR: true, DV: true}},
 		{"SDR, 1080p wide", media.DeviceProfile{
 			DirectPlayProfiles: []media.DirectPlayProfile{{Type: "Video", VideoCodec: "h264,hevc"}},
 			CodecProfiles: []media.CodecProfile{{Type: "Video", Codec: "hevc", Conditions: []media.ProfileCondition{
@@ -602,12 +602,17 @@ func TestStreamPrefs(t *testing.T) {
 				{Type: "Video", Conditions: []media.ProfileCondition{{Condition: "EqualsAny", Property: "VideoRangeType", Value: "SDR|HDR10|DOVI"}}},
 				{Type: "Video", Conditions: []media.ProfileCondition{{Condition: "LessThanEqual", Property: "Height", Value: "2160"}}},
 			},
-		}, 0, stremio.Prefs{HEVC: true, AV1: true, HDR: true, MaxHeight: 2160}},
+		}, 0, stremio.Prefs{HEVC: true, AV1: true, HDR: true, DV: true, MaxHeight: 2160}},
+		{"HDR10, DV only through its HDR10 base", media.DeviceProfile{
+			DirectPlayProfiles: []media.DirectPlayProfile{{Type: "Video", VideoCodec: "hevc"}},
+			CodecProfiles: []media.CodecProfile{{Type: "Video", Codec: "hevc", Conditions: []media.ProfileCondition{
+				{Condition: "EqualsAny", Property: "VideoRangeType", Value: "SDR|HDR10|HLG|DOVIWithHDR10|DOVIWithHLG"}}}},
+		}, 0, stremio.Prefs{HEVC: true, HDR: true}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			got := streamPrefs(c.p, c.max)
-			if got.HEVC != c.want.HEVC || got.AV1 != c.want.AV1 || got.HDR != c.want.HDR || got.MaxHeight != c.want.MaxHeight || got.MaxBitrate != c.want.MaxBitrate {
+			if got.HEVC != c.want.HEVC || got.AV1 != c.want.AV1 || got.HDR != c.want.HDR || got.DV != c.want.DV || got.MaxHeight != c.want.MaxHeight || got.MaxBitrate != c.want.MaxBitrate {
 				t.Errorf("streamPrefs = %+v, want %+v", got, c.want)
 			}
 		})
@@ -622,7 +627,7 @@ func TestStreamLabel(t *testing.T) {
 	}{
 		{stremio.Ranked{Offer: stremio.Offer{Addon: "Torrentio", Stream: stremio.Stream{InfoHash: "a"}},
 			Info: stremio.Info{Height: 2160, DV: true, HDR: true, Codec: "hevc", Remux: true, Size: 29 << 30, Cached: true, Debrid: true}}, 0,
-			"2160p DV HEVC Remux • 29.0 GB • cached"},
+			"2160p DV HDR HEVC Remux • 29.0 GB • cached"},
 		// The audio, and the bitrate over the title's runtime, else the
 		// addon's own duration.
 		{stremio.Ranked{Offer: stremio.Offer{Stream: stremio.Stream{InfoHash: "a"}},

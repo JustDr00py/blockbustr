@@ -14,9 +14,13 @@ import (
 // GB ⚙️ 1337x\nMulti Audio / 🇫🇷"), so every field is best effort and zero
 // when unknown.
 type Info struct {
-	Height    int // 2160, 1080, 720, 576, 480
-	HDR       bool
-	DV        bool     // Dolby Vision
+	Height int // 2160, 1080, 720, 576, 480
+	HDR    bool
+	DV     bool // Dolby Vision
+	// DVOnly: Dolby Vision with no HDR10 base layer named (a WEB-DL's
+	// profile 5), which shows purple and green on a display without DV.
+	// "DV HDR10", hybrids and remuxes (profile 7) carry an HDR10 base.
+	DVOnly    bool
 	Codec     string   // "hevc", "av1", "h264", "vp9"
 	Size      int64    // bytes
 	Seeders   int      // torrents only
@@ -37,6 +41,7 @@ var (
 	reFHD     = regexp.MustCompile(`(?i)\bfhd\b`)
 	reHDR     = regexp.MustCompile(`(?i)\b(hdr10\+?|hdr)\b`)
 	reDV      = regexp.MustCompile(`(?i)\b(dv|dovi|dolby vision)\b`)
+	reHybrid  = regexp.MustCompile(`(?i)\bhybrid\b`)
 	reHEVC    = regexp.MustCompile(`(?i)\b(x265|h 265|h265|hevc)\b`)
 	reAV1     = regexp.MustCompile(`(?i)\bav1\b`)
 	reH264    = regexp.MustCompile(`(?i)\b(x264|h 264|h264|avc)\b`)
@@ -122,6 +127,7 @@ func Parse(s Stream) Info {
 	// Only the release name decides CAM: "ts" elsewhere is noise.
 	in.Cam = reCam.MatchString(wordSep.Replace(firstLine(details))) || reCam.MatchString(wordSep.Replace(s.Hints.Filename))
 	in.Remux = reRemux.MatchString(words)
+	in.DVOnly = in.DV && !in.HDR && !in.Remux && !reHybrid.MatchString(words)
 	raw := s.Name + "\n" + details + "\n" + s.Hints.Filename
 	in.Audio = parseAudio(raw)
 	in.Duration = parseDuration(s.Name + "\n" + details)
@@ -263,6 +269,7 @@ type Prefs struct {
 	MaxBitrate int64         // bits/s; 0 = none
 	HEVC, AV1  bool          // the client decodes these itself
 	HDR        bool          // the client shows HDR
+	DV         bool          // …and Dolby Vision itself (profile 5), not just its HDR10 base
 	Runtime    time.Duration // the title's, to turn a size into a bitrate
 	Languages  []string      // preferred audio, ISO 639-1
 	Allow      []string      // release groups to favour
@@ -280,6 +287,7 @@ const (
 	scoreLangExtra       = 20 // a wanted language among others
 	scoreCodecMiss       = -150
 	scoreHDRMiss         = -50
+	scoreDVOnlyMiss      = -150 // like a codec miss: equal versions with an HDR10 base win, cached and height still decide
 	scoreOverBudget      = -200 // per multiple of the client's bitrate cap
 	scoreOverBudgetFloor = -800 // …clamped, so cached still dominates however far over
 	scoreOverHeight      = -250
@@ -307,6 +315,9 @@ func Score(in Info, p Prefs) (score int, ok bool) {
 	}
 	if (in.HDR || in.DV) && !p.HDR {
 		score += scoreHDRMiss
+	}
+	if in.DVOnly && !p.DV {
+		score += scoreDVOnlyMiss
 	}
 	if bitrate := in.Bitrate(p.Runtime); p.MaxBitrate > 0 && bitrate > 0 {
 		// The penalty grows with the multiple of the cap: a stream's
