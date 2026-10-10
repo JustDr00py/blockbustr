@@ -59,6 +59,20 @@ services:
   postgres:
     image: docker.io/library/postgres:17.11
     restart: unless-stopped
+    # Sized for a 2 vCPU / 4 GB host shared with blockbustr, Redis and ffmpeg.
+    # No parallel query: one search would otherwise take every core.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=2GB
+      - -c
+      - work_mem=8MB
+      - -c
+      - max_parallel_workers_per_gather=0
+      - -c
+      - log_min_duration_statement=1000   # log queries slower than 1 s
     environment:
       POSTGRES_USER: blockbustr
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blockbustr}
