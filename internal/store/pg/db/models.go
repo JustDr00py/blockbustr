@@ -291,6 +291,12 @@ type User struct {
 	LastLoginAt   *time.Time
 }
 
+type UserBytesHourly struct {
+	UserID uuid.UUID
+	Hour   time.Time
+	Bytes  int64
+}
+
 type UserDatum struct {
 	UserID                uuid.UUID
 	ItemID                uuid.UUID

@@ -163,7 +163,8 @@ func (a *api) serveHLSInput(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodHead {
 		return
 	}
-	cw := &countingWriter{w: w, a: a, ctx: ctx, sl: streamLog{playSession: e.playSession}, last: time.Now()}
+	ps, _ := a.loadPlaySession(ctx, e.playSession)
+	cw := &countingWriter{w: w, a: a, ctx: ctx, sl: streamLog{playSession: e.playSession, owner: ps.UserID}, last: time.Now()}
 	metrics.ActiveProxies.Inc()
 	_, _ = io.Copy(cw, resp.Body) // ends when ffmpeg hangs up
 	metrics.ActiveProxies.Dec()

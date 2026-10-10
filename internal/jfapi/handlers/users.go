@@ -167,6 +167,11 @@ type userPolicy struct {
 	// offered, in the GB (2^30 bytes) their labels show; 0 or absent: no
 	// cap. A version whose size isn't known is still offered.
 	MaxFileSizeGB *int32 `json:",omitempty"`
+	// MonthlyDataGB caps the bytes blockbustr proxies for the user per
+	// calendar month (server.timezone), in GB (2^30 bytes); 0 or absent:
+	// no cap. Once used up, plays and downloads are refused until the
+	// month turns; a play already going finishes.
+	MonthlyDataGB *int32 `json:",omitempty"`
 }
 
 // userDTO is Jellyfin's UserDto with blockbustr's policy fields.

@@ -90,7 +90,10 @@ func (a *api) logPlayProgress(ctx context.Context, id int64, rep playReport, pos
 // its token names. The zero value logs nothing.
 type streamLog struct {
 	playSession string
-	user, item  uuid.UUID
+	// owner is whose monthly data quota the bytes count against, whether
+	// or not a logged play claims them (a download doesn't).
+	owner      uuid.UUID
+	user, item uuid.UUID
 	// What a sessionless stream adds to the play it joins.
 	delivery, source, addon, host string
 }
@@ -130,16 +133,16 @@ func (a *api) logStream(r *http.Request, it db.Item, src db.MediaSource, deliver
 			if !errors.Is(err, pgx.ErrNoRows) {
 				a.Log.WarnContext(ctx, "playback log failed", "item", it.ID, "err", err)
 			}
-			return streamLog{}
+			return streamLog{owner: ps.UserID}
 		}
-		return streamLog{playSession: id}
+		return streamLog{playSession: id, owner: ps.UserID}
 	}
 	// No play session: the request's token, if it has one, names the user.
 	sess, err := a.Auth.Resolve(ctx, jfapi.AuthFrom(ctx).Token)
 	if err != nil {
 		return streamLog{}
 	}
-	sl := streamLog{user: sess.UserID, item: it.ID, delivery: delivery, source: src.Name, addon: addon, host: host}
+	sl := streamLog{owner: sess.UserID, user: sess.UserID, item: it.ID, delivery: delivery, source: src.Name, addon: addon, host: host}
 	sl.attach(ctx, a, 0)
 	return sl
 }
@@ -162,21 +165,23 @@ func (l streamLog) attach(ctx context.Context, a *api, bytes int64) bool {
 }
 
 // countingWriter counts proxied bytes as they go (a stream can last hours),
-// and adds them to the play's log row every playbackLogFlush and when done
-// (flush).
+// and adds them to the play's log row and the owner's quota usage every
+// playbackLogFlush and when done (flush).
 type countingWriter struct {
-	w       io.Writer
-	a       *api
-	ctx     context.Context
-	sl      streamLog // zero: not logged
-	pending int64
-	last    time.Time
+	w        io.Writer
+	a        *api
+	ctx      context.Context
+	sl       streamLog // zero: not logged
+	pending  int64     // not on the play's log row yet
+	unbilled int64     // not in the owner's usage yet
+	last     time.Time
 }
 
 func (c *countingWriter) Write(p []byte) (int, error) {
 	n, err := c.w.Write(p)
 	metrics.ProxiedBytes.Add(float64(n))
 	c.pending += int64(n)
+	c.unbilled += int64(n)
 	if time.Since(c.last) >= playbackLogFlush {
 		c.flush()
 	}
@@ -185,12 +190,21 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 
 func (c *countingWriter) flush() {
 	c.last = time.Now()
-	if c.pending == 0 || (c.sl.playSession == "" && c.sl.user == uuid.Nil) {
-		return
-	}
 	// The client may have hung up already: the bytes still count.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(c.ctx), 5*time.Second)
 	defer cancel()
+	if c.unbilled > 0 && c.sl.owner != uuid.Nil {
+		n := c.unbilled
+		c.unbilled = 0
+		if err := c.a.Queries.AddUserBytes(ctx, db.AddUserBytesParams{
+			UserID: c.sl.owner, Hour: time.Now().UTC().Truncate(time.Hour), Bytes: n,
+		}); err != nil {
+			c.a.Log.WarnContext(ctx, "counting a user's bytes failed", "user", c.sl.owner, "err", err)
+		}
+	}
+	if c.pending == 0 || (c.sl.playSession == "" && c.sl.user == uuid.Nil) {
+		return
+	}
 	if c.sl.playSession == "" {
 		// Without a play session the row may not exist until the player's
 		// Playing report arrives: keep the bytes until it does.

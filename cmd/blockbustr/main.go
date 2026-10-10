@@ -499,6 +499,10 @@ func prunePlaybackLog(ctx context.Context, q *sqlcdb.Queries, log *slog.Logger) 
 		} else if n > 0 {
 			log.Info("pruned the playback log", "plays", n)
 		}
+		// Quota usage only ever looks at this month: a year is plenty.
+		if _, err := q.PruneUserBytes(ctx, time.Now().Add(-playbackLogKeep)); err != nil && ctx.Err() == nil {
+			log.Warn("pruning per-user bytes failed", "err", err)
+		}
 		select {
 		case <-ctx.Done():
 			return

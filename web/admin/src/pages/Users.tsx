@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { api, type MediaFolder, type User, type UserPolicy } from "../api";
-import { ErrorNote, PageHeader, Toggle, timeAgo, useAction, useLoad } from "../ui";
+import { ErrorNote, PageHeader, Toggle, bytes, timeAgo, useAction, useLoad } from "../ui";
 
 async function load() {
-  const [users, folders] = await Promise.all([
+  const [users, folders, usage] = await Promise.all([
     api<User[]>("GET", "/Users"),
     api<{ Items: MediaFolder[] }>("GET", "/Library/MediaFolders"),
+    api<{ Month: string; Users: { UserID: string; Bytes: number }[] }>("GET", "/blockbustr/usage"),
   ]);
-  return { users, folders: folders.Items };
+  // Usage ids are dashed; Jellyfin's user ids aren't.
+  const used = new Map(usage.Users.map((u) => [u.UserID.replace(/-/g, ""), u.Bytes]));
+  return { users, folders: folders.Items, used };
 }
 
 // Jellyfin's parental rating scores (US).
@@ -56,13 +59,14 @@ export default function Users() {
       </form>
       <div className="card">
         <table>
-          <thead><tr><th>User</th><th>Access</th><th>Last sign-in</th><th></th></tr></thead>
+          <thead><tr><th>User</th><th>Access</th><th title="Data proxied for the user this calendar month, against their monthly allowance">This month</th><th>Last sign-in</th><th></th></tr></thead>
           <tbody>
             {data?.users.map((u) => (
               <UserRow
                 key={u.Id}
                 user={u}
                 folders={data.folders}
+                used={data.used.get(u.Id.replace(/-/g, "")) ?? 0}
                 editing={editing === u.Id}
                 onEdit={() => setEditing(editing === u.Id ? undefined : u.Id)}
                 onChanged={async () => {
@@ -96,9 +100,10 @@ function accessSummary(p: UserPolicy, folders: MediaFolder[]): string {
   return parts.join(" · ");
 }
 
-function UserRow({ user, folders, editing, onEdit, onChanged }: {
+function UserRow({ user, folders, used, editing, onEdit, onChanged }: {
   user: User;
   folders: MediaFolder[];
+  used: number;
   editing: boolean;
   onEdit: () => void;
   onChanged: () => Promise<void>;
@@ -114,12 +119,17 @@ function UserRow({ user, folders, editing, onEdit, onChanged }: {
           {!user.HasPassword && <div className="muted small">no password</div>}
         </td>
         <td className="small">{accessSummary(p, folders)}</td>
+        <td className="small">
+          {bytes(used)}
+          {p.MonthlyDataGB ? ` of ${bytes(p.MonthlyDataGB * 2 ** 30)}` : ""}
+          {p.MonthlyDataGB && used >= p.MonthlyDataGB * 2 ** 30 ? <> <span className="badge bad">used up</span></> : null}
+        </td>
         <td className="muted">{timeAgo(user.LastLoginDate)}</td>
         <td><button onClick={onEdit}>{editing ? "Close" : "Edit"}</button></td>
       </tr>
       {editing && (
         <tr>
-          <td colSpan={4}><UserEditor user={user} folders={folders} onChanged={onChanged} /></td>
+          <td colSpan={5}><UserEditor user={user} folders={folders} onChanged={onChanged} /></td>
         </tr>
       )}
     </>
@@ -139,6 +149,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
   const [transcoding, setTranscoding] = useState(p.EnableVideoPlaybackTranscoding !== false);
   const [height, setHeight] = useState(p.MaxVideoHeight ?? 0);
   const [sizeGB, setSizeGB] = useState(p.MaxFileSizeGB ?? 0);
+  const [monthGB, setMonthGB] = useState(p.MonthlyDataGB ?? 0);
   const [pw, setPw] = useState("");
   const act = useAction();
 
@@ -157,6 +168,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
           EnableVideoPlaybackTranscoding: transcoding,
           MaxVideoHeight: height,
           MaxFileSizeGB: sizeGB,
+          MonthlyDataGB: monthGB,
         }),
       onChanged,
     );
@@ -198,6 +210,10 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
         <label className="field" title="Largest addon version this user is offered, in GB as the version labels show it. Versions whose size isn't known are still offered. 0: no limit.">
           <span>Largest addon file (GB)</span>
           <input type="number" min={0} step={1} value={sizeGB} onChange={(e) => setSizeGB(Math.max(0, Math.floor(Number(e.target.value) || 0)))} />
+        </label>
+        <label className="field" title="Data this user may stream or download per calendar month (in the server's time zone), in GB; 1024 GB is 1 TB. Once used up, new plays are refused until the month turns; a play already going finishes. 0: no limit.">
+          <span>Monthly data (GB)</span>
+          <input type="number" min={0} step={1} value={monthGB} onChange={(e) => setMonthGB(Math.max(0, Math.floor(Number(e.target.value) || 0)))} />
         </label>
         <div className="field">
           <span>Hide unrated</span>

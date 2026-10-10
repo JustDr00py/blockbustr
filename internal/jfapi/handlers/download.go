@@ -32,6 +32,13 @@ func (a *api) download(w http.ResponseWriter, r *http.Request, s auth.Session) {
 		errorText(w, http.StatusForbidden)
 		return
 	}
+	if over, err := a.overQuota(r.Context(), s); err != nil {
+		a.internalError(w, r, err)
+		return
+	} else if over {
+		errorText(w, http.StatusForbidden)
+		return
+	}
 	id, err := dto.ParseID(jfapi.URLParam(r, "itemId"))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

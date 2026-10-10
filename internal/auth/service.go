@@ -49,13 +49,15 @@ type Session struct {
 	// policy (P4.1): what they may see, and whether they may play, download
 	// or have video transcoded. MaxHeight and MaxSize (MaxVideoHeight and
 	// MaxFileSizeGB, blockbustr's own) cap the addon versions they're
-	// offered; 0: none.
-	Access      pg.Access `json:",omitempty"`
-	NoPlayback  bool      `json:",omitempty"`
-	NoDownload  bool      `json:",omitempty"`
-	NoTranscode bool      `json:",omitempty"`
-	MaxHeight   int       `json:",omitempty"`
-	MaxSize     int64     `json:",omitempty"` // bytes
+	// offered; 0: none. MonthlyQuota (MonthlyDataGB) caps the bytes
+	// proxied for them per calendar month; 0: none.
+	Access       pg.Access `json:",omitempty"`
+	NoPlayback   bool      `json:",omitempty"`
+	NoDownload   bool      `json:",omitempty"`
+	NoTranscode  bool      `json:",omitempty"`
+	MaxHeight    int       `json:",omitempty"`
+	MaxSize      int64     `json:",omitempty"` // bytes
+	MonthlyQuota int64     `json:",omitempty"` // bytes
 }
 
 // policySession fills s's policy fields from a stored users.policy.
@@ -63,7 +65,7 @@ func policySession(s Session, policy []byte) Session {
 	s.Access = pg.AccessFromPolicy(policy)
 	var p struct {
 		EnableMediaPlayback, EnableContentDownloading, EnableVideoPlaybackTranscoding *bool
-		MaxVideoHeight, MaxFileSizeGB                                                 int
+		MaxVideoHeight, MaxFileSizeGB, MonthlyDataGB                                  int
 	}
 	if json.Unmarshal(policy, &p) == nil {
 		s.NoPlayback = p.EnableMediaPlayback != nil && !*p.EnableMediaPlayback
@@ -71,6 +73,7 @@ func policySession(s Session, policy []byte) Session {
 		s.NoTranscode = p.EnableVideoPlaybackTranscoding != nil && !*p.EnableVideoPlaybackTranscoding
 		s.MaxHeight = max(p.MaxVideoHeight, 0)
 		s.MaxSize = int64(max(p.MaxFileSizeGB, 0)) << 30
+		s.MonthlyQuota = int64(max(p.MonthlyDataGB, 0)) << 30
 	}
 	return s
 }

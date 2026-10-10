@@ -155,6 +155,16 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		errorText(w, http.StatusForbidden)
 		return
 	}
+	// Jellyfin's own answer for a user out of allowance: clients show it
+	// as a playback error.
+	if over, err := a.overQuota(r.Context(), s); err != nil {
+		a.internalError(w, r, err)
+		return
+	} else if over {
+		code := dto.RateLimitExceeded
+		jfapi.WriteJSON(w, r, http.StatusOK, dto.PlaybackInfoResponse{MediaSources: &[]dto.MediaSourceInfo{}, ErrorCode: &code})
+		return
+	}
 	id, err := dto.ParseID(jfapi.URLParam(r, "itemId"))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

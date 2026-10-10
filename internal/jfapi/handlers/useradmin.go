@@ -183,6 +183,9 @@ func (a *api) updatePolicy(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	if pol.MaxFileSizeGB != nil && *pol.MaxFileSizeGB <= 0 {
 		pol.MaxFileSizeGB = nil
 	}
+	if pol.MonthlyDataGB != nil && *pol.MonthlyDataGB <= 0 {
+		pol.MonthlyDataGB = nil
+	}
 	// The database owns the two flags; the rest is stored as sent (only the
 	// keys the body set, in Jellyfin's casing).
 	pol.IsAdministrator, pol.IsDisabled = nil, nil

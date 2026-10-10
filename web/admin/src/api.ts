@@ -95,6 +95,8 @@ export interface UserPolicy {
   MaxVideoHeight?: number;
   /** blockbustr's own: caps the addon versions offered by size, in GB (2^30 bytes). */
   MaxFileSizeGB?: number;
+  /** blockbustr's own: data proxied per calendar month, in GB (2^30 bytes). */
+  MonthlyDataGB?: number;
 }
 
 export interface User {
