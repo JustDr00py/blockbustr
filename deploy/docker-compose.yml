@@ -13,6 +13,9 @@ services:
       context: ..
       dockerfile: Dockerfile
     image: localhost/blockbustr:dev
+    # Or run the published release instead of building (then drop the build: block
+    # above and use `docker compose pull && docker compose up -d`):
+    # image: ghcr.io/justdr00py/blockbustr:latest
     restart: unless-stopped
     # Rootless docker: uid 0 in the container is your own user on the host, so
     # the bind mounts below (./data/*, the media dir) stay readable and writable.
