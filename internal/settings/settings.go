@@ -44,6 +44,7 @@ var (
 const (
 	KindInt      = "int"
 	KindBool     = "bool"
+	KindString   = "string"   // plain text
 	KindList     = "list"     // strings
 	KindDuration = "duration" // "6h", "30m"
 	KindSecret   = "secret"   // a string never shown again once stored
@@ -60,6 +61,9 @@ type Field struct {
 
 // Fields are the settings, in the order the UI shows them.
 var Fields = []Field{
+	{Key: "server.timezone", Label: "Time zone", Kind: KindString,
+		Help: "An IANA name such as UTC or Europe/Berlin. The Stats page's monthly proxy totals follow this zone's calendar months; changing it regroups the stored history.",
+		ptr:  func(c *config.Config) any { return &c.Server.Timezone }},
 	{Key: "stremio.redirect_hosts", Label: "Stream proxy hosts", Kind: KindList,
 		Help: "Hosts of stream proxies apps may fetch from themselves (MediaFlow Proxy, StremThru, an AIOStreams host's built-in proxy). Addon streams resolving to one are redirected to, so their bytes skip this server. Host names only.",
 		ptr:  func(c *config.Config) any { return &c.Stremio.RedirectHosts }},
@@ -208,7 +212,16 @@ func (s *Store) apply(f Field, c *config.Config, raw json.RawMessage) error {
 			return fmt.Errorf("%w: %s wants a duration such as \"6h\"", ErrInvalid, f.Key)
 		}
 		*p = d
-	case *string: // a secret, sealed
+	case *string:
+		if f.Kind == KindString {
+			var v string
+			if err := json.Unmarshal(raw, &v); err != nil || strings.TrimSpace(v) == "" {
+				return fmt.Errorf("%w: %s wants a non-empty string", ErrInvalid, f.Key)
+			}
+			*p = strings.TrimSpace(v)
+			break
+		}
+		// A secret, sealed.
 		var enc string
 		if err := json.Unmarshal(raw, &enc); err != nil {
 			return fmt.Errorf("%w: %s", ErrInvalid, f.Key)
@@ -348,6 +361,10 @@ func (s *Store) Views() []View {
 		}
 		switch p := f.ptr(&cfg).(type) {
 		case *string:
+			if f.Kind == KindString {
+				v.Value, _ = json.Marshal(*p)
+				break
+			}
 			v.IsSet = *p != ""
 		case *time.Duration:
 			v.Value, _ = json.Marshal(p.String())

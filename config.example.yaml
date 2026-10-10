@@ -4,6 +4,7 @@ server:
   listen: ":8096"              # Jellyfin's port, so clients find it by default
   external_url: ""             # e.g. https://blockbustr.example.ts.net
   server_name: blockbustr
+  timezone: UTC                # IANA zone whose calendar months the Stats page totals proxied bytes by (also editable in the admin UI)
   shutdown_timeout: 10s
   discovery: true              # answer LAN discovery on UDP 7359 (containers: publish 7359/udp, set external_url)
   stream_url_ttl: 48h          # how long signed stream URLs handed to clients stay valid

@@ -130,6 +130,9 @@ type Server struct {
 	ExternalURL string `yaml:"external_url"`
 	// ServerName is reported as ServerName in /System/Info.
 	ServerName string `yaml:"server_name"`
+	// Timezone is the IANA zone (Europe/Berlin) whose calendar months the
+	// Stats page totals proxied bytes by. Default UTC.
+	Timezone string `yaml:"timezone"`
 	// ShutdownTimeout bounds graceful shutdown.
 	ShutdownTimeout time.Duration `yaml:"shutdown_timeout"`
 	// Discovery answers clients' LAN discovery broadcasts on UDP 7359
@@ -237,6 +240,7 @@ func Defaults() Config {
 		Server: Server{
 			Listen:          ":8096",
 			ServerName:      "blockbustr",
+			Timezone:        "UTC",
 			ShutdownTimeout: 10 * time.Second,
 			Discovery:       true,
 			StreamURLTTL:    48 * time.Hour,
@@ -302,6 +306,7 @@ var envOverrides = []struct {
 }{
 	{"BLOCKBUSTR_LISTEN", func(c *Config, v string) { c.Server.Listen = v }},
 	{"BLOCKBUSTR_EXTERNAL_URL", func(c *Config, v string) { c.Server.ExternalURL = v }},
+	{"BLOCKBUSTR_TIMEZONE", func(c *Config, v string) { c.Server.Timezone = v }},
 	{"BLOCKBUSTR_SERVER_NAME", func(c *Config, v string) { c.Server.ServerName = v }},
 	{"BLOCKBUSTR_ADMIN_USERNAME", func(c *Config, v string) { c.Server.AdminUsername = v }},
 	{"BLOCKBUSTR_ADMIN_PASSWORD", func(c *Config, v string) { c.Server.AdminPassword = v }},
@@ -378,6 +383,9 @@ func (c *Config) Validate() error {
 	}
 	if (c.Server.AdminUsername == "") != (c.Server.AdminPassword == "") {
 		add("server.admin_username and server.admin_password must be set together")
+	}
+	if _, err := time.LoadLocation(c.Server.Timezone); err != nil || c.Server.Timezone == "" {
+		add("server.timezone must be an IANA time zone name such as UTC or Europe/Berlin")
 	}
 	if c.Server.ShutdownTimeout <= 0 {
 		add("server.shutdown_timeout must be positive")

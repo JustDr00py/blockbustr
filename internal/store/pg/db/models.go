@@ -242,8 +242,8 @@ type PlaybackLog struct {
 	StoppedAt     *time.Time
 }
 
-type ProxiedBytesMonthly struct {
-	Month time.Time
+type ProxiedBytesHourly struct {
+	Hour  time.Time
 	Bytes int64
 }
 

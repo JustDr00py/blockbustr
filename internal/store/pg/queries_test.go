@@ -307,3 +307,35 @@ func TestEnsureStreamKeyIsStable(t *testing.T) {
 		t.Errorf("second: %x %v, want %x", second, err, first)
 	}
 }
+
+func TestProxiedBytesByMonth(t *testing.T) {
+	q, _ := newTestQueries(t)
+	ctx := t.Context()
+	// 23:30 UTC on Oct 31 is already Nov 1 in Berlin.
+	for _, a := range []db.AddProxiedBytesParams{
+		{Hour: time.Date(2026, 10, 31, 23, 0, 0, 0, time.UTC), Bytes: 100},
+		{Hour: time.Date(2026, 10, 31, 23, 0, 0, 0, time.UTC), Bytes: 50}, // same hour: added
+		{Hour: time.Date(2026, 11, 1, 5, 0, 0, 0, time.UTC), Bytes: 7},
+	} {
+		if err := q.AddProxiedBytes(ctx, a); err != nil {
+			t.Fatal(err)
+		}
+	}
+	months := func(tz string) map[string]int64 {
+		rows, err := q.ListProxiedBytesByMonth(ctx, db.ListProxiedBytesByMonthParams{Tz: tz, Lim: 12})
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := map[string]int64{}
+		for _, r := range rows {
+			out[r.Month] = r.Bytes
+		}
+		return out
+	}
+	if got := months("UTC"); len(got) != 2 || got["2026-10"] != 150 || got["2026-11"] != 7 {
+		t.Errorf("UTC months = %v", got)
+	}
+	if got := months("Europe/Berlin"); len(got) != 1 || got["2026-11"] != 157 {
+		t.Errorf("Berlin months = %v", got)
+	}
+}

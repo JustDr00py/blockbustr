@@ -11,35 +11,51 @@ import (
 )
 
 const addProxiedBytes = `-- name: AddProxiedBytes :exec
-INSERT INTO proxied_bytes_monthly (month, bytes) VALUES ($1, $2)
-ON CONFLICT (month) DO UPDATE SET bytes = proxied_bytes_monthly.bytes + EXCLUDED.bytes
+INSERT INTO proxied_bytes_hourly (hour, bytes) VALUES ($1, $2)
+ON CONFLICT (hour) DO UPDATE SET bytes = proxied_bytes_hourly.bytes + EXCLUDED.bytes
 `
 
 type AddProxiedBytesParams struct {
-	Month time.Time
+	Hour  time.Time
 	Bytes int64
 }
 
-// Adds to a month's total (month: its first day).
+// Adds to an hour's total (hour: its start).
 func (q *Queries) AddProxiedBytes(ctx context.Context, arg AddProxiedBytesParams) error {
-	_, err := q.db.Exec(ctx, addProxiedBytes, arg.Month, arg.Bytes)
+	_, err := q.db.Exec(ctx, addProxiedBytes, arg.Hour, arg.Bytes)
 	return err
 }
 
-const listProxiedBytes = `-- name: ListProxiedBytes :many
-SELECT month, bytes FROM proxied_bytes_monthly ORDER BY month DESC LIMIT $1
+const listProxiedBytesByMonth = `-- name: ListProxiedBytesByMonth :many
+SELECT to_char(date_trunc('month', hour AT TIME ZONE $1::text), 'YYYY-MM')::text AS month,
+       sum(bytes)::bigint AS bytes
+FROM proxied_bytes_hourly
+GROUP BY 1
+ORDER BY 1 DESC
+LIMIT $2
 `
 
-// The newest months first.
-func (q *Queries) ListProxiedBytes(ctx context.Context, lim int32) ([]ProxiedBytesMonthly, error) {
-	rows, err := q.db.Query(ctx, listProxiedBytes, lim)
+type ListProxiedBytesByMonthParams struct {
+	Tz  string
+	Lim int32
+}
+
+type ListProxiedBytesByMonthRow struct {
+	Month string
+	Bytes int64
+}
+
+// The newest calendar months first, as they fall in the time zone tz (an
+// IANA name).
+func (q *Queries) ListProxiedBytesByMonth(ctx context.Context, arg ListProxiedBytesByMonthParams) ([]ListProxiedBytesByMonthRow, error) {
+	rows, err := q.db.Query(ctx, listProxiedBytesByMonth, arg.Tz, arg.Lim)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ProxiedBytesMonthly{}
+	items := []ListProxiedBytesByMonthRow{}
 	for rows.Next() {
-		var i ProxiedBytesMonthly
+		var i ListProxiedBytesByMonthRow
 		if err := rows.Scan(&i.Month, &i.Bytes); err != nil {
 			return nil, err
 		}

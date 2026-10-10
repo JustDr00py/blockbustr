@@ -203,7 +203,7 @@ export interface Setting {
   Key: string;
   Label: string;
   Help: string;
-  Kind: "int" | "bool" | "list" | "duration" | "secret";
+  Kind: "int" | "bool" | "string" | "list" | "duration" | "secret";
   Value?: unknown;
   IsSet: boolean;
   Source: string;

@@ -9,6 +9,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/metrics"
+	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 )
 
 // registerOps mounts the operator endpoints (P4.4): Prometheus metrics when
@@ -41,22 +42,28 @@ func (a *api) registerOps(rt *jfapi.Router) {
 	rt.Get("/debug/pprof/*", admin(pprof.Index)) // index and named profiles (heap, goroutine…)
 }
 
-// proxiedMonths is the stored monthly proxied-bytes totals, newest first,
-// with the bytes not stored yet added to this month's.
+// proxiedMonths is the stored proxied-bytes totals per calendar month of the
+// configured time zone, newest first, with the bytes not stored yet added
+// to this month's.
 func (a *api) proxiedMonths(ctx context.Context) []metrics.MonthBytes {
-	rows, err := a.Queries.ListProxiedBytes(ctx, 12)
+	tz := a.live().Server.Timezone
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		tz, loc = "UTC", time.UTC
+	}
+	rows, err := a.Queries.ListProxiedBytesByMonth(ctx, db.ListProxiedBytesByMonthParams{Tz: tz, Lim: 12})
 	if err != nil {
 		a.Log.WarnContext(ctx, "reading the monthly proxied bytes failed", "err", err)
 	}
 	var out []metrics.MonthBytes
 	for _, r := range rows {
-		out = append(out, metrics.MonthBytes{Month: r.Month.Format("2006-01"), Bytes: float64(r.Bytes)})
+		out = append(out, metrics.MonthBytes{Month: r.Month, Bytes: float64(r.Bytes)})
 	}
 	var pending int64
 	if a.MonthlyBytes != nil {
 		pending = a.MonthlyBytes.Unflushed()
 	}
-	this := metrics.MonthStart(time.Now()).Format("2006-01")
+	this := time.Now().In(loc).Format("2006-01")
 	if len(out) == 0 || out[0].Month != this {
 		out = append([]metrics.MonthBytes{{Month: this}}, out...)
 	}

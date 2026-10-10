@@ -16,6 +16,7 @@ import (
 	"slices"
 	"syscall"
 	"time"
+	_ "time/tzdata" // zone names work in the slim container image, which has no tzdata
 
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/cache"
@@ -310,11 +311,11 @@ func run() error {
 	return nil
 }
 
-// monthStore keeps the proxied-bytes totals in Postgres (metrics.MonthStore).
+// monthStore keeps the hourly proxied-bytes totals in Postgres (metrics.MonthStore).
 type monthStore struct{ q *sqlcdb.Queries }
 
-func (s monthStore) AddProxiedBytes(ctx context.Context, month time.Time, n int64) error {
-	return s.q.AddProxiedBytes(ctx, sqlcdb.AddProxiedBytesParams{Month: month, Bytes: n})
+func (s monthStore) AddProxiedBytes(ctx context.Context, hour time.Time, n int64) error {
+	return s.q.AddProxiedBytes(ctx, sqlcdb.AddProxiedBytesParams{Hour: hour, Bytes: n})
 }
 
 // bootstrapDebrid adds the configured debrid API keys, sealed with

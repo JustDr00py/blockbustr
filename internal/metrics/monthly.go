@@ -9,14 +9,14 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
-// MonthStore keeps proxied-byte totals per calendar month; month is the
-// first day of the month (UTC).
+// MonthStore keeps proxied-byte totals per hour (hour: its start), which
+// the Stats page groups into months of the admin's time zone.
 type MonthStore interface {
-	AddProxiedBytes(ctx context.Context, month time.Time, bytes int64) error
+	AddProxiedBytes(ctx context.Context, hour time.Time, bytes int64) error
 }
 
 // MonthlyBytes persists the proxied-bytes counter, which restarts at zero
-// with the process, as per-month totals that don't. Run flushes the growth
+// with the process, as per-hour totals that don't. Run flushes the growth
 // since the last flush every interval; Flush does it once (at shutdown, when
 // the last streams have finished).
 type MonthlyBytes struct {
@@ -33,12 +33,6 @@ func NewMonthlyBytes(store MonthStore, log *slog.Logger) *MonthlyBytes {
 	return &MonthlyBytes{Store: store, Log: log, flushed: proxiedNow()}
 }
 
-// MonthStart is the first instant of t's month in UTC.
-func MonthStart(t time.Time) time.Time {
-	y, m, _ := t.UTC().Date()
-	return time.Date(y, m, 1, 0, 0, 0, 0, time.UTC)
-}
-
 // Unflushed is what has been proxied but not stored yet.
 func (b *MonthlyBytes) Unflushed() int64 {
 	b.mu.Lock()
@@ -46,7 +40,7 @@ func (b *MonthlyBytes) Unflushed() int64 {
 	return int64(proxiedNow() - b.flushed)
 }
 
-// Flush stores the growth since the last flush against the current month.
+// Flush stores the growth since the last flush against the current hour.
 // On failure it keeps the growth for the next try.
 func (b *MonthlyBytes) Flush(ctx context.Context) {
 	b.mu.Lock()
@@ -56,7 +50,7 @@ func (b *MonthlyBytes) Flush(ctx context.Context) {
 	if n <= 0 {
 		return
 	}
-	if err := b.Store.AddProxiedBytes(ctx, MonthStart(time.Now()), n); err != nil {
+	if err := b.Store.AddProxiedBytes(ctx, time.Now().UTC().Truncate(time.Hour), n); err != nil {
 		b.Log.Warn("storing the monthly proxied bytes failed", "err", err)
 		return
 	}
