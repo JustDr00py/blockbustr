@@ -15,7 +15,22 @@ interface Timing {
   P95Bound?: boolean; // in the first bucket: at most P95Ms
 }
 
+interface Host {
+  CPUs: number;
+  CPUBusy: number; // cumulative CPU seconds
+  CPUTotal: number;
+  ProcessCPU: number;
+  Load1: number;
+  Load5: number;
+  Load15: number;
+  MemTotal: number;
+  MemUsed: number;
+  ProcessRSS: number;
+  Disks: { Name: string; Total: number; Free: number }[] | null;
+}
+
 interface Stats {
+  Host: Host;
   UptimeSeconds: number;
   ActiveStreams: number;
   ProxiedBytes: number;
@@ -86,7 +101,8 @@ export default function StatsPage() {
   const [stats, setStats] = useState<Stats>();
   const [rate, setRate] = useState<number>(); // proxied bytes per second
   const [error, setError] = useState<string>();
-  const last = useRef<{ at: number; bytes: number }>(undefined);
+  const [cpu, setCpu] = useState<{ host: number; proc: number }>(); // percent
+  const last = useRef<{ at: number; bytes: number; host: Host }>(undefined);
 
   useEffect(() => {
     let stopped = false;
@@ -98,7 +114,13 @@ export default function StatsPage() {
         const prev = last.current;
         // A restart resets the total; skip that interval.
         if (prev && s.ProxiedBytes >= prev.bytes) setRate(((s.ProxiedBytes - prev.bytes) * 1000) / (now - prev.at));
-        last.current = { at: now, bytes: s.ProxiedBytes };
+        if (prev && s.Host.CPUTotal > prev.host.CPUTotal && now > prev.at) {
+          const busy = (s.Host.CPUBusy - prev.host.CPUBusy) / (s.Host.CPUTotal - prev.host.CPUTotal);
+          // Process CPU seconds over wall seconds is in cores; 100% is every core.
+          const proc = (s.Host.ProcessCPU - prev.host.ProcessCPU) / ((now - prev.at) / 1000) / s.Host.CPUs;
+          setCpu({ host: Math.min(busy * 100, 100), proc: Math.min(Math.max(proc * 100, 0), 100) });
+        }
+        last.current = { at: now, bytes: s.ProxiedBytes, host: s.Host };
         setStats(s);
         setError(undefined);
       } catch (e) {
@@ -123,6 +145,33 @@ export default function StatsPage() {
       {stats && (
         <>
           <div className="grid">
+            <Stat
+              label="CPU"
+              value={cpu ? `${cpu.host.toFixed(0)}%` : "…"}
+              note={cpu ? `blockbustr ${cpu.proc.toFixed(1)}% · ${stats.Host.CPUs} cores` : `${stats.Host.CPUs} cores`}
+            />
+            {stats.Host.MemTotal > 0 && (
+              <Stat
+                label="Memory"
+                value={`${((stats.Host.MemUsed / stats.Host.MemTotal) * 100).toFixed(0)}%`}
+                note={`${bytes(stats.Host.MemUsed)} of ${bytes(stats.Host.MemTotal)} · blockbustr ${bytes(stats.Host.ProcessRSS)}`}
+              />
+            )}
+            {stats.Host.CPUTotal > 0 && (
+              <Stat
+                label="Load average"
+                value={stats.Host.Load1.toFixed(2)}
+                note={`${stats.Host.Load5.toFixed(2)} (5 min) · ${stats.Host.Load15.toFixed(2)} (15 min)`}
+              />
+            )}
+            {(stats.Host.Disks ?? []).map((d) => (
+              <Stat
+                key={d.Name}
+                label={`Disk · ${d.Name}`}
+                value={`${bytes(d.Free)} free`}
+                note={`${(((d.Total - d.Free) / d.Total) * 100).toFixed(0)}% of ${bytes(d.Total)} used`}
+              />
+            ))}
             <Stat label="Streams proxied now" value={stats.ActiveStreams} />
             <Stat
               label="Proxy throughput"

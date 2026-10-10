@@ -23,6 +23,9 @@ func (a *api) registerOps(rt *jfapi.Router) {
 			a.internalError(w, r, err)
 			return
 		}
+		s.Host = metrics.ReadHost(map[string]string{
+			"Cache": a.Config.Paths.Cache, "Transcode": a.Config.Paths.TranscodeDir(), "Images": a.Config.Paths.ImagesDir(),
+		})
 		jfapi.WriteJSON(w, r, http.StatusOK, s)
 	}))
 	admin := func(h http.HandlerFunc) http.HandlerFunc {

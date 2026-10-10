@@ -30,6 +30,7 @@ type Stats struct {
 	Addons         []Timing // by resource (stream, meta, catalog…)
 	Resolves       []Count  // by kind and result
 	Search         Timing
+	Host           Host // filled by the caller (ReadHost); it needs the configured paths
 }
 
 // Timing summarises a histogram: how many, how many failed (5xx for
