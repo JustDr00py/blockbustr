@@ -186,7 +186,7 @@ func (s *Store) build(stored map[string]json.RawMessage) (config.Config, map[str
 			continue
 		}
 		if err := next.Validate(); err != nil {
-			skipped[f.Key] = fmt.Errorf("%w: %v", ErrInvalid, err)
+			skipped[f.Key] = fmt.Errorf("%w: %w", ErrInvalid, err)
 			continue
 		}
 		cfg = next

@@ -517,9 +517,5 @@ func hasScheme(raw string, schemes ...string) bool {
 // splitHosts reads a comma- or space-separated host list
 // (BLOCKBUSTR_REDIRECT_HOSTS).
 func splitHosts(v string) []string {
-	var out []string
-	for _, h := range strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == ' ' }) {
-		out = append(out, h)
-	}
-	return out
+	return strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == ' ' })
 }

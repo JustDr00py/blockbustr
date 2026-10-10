@@ -571,7 +571,7 @@ func Decide(p DeviceProfile, src Source, o PlayOptions) Decision {
 	d.SupportsDirectStream = (d.SupportsDirectPlay || remuxOnly) && !o.DisableDirectStream
 	cpuWork := video != nil && ((video.VideoRangeType != "" && !strings.EqualFold(video.VideoRangeType, "SDR")) ||
 		(sub != nil && subtitleMethod(p, *sub, false) == "Encode"))
-	encodeVideo := !o.NoVideoEncode && !(o.NoCPUFilters && cpuWork)
+	encodeVideo := !o.NoVideoEncode && (!o.NoCPUFilters || !cpuWork)
 	d.SupportsTranscoding = tp != nil && !o.DisableTranscoding && encodeVideo
 	// With the video encoder ruled out, a source whose video the client
 	// takes still plays with only its container or audio converted.

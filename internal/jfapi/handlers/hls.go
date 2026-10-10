@@ -55,7 +55,7 @@ func (t *Transcoding) lock(id string) *sync.Mutex {
 // encodes says whether video can be re-encoded at all: false when only the
 // software encoder is left and the CPU may not be used.
 func (t *Transcoding) encodes() bool {
-	return t == nil || !(t.NoCPU.Load() && t.Encoder == transcode.CapSoftware)
+	return t == nil || (!t.NoCPU.Load() || t.Encoder != transcode.CapSoftware)
 }
 
 // errTranscodeRefused: the request needs a video transcode this user or

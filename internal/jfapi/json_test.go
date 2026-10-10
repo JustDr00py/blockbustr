@@ -18,7 +18,7 @@ func TestDecodeJSONCoercesScalarsLikeJellyfin(t *testing.T) {
 		"CodecProfiles":[{"Type":"VideoAudio","Codec":"aac","Conditions":[
 			{"Condition":"LessThanEqual","Property":"AudioChannels","Value":6,"IsRequired":true},
 			{"Condition":"Equals","Property":"IsAnamorphic","Value":"true","IsRequired":false}]}]}}`
-	r := httptest.NewRequest("POST", "/Items/x/PlaybackInfo", strings.NewReader(body))
+	r := httptest.NewRequestWithContext(t.Context(), "POST", "/Items/x/PlaybackInfo", strings.NewReader(body))
 	var b dto.PlaybackInfoDto
 	if err := DecodeJSON(httptest.NewRecorder(), r, &b); err != nil {
 		t.Fatalf("DecodeJSON: %v", err)
@@ -47,7 +47,7 @@ func TestDecodeJSONCoercesScalarsLikeJellyfin(t *testing.T) {
 
 func TestDecodeJSONStillRejectsBadBodies(t *testing.T) {
 	for _, body := range []string{`{"MaxStreamingBitrate":"fast"}`, `{"EnableDirectPlay":"maybe"}`, `{not json`} {
-		r := httptest.NewRequest("POST", "/", strings.NewReader(body))
+		r := httptest.NewRequestWithContext(t.Context(), "POST", "/", strings.NewReader(body))
 		var b dto.PlaybackInfoDto
 		if err := DecodeJSON(httptest.NewRecorder(), r, &b); err == nil {
 			t.Errorf("DecodeJSON(%s) = nil, want an error", body)
@@ -56,7 +56,7 @@ func TestDecodeJSONStillRejectsBadBodies(t *testing.T) {
 }
 
 func TestDecodeJSONEmptyBody(t *testing.T) {
-	r := httptest.NewRequest("POST", "/", strings.NewReader("  "))
+	r := httptest.NewRequestWithContext(t.Context(), "POST", "/", strings.NewReader("  "))
 	var b dto.PlaybackInfoDto
 	if err := DecodeJSON(httptest.NewRecorder(), r, &b); err != nil {
 		t.Fatalf("empty body: %v", err)
