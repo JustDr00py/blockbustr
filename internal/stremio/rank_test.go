@@ -347,3 +347,42 @@ func TestScoreDolbyVisionOnly(t *testing.T) {
 		t.Error("a DV display shouldn't penalise DV-only")
 	}
 }
+
+// MediaFusion sends a whole season pack's size for one episode: 324 GB for
+// a 62-minute episode is 700 Mbps. Such a size is dropped, not shown or
+// ranked on; a real episode's size, and a size without a runtime, stay.
+func TestRankDropsImplausibleSize(t *testing.T) {
+	const gib = 1 << 30
+	pack := Stream{Name: "A\n1080p", InfoHash: "pack", Hints: StreamHints{VideoSize: 324 * gib}}
+	file := Stream{Name: "A\n1080p", InfoHash: "file", Hints: StreamHints{VideoSize: 4 * gib}}
+	smallPack := Stream{Name: "A\n1080p", InfoHash: "small", Hints: StreamHints{VideoSize: 38 * gib}} // 88 Mbps: no 1080p release
+	uhdRemux := Stream{Name: "A\n2160p", InfoHash: "uhd", Hints: StreamHints{VideoSize: 60 * gib}}    // 139 Mbps: a real 4K remux episode
+	p := Prefs{MaxBitrate: 20_000_000, Runtime: 62 * time.Minute}
+
+	got := Rank([]Offer{{Stream: pack}, {Stream: file}, {Stream: smallPack}, {Stream: uhdRemux}}, p)
+	sizes := map[string]int64{}
+	scores := map[string]int{}
+	for _, r := range got {
+		sizes[r.Stream.InfoHash] = r.Info.Size
+		scores[r.Stream.InfoHash] = r.Score
+	}
+	for _, h := range []string{"pack", "small"} {
+		if sizes[h] != 0 {
+			t.Errorf("%s size kept: %d", h, sizes[h])
+		}
+	}
+	if sizes["file"] != 4*gib || sizes["uhd"] != 60*gib {
+		t.Errorf("real sizes dropped: file %d, uhd %d", sizes["file"], sizes["uhd"])
+	}
+	if scores["pack"] != scores["file"] || scores["small"] != scores["file"] {
+		t.Errorf("dropped sizes must not be penalised: pack %d, small %d, file %d", scores["pack"], scores["small"], scores["file"])
+	}
+
+	// No runtime to judge by: kept as before.
+	p.Runtime = 0
+	for _, r := range Rank([]Offer{{Stream: pack}}, p) {
+		if r.Info.Size != 324*gib {
+			t.Errorf("no runtime: size = %d", r.Info.Size)
+		}
+	}
+}

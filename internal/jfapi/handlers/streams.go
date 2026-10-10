@@ -187,7 +187,7 @@ func choiceSources(it db.Item, choices []StreamChoice, subs []SubtitleChoice) ([
 			}
 			if runtime > 0 {
 				// An estimate from the size; probing at first play replaces it.
-				src.Bitrate = ptr(int32(min(c.Size*8*10_000_000/runtime, 1<<31-1)))
+				src.Bitrate = ptr(estimateBitrate(c.Size, runtime))
 			}
 		}
 		out = append(out, src)
@@ -517,6 +517,16 @@ func hasChoice(list []StreamChoice, id uuid.UUID) bool {
 
 // streamChoice is r as a choice of item, whose runtime (0: unknown) turns
 // its size into a bitrate for the label.
+// estimateBitrate is the average bits/s of size bytes over runtime ticks,
+// clamped to what an int32 holds. Float math: size*8*10_000_000 overflows
+// int64 from about 115 GB.
+func estimateBitrate(size, runtimeTicks int64) int32 {
+	if size <= 0 || runtimeTicks <= 0 {
+		return 0
+	}
+	return int32(min(float64(size)*8*10_000_000/float64(runtimeTicks), 1<<31-1))
+}
+
 func streamChoice(item uuid.UUID, r stremio.Ranked, runtime time.Duration) StreamChoice {
 	s := r.Stream
 	key, target := "url:"+s.URL, s.URL

@@ -1364,3 +1364,31 @@ func TestChoiceProbesLimited(t *testing.T) {
 		t.Errorf("probes after picking the 720p = %d, want 2", n)
 	}
 }
+
+func TestEstimateBitrate(t *testing.T) {
+	const gib = 1 << 30
+	hour := int64(3600 * 10_000_000)
+	for _, tc := range []struct {
+		name          string
+		size, runtime int64
+		want          int32
+	}{
+		{"1.5 GB over 94 min", 3 * gib / 2, 94 * 60 * 10_000_000, 2_283_000},
+		{"no size", 0, hour, 0},
+		{"no runtime", gib, 0, 0},
+		// size*8*10_000_000 overflowed int64 from ~115 GB and came out negative.
+		{"2 TB episode is clamped, not negative", 2000 * gib, hour, 1<<31 - 1},
+		{"324 GB episode is 773 Mbps, positive", 324 * gib, hour, 773_094_113},
+	} {
+		got := estimateBitrate(tc.size, tc.runtime)
+		if tc.want == 2_283_000 {
+			if got < tc.want-20_000 || got > tc.want+20_000 {
+				t.Errorf("%s = %d, want about %d", tc.name, got, tc.want)
+			}
+			continue
+		}
+		if got != tc.want {
+			t.Errorf("%s = %d, want %d", tc.name, got, tc.want)
+		}
+	}
+}

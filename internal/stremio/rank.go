@@ -203,6 +203,27 @@ func (in Info) Bitrate(runtime time.Duration) int64 {
 	return int64(float64(in.Size) * 8 / runtime.Seconds())
 }
 
+// Average bitrates no release of that class exceeds: Blu-ray caps at 54 Mbps
+// with audio, UHD Blu-ray at 144. An addon's size that implies more
+// (MediaFusion sends a whole season pack's size for one episode) is not
+// the file's, so it is treated as unknown instead of shown and ranked on.
+const (
+	maxPlausibleBitrateHD  = 60_000_000  // 1080p and below
+	maxPlausibleBitrateUHD = 160_000_000 // above 1080p, or height unknown
+)
+
+// dropImplausibleSize forgets in.Size when it can't be the title's file
+// over runtime (or the addon's own duration): no size, no bitrate estimate.
+func (in *Info) dropImplausibleSize(runtime time.Duration) {
+	limit := int64(maxPlausibleBitrateUHD)
+	if in.Height > 0 && in.Height <= 1080 {
+		limit = maxPlausibleBitrateHD
+	}
+	if in.Bitrate(runtime) > limit {
+		in.Size = 0
+	}
+}
+
 func firstLine(s string) string {
 	if i := strings.IndexByte(s, '\n'); i >= 0 {
 		return s[:i]
@@ -400,6 +421,7 @@ func Rank(offers []Offer, p Prefs) []Ranked {
 		}
 		seen[key] = true
 		in := Parse(o.Stream)
+		in.dropImplausibleSize(p.Runtime)
 		if o.Cached {
 			in.Cached, in.Debrid, in.Uncached = true, true, false
 		}
