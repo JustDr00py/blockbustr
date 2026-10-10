@@ -93,6 +93,8 @@ export interface UserPolicy {
   EnableVideoPlaybackTranscoding?: boolean;
   /** blockbustr's own: caps the addon versions offered (1080: no 4K). */
   MaxVideoHeight?: number;
+  /** blockbustr's own: caps the addon versions offered by size, in GB (2^30 bytes). */
+  MaxFileSizeGB?: number;
 }
 
 export interface User {

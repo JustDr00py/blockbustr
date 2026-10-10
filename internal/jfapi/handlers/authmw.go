@@ -33,7 +33,7 @@ func (a *api) requireUser(h sessionHandler) http.HandlerFunc {
 		// allows (P4.1).
 		r = r.WithContext(pg.WithAccess(r.Context(), s.Access))
 		r = r.WithContext(context.WithValue(r.Context(), mayDownloadKey{}, !s.NoPlayback && !s.NoDownload))
-		r = r.WithContext(withMaxHeight(r.Context(), s.MaxHeight))
+		r = r.WithContext(withVersionCaps(r.Context(), versionCaps{Height: s.MaxHeight, Size: s.MaxSize}))
 		a.touchSession(r, s) // GET /Sessions lists recently active devices
 		h(w, r, s)
 	}
@@ -57,20 +57,32 @@ func mayDownload(ctx context.Context) bool {
 	return ok
 }
 
-type maxHeightKey struct{}
-
-// withMaxHeight is ctx with the user's cap on addon versions' height (0:
-// none).
-func withMaxHeight(ctx context.Context, h int) context.Context {
-	return context.WithValue(ctx, maxHeightKey{}, h)
+// versionCaps are a user's limits on the addon versions they're offered,
+// listed and able to play: their policy's MaxVideoHeight and
+// MaxFileSizeGB. 0: no cap.
+type versionCaps struct {
+	Height int
+	Size   int64 // bytes
 }
 
-// maxHeight is the cap on addon versions' height for the user of the
-// request in ctx (set by requireUser, or from the play session for a
-// stream request; 0: none).
-func maxHeight(ctx context.Context) int {
-	h, _ := ctx.Value(maxHeightKey{}).(int)
-	return h
+// allows says whether a version of this height and size is within c. A
+// version whose labels don't say its height or size passes that cap.
+func (c versionCaps) allows(height int, size int64) bool {
+	return (c.Height <= 0 || height <= c.Height) && (c.Size <= 0 || size <= c.Size)
+}
+
+type versionCapsKey struct{}
+
+// withVersionCaps is ctx with the user's caps on addon versions.
+func withVersionCaps(ctx context.Context, c versionCaps) context.Context {
+	return context.WithValue(ctx, versionCapsKey{}, c)
+}
+
+// capsOf is the caps on addon versions for the user of the request in ctx
+// (set by requireUser, or from the play session for a stream request).
+func capsOf(ctx context.Context) versionCaps {
+	c, _ := ctx.Value(versionCapsKey{}).(versionCaps)
+	return c
 }
 
 // requireAdmin is requireUser plus an administrator check (403 otherwise).

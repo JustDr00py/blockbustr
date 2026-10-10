@@ -91,6 +91,7 @@ function accessSummary(p: UserPolicy, folders: MediaFolder[]): string {
     if (p.EnableContentDownloading === false) parts.push("can't download");
     if (p.EnableVideoPlaybackTranscoding === false) parts.push("no transcoding");
     if (p.MaxVideoHeight) parts.push(`up to ${p.MaxVideoHeight}p`);
+    if (p.MaxFileSizeGB) parts.push(`files ≤ ${p.MaxFileSizeGB} GB`);
   }
   return parts.join(" · ");
 }
@@ -137,6 +138,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
   const [downloads, setDownloads] = useState(p.EnableContentDownloading !== false);
   const [transcoding, setTranscoding] = useState(p.EnableVideoPlaybackTranscoding !== false);
   const [height, setHeight] = useState(p.MaxVideoHeight ?? 0);
+  const [sizeGB, setSizeGB] = useState(p.MaxFileSizeGB ?? 0);
   const [pw, setPw] = useState("");
   const act = useAction();
 
@@ -154,6 +156,7 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
           EnableContentDownloading: downloads,
           EnableVideoPlaybackTranscoding: transcoding,
           MaxVideoHeight: height,
+          MaxFileSizeGB: sizeGB,
         }),
       onChanged,
     );
@@ -191,6 +194,10 @@ function UserEditor({ user, folders, onChanged }: { user: User; folders: MediaFo
           <select value={height} onChange={(e) => setHeight(Number(e.target.value))}>
             {heights.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}
           </select>
+        </label>
+        <label className="field" title="Largest addon version this user is offered, in GB as the version labels show it. Versions whose size isn't known are still offered. 0: no limit.">
+          <span>Largest addon file (GB)</span>
+          <input type="number" min={0} step={1} value={sizeGB} onChange={(e) => setSizeGB(Math.max(0, Math.floor(Number(e.target.value) || 0)))} />
         </label>
         <div className="field">
           <span>Hide unrated</span>

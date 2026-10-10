@@ -104,9 +104,9 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	// No token here: the user's height cap comes with their play session.
+	// No token here: the user's caps come with their play session.
 	ps, _ := a.loadPlaySession(r.Context(), q.Get("PlaySessionId"))
-	r = r.WithContext(withMaxHeight(r.Context(), ps.MaxHeight))
+	r = r.WithContext(withVersionCaps(r.Context(), versionCaps{Height: ps.MaxHeight, Size: ps.MaxSize}))
 	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
 	if err := a.loadPlaySources(r.Context(), b, it); err != nil {
 		a.internalError(w, r, err)

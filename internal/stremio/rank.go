@@ -288,6 +288,7 @@ func isRegional(r rune) bool { return r >= 0x1F1E6 && r <= 0x1F1FF }
 type Prefs struct {
 	MaxHeight  int           // resolution cap; 0 = none
 	MaxBitrate int64         // bits/s; 0 = none
+	MaxSize    int64         // bytes; 0 = none. The picker drops versions over it
 	HEVC, AV1  bool          // the client decodes these itself
 	HDR        bool          // the client shows HDR
 	DV         bool          // …and Dolby Vision itself (profile 5), not just its HDR10 base

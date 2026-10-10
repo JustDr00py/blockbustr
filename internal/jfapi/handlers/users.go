@@ -163,6 +163,10 @@ type userPolicy struct {
 	// MaxVideoHeight caps the height of the addon versions the user is
 	// offered (1080: no 4K); 0 or absent: no cap.
 	MaxVideoHeight *int32 `json:",omitempty"`
+	// MaxFileSizeGB caps the size of the addon versions the user is
+	// offered, in the GB (2^30 bytes) their labels show; 0 or absent: no
+	// cap. A version whose size isn't known is still offered.
+	MaxFileSizeGB *int32 `json:",omitempty"`
 }
 
 // userDTO is Jellyfin's UserDto with blockbustr's policy fields.

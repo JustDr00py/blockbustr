@@ -42,9 +42,10 @@ type PlaySession struct {
 	// Order is an addon title's sources as offered, first (the item id,
 	// the default) first; stream and HLS requests of the session use it.
 	Order []uuid.UUID `json:",omitempty"`
-	// MaxHeight is the user's cap on addon versions (0: none), for stream
-	// requests, which carry no token.
-	MaxHeight int `json:",omitempty"`
+	// MaxHeight and MaxSize (bytes) are the user's caps on addon versions
+	// (0: none), for stream requests, which carry no token.
+	MaxHeight int   `json:",omitempty"`
+	MaxSize   int64 `json:",omitempty"`
 }
 
 // playbackRequest merges the PlaybackInfoDto body with the query string
@@ -184,7 +185,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		maxBitrate = int64(*req.MaxStreamingBitrate)
 	}
 	session := PlaySession{
-		UserID: user, DeviceID: s.DeviceID, ItemID: it.ID, Sources: map[string]media.Decision{}, MaxHeight: s.MaxHeight,
+		UserID: user, DeviceID: s.DeviceID, ItemID: it.ID, Sources: map[string]media.Decision{}, MaxHeight: s.MaxHeight, MaxSize: s.MaxSize,
 		AudioStreamIndex: optInt(req.AudioStreamIndex), SubtitleStreamIndex: optInt(req.SubtitleStreamIndex),
 	}
 	if req.StartTimeTicks != nil {
@@ -209,6 +210,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	if _, _, ok := stremioRef(it); ok && len(rows) == 0 {
 		prefs := streamPrefs(profile, maxBitrate)
 		prefs.MaxHeight = minCap(prefs.MaxHeight, s.MaxHeight)
+		prefs.MaxSize = s.MaxSize
 		rows = a.offerStreams(r, b, it, prefs, req.MediaSourceId)
 		// The item id stands for the best choice: a client asking for it
 		// (from the details' placeholder) gets every choice.
@@ -287,7 +289,7 @@ func (a *api) offerStreams(r *http.Request, b *itemBatch, it db.Item, prefs stre
 	choices := pick.Choices
 	if want != nil && *want != "" && !sameID(*want, dto.IDFromUUID(it.ID).String()) {
 		if set, ok := a.loadStreamSet(r.Context(), it.ID); ok {
-			for _, c := range withinHeight(set.All(), maxHeight(r.Context())) {
+			for _, c := range withinCaps(set.All(), capsOf(r.Context())) {
 				if sameID(*want, dto.IDFromUUID(c.ID).String()) && !hasChoice(choices, c.ID) {
 					choices = append(choices, c)
 				}

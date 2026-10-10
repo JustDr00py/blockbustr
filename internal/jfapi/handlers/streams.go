@@ -150,13 +150,12 @@ func imdbOf(it db.Item) string {
 	return ""
 }
 
-// withinHeight is choices without those above maxHeight (0: no cap). A
-// choice whose labels don't say its height stays.
-func withinHeight(choices []StreamChoice, maxHeight int) []StreamChoice {
-	if maxHeight <= 0 {
+// withinCaps is choices without those caps rules out.
+func withinCaps(choices []StreamChoice, caps versionCaps) []StreamChoice {
+	if caps == (versionCaps{}) {
 		return choices
 	}
-	return slices.DeleteFunc(slices.Clone(choices), func(c StreamChoice) bool { return c.Height > maxHeight })
+	return slices.DeleteFunc(slices.Clone(choices), func(c StreamChoice) bool { return !caps.allows(c.Height, c.Size) })
 }
 
 // choiceSources are the sources a set's choices stand for, in its order,
@@ -221,8 +220,8 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 	if len(set.Choices) > 0 {
 		// Every choice offered gets its probe, earlier ones too: a source
 		// without tracks transcodes with software decode (no codec known).
-		// Those above the user's height cap aren't theirs to see or play.
-		all := withinHeight(set.All(), maxHeight(ctx))
+		// Those over the user's caps aren't theirs to see or play.
+		all := withinCaps(set.All(), capsOf(ctx))
 		var streams map[uuid.UUID][]db.MediaStream
 		b.sources[it.ID], streams = choiceSources(it, all, set.Subtitles)
 		applyProbes(b.sources[it.ID], streams, a.loadChoiceProbes(ctx, all), a.preferredAudio())
@@ -387,12 +386,12 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	ranked := stremio.Rank(offers, prefs)
 	uhd, hd := max(cfg.UHDSlots, 0), max(cfg.HDSlots, 0)
 	total := uhd + hd
-	// A client that caps its height never sees past it: the slots it would
-	// have wasted on 4K go to versions it can play.
+	// A client or user that caps height or size never sees past it: the
+	// slots it would have wasted on 4K go to versions it can play.
 	avail := make([]stremio.Ranked, 0, len(ranked))
 	bad := a.badChoices(ctx, it.ID)
 	for _, r := range ranked {
-		if bad[streamChoice(it.ID, r, prefs.Runtime).ID] || (prefs.MaxHeight > 0 && r.Info.Height > prefs.MaxHeight) {
+		if bad[streamChoice(it.ID, r, prefs.Runtime).ID] || !(versionCaps{prefs.MaxHeight, prefs.MaxSize}).allows(r.Info.Height, r.Info.Size) {
 			continue
 		}
 		avail = append(avail, r)
