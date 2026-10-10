@@ -14,6 +14,10 @@ services:
       dockerfile: Dockerfile
     image: localhost/blockbustr:dev
     restart: unless-stopped
+    # Rootless docker: uid 0 in the container is your own user on the host, so
+    # the bind mounts below (./data/*, the media dir) stay readable and writable.
+    # Under rootful docker this would run as real root; drop it there.
+    user: "0:0"
     depends_on:
       postgres:
         condition: service_healthy
