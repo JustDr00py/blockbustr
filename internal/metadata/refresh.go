@@ -412,7 +412,14 @@ func artwork(im tmdb.Images, poster, backdrop, lang string) []Image {
 	} else if backdrop != "" {
 		out = append(out, Image{"Backdrop", tmdb.ImageURL(backdrop)})
 	}
-	if l, ok := tmdb.BestImage(im.Logos, lang); ok {
+	// TMDB has some logos only as SVG, which the image store can't decode.
+	var logos []tmdb.Image
+	for _, l := range im.Logos {
+		if !strings.HasSuffix(strings.ToLower(l.FilePath), ".svg") {
+			logos = append(logos, l)
+		}
+	}
+	if l, ok := tmdb.BestImage(logos, lang); ok {
 		out = append(out, Image{"Logo", tmdb.ImageURL(l.FilePath)})
 	}
 	return out

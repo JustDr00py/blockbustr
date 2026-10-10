@@ -5,7 +5,9 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -34,8 +36,31 @@ func recoverer(log *slog.Logger, next http.Handler) http.Handler {
 	})
 }
 
-// logRequests logs one line per request. Only the path is logged, never the
-// query string: Jellyfin clients put access tokens there (?ApiKey=…).
+// StatusClientClosed (nginx's 499) answers a request whose client hung up
+// before the response was ready; no client sees it.
+const StatusClientClosed = 499
+
+// slowRequest is how long a request runs before its log line carries the
+// query string.
+const slowRequest = 5 * time.Second
+
+// redactedQuery renders q for a log line without credentials: Jellyfin
+// clients send tokens as ApiKey/api_key, and signed URLs carry signatures.
+func redactedQuery(q url.Values) string {
+	for k := range q {
+		lk := strings.ToLower(k)
+		for _, secret := range []string{"key", "token", "sig", "auth", "password"} {
+			if strings.Contains(lk, secret) {
+				q[k] = []string{"REDACTED"}
+				break
+			}
+		}
+	}
+	return q.Encode()
+}
+
+// logRequests logs one line per request. The raw query string is never
+// logged: Jellyfin clients put access tokens there (?ApiKey=…).
 // Successful requests are debug-level because clients poll constantly
 // (Streamyfin calls GET /Sessions every ~2s).
 func logRequests(log *slog.Logger, next http.Handler) http.Handler {
@@ -56,16 +81,26 @@ func logRequests(log *slog.Logger, next http.Handler) http.Handler {
 		if route == "" {
 			route = "unmatched"
 		}
-		metrics.ObserveRequest(route, r.Method, status, time.Since(start).Seconds())
+		took := time.Since(start)
+		metrics.ObserveRequest(route, r.Method, status, took.Seconds())
 		level := slog.LevelDebug
 		switch {
+		case status == StatusClientClosed && took >= slowRequest:
+			level = slog.LevelWarn // the client gave up waiting on us
+		case status == StatusClientClosed:
 		case status >= 500:
 			level = slog.LevelError
 		case status >= 400:
 			level = slog.LevelInfo
 		}
-		log.Log(r.Context(), level, "request", "method", r.Method, "path", path, "status", status,
-			"bytes", ww.BytesWritten(), "took", time.Since(start), "remote", r.RemoteAddr)
+		attrs := []any{"method", r.Method, "path", path, "status", status,
+			"bytes", ww.BytesWritten(), "took", took, "remote", r.RemoteAddr}
+		// A failed or slow request is hard to reproduce without its
+		// parameters, so those carry the query string, credentials removed.
+		if (status >= 500 || took >= slowRequest) && r.URL.RawQuery != "" {
+			attrs = append(attrs, "query", redactedQuery(r.URL.Query()))
+		}
+		log.Log(r.Context(), level, "request", attrs...)
 	})
 }
 

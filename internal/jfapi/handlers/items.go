@@ -312,7 +312,9 @@ func (a *api) withRemoteMatches(r *http.Request, iq pg.ItemQuery, local []db.Ite
 	}
 	remote, err := a.RemoteSearch.SearchItems(r.Context(), term, types, room)
 	if err != nil {
-		a.Log.WarnContext(r.Context(), "remote search failed", "err", err)
+		if r.Context().Err() == nil {
+			a.Log.WarnContext(r.Context(), "remote search failed", "err", err)
+		}
 		return local
 	}
 	seen := make(map[uuid.UUID]bool, len(local))

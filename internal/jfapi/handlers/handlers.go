@@ -179,8 +179,15 @@ func errorText(w http.ResponseWriter, status int) {
 	_, _ = w.Write([]byte("Error processing request."))
 }
 
-// internalError logs err and answers 500.
+// internalError logs err and answers 500. A request whose client went away
+// (a search superseded by the next keystroke) failed through no fault of
+// ours: it answers jfapi.StatusClientClosed, logged at debug.
 func (a *api) internalError(w http.ResponseWriter, r *http.Request, err error) {
+	if r.Context().Err() != nil {
+		a.Log.DebugContext(r.Context(), "request canceled", "path", r.URL.Path, "err", err)
+		w.WriteHeader(jfapi.StatusClientClosed)
+		return
+	}
 	a.Log.ErrorContext(r.Context(), "request failed", "path", r.URL.Path, "err", err)
 	errorText(w, http.StatusInternalServerError)
 }
