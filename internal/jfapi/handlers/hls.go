@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -259,11 +260,23 @@ func (a *api) startOptions(r *http.Request, j hlsJob, owner string) (transcode.S
 		if a.Resolver == nil {
 			return o, errors.New("remote source without a resolver")
 		}
-		_, _, link, err := a.playLink(r.Context(), j.item, j.src, j.sources, j.q.Get("MediaSourceId"))
+		_, target, link, err := a.playLink(r.Context(), j.item, j.src, j.sources, j.q.Get("MediaSourceId"))
 		if err != nil {
 			return o, err
 		}
 		o.Input, o.Remote = link.URL, true
+		// ffmpeg reads the link through this server, which counts the bytes
+		// for the play and renews a link that expires (hlsinput.go).
+		refresh := func(ctx context.Context) (string, error) {
+			a.Resolver.Forget(ctx, target)
+			l, err := a.Resolver.Resolve(ctx, target)
+			return l.URL, err
+		}
+		if in, err := a.hlsInputURL(j.playSession, link.URL, refresh); err != nil {
+			a.Log.WarnContext(r.Context(), "transcode input not counted", "err", err)
+		} else {
+			o.Input = in
+		}
 	}
 	return o, nil
 }
@@ -473,6 +486,9 @@ func (a *api) sessionFor(r *http.Request, j hlsJob, n int, owner string) (*trans
 		return nil, err
 	}
 	o.StartSegment = n
+	// Logged first: ffmpeg's input bytes are added to the play's row as they
+	// arrive, so the row has to be there.
+	a.logStream(r, j.item, j.src, hlsDelivery(o), a.hlsUpstream(j.playSession))
 	return t.Sessions.Start(r.Context(), j.playSession, o, hlsStartTimeout)
 }
 

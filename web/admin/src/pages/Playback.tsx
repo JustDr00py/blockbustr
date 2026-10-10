@@ -31,7 +31,9 @@ function status(e: PlaybackEntry): { label: string; cls: string } {
   return { label: "ended", cls: "off" };
 }
 
-const deliveryBadge: Record<string, string> = { proxied: "warn", redirected: "ok", local: "" };
+const deliveryBadge: Record<string, string> = { proxied: "warn", remuxed: "warn", transcoded: "warn", redirected: "ok", local: "" };
+// Deliveries whose bytes pass through this server.
+const COUNTED = new Set(["proxied", "remuxed", "transcoded"]);
 
 function Totals({ rows, days, user, onPick }: {
   rows: PlaybackTotal[];
@@ -140,7 +142,9 @@ export default function PlaybackPage() {
               {user && <button onClick={() => setUser(undefined)}>Show everyone</button>}
             </div>
             <p className="muted small">
-              <b>Proxied</b> streams pass through blockbustr and their bytes are counted. <b>Redirected</b> ones go
+              <b>Proxied</b> streams pass through blockbustr and their bytes are counted. <b>Remuxed</b> and{" "}
+              <b>transcoded</b> plays are made by ffmpeg, which downloads the source through this server: that download
+              is counted (Linux only). <b>Redirected</b> ones go
               straight from the source (a trusted stream proxy, or a link the app may fetch itself) and aren't. Debrid
               links an addon resolved with its own keys count against that addon's debrid account.
             </p>
@@ -174,7 +178,7 @@ export default function PlaybackPage() {
                           {e.LinkHost && <div className="muted small"><code>{e.LinkHost}</code></div>}
                         </td>
                         <td>{watched(e)}</td>
-                        <td>{e.Delivery === "proxied" ? bytes(e.Bytes) : <span className="muted">—</span>}</td>
+                        <td>{COUNTED.has(e.Delivery) ? bytes(e.Bytes) : <span className="muted">—</span>}</td>
                       </tr>
                     );
                   })}

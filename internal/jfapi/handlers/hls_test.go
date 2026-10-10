@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/sysadmin/blockbustr/internal/jfapi"
+	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/testutil"
 	"github.com/sysadmin/blockbustr/internal/transcode"
@@ -428,6 +429,12 @@ func TestHLSRemuxRealFFmpeg(t *testing.T) {
 	if !ok || !sess.Opts.CopyVideo || !sess.Opts.CopyAudio {
 		t.Errorf("session copies: %+v", sess)
 	}
+	// The play is logged for the Playback page as remuxed.
+	var log playbackResponse
+	logRec := call(t, h, "GET", "/blockbustr/playback", `MediaBrowser Token="`+captureToken+`"`, "")
+	if err := json.Unmarshal(logRec.Body.Bytes(), &log); err != nil || len(log.Entries) != 1 || log.Entries[0].Delivery != deliveryRemuxed {
+		t.Errorf("playback log: %v %s", err, logRec.Body)
+	}
 	// A seek after a stop restarts at segment 7: copied video starts at the
 	// keyframe nearest 21s (1s GOP), plus the MPEG-TS muxer's 1.4s delay.
 	d.Transcoding.Sessions.Close(q.Get("PlaySessionId"))
@@ -467,5 +474,91 @@ func TestHLSTranscodeRefused(t *testing.T) {
 	d.Transcoding.NoCPU.Store(true) // the test server's encoder is the software one
 	if rec := c.replay(t, h); rec.Code != 403 {
 		t.Errorf("software transcode with transcode.software off: %d", rec.Code)
+	}
+}
+
+// ffmpeg reads a remote source through this server, so the play is logged
+// as remuxed with the bytes it downloaded.
+func TestHLSRemoteInputIsCounted(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not installed")
+	}
+	_, d := newIntegrationServer(t)
+	seedRecon(t, d)
+	seedCaptureToken(t, d)
+	d.Transcoding = &Transcoding{Sessions: transcode.NewManager(t.TempDir(), 2), Encoder: transcode.CapSoftware, SegmentSeconds: 3}
+	t.Cleanup(d.Transcoding.Sessions.CloseAll)
+	d.Resolver = &resolve.Resolver{Cache: d.Cache}
+	rt := jfapi.NewRouter(testutil.Discard(), jfapi.Options{LegacyAuth: true})
+	Register(rt, d)
+
+	dir := t.TempDir()
+	src := filepath.Join(dir, "episode.mkv")
+	if out, err := exec.CommandContext(t.Context(), "ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc=duration=30:size=320x240:rate=24",
+		"-f", "lavfi", "-i", "sine=frequency=440:duration=30", "-map", "0", "-map", "1",
+		"-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", "-g", "24", "-c:a", "aac", "-ac", "2", src).CombinedOutput(); err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	fi, err := os.Stat(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cdn := httptest.NewServer(http.FileServer(http.Dir(dir))) // answers Range
+	t.Cleanup(cdn.Close)
+	execSQL(t, `UPDATE media_sources SET path_or_url = $1, is_remote = true, protocol = 'Http', runtime_ticks = 300000000, container = 'mkv' WHERE item_id = $2`,
+		cdn.URL+"/episode.mkv", mkii)
+	execSQL(t, `UPDATE media_streams SET codec = 'h264', profile = 'Constrained Baseline', level = 13, width = 320, height = 240
+		WHERE type = 'Video' AND media_source_id IN (SELECT id FROM media_sources WHERE item_id = $1)`, mkii)
+
+	authz := `MediaBrowser Token="` + captureToken + `"`
+	rec := call(t, rt, "POST", "/Items/"+mkii+"/PlaybackInfo", authz, `{"DeviceProfile":{
+		"DirectPlayProfiles":[{"Type":"Video","Container":"mp4","VideoCodec":"h264","AudioCodec":"aac"}],
+		"TranscodingProfiles":[{"Type":"Video","Container":"ts","Protocol":"hls","VideoCodec":"h264","AudioCodec":"aac"}]}}`)
+	var pi playbackResp
+	_ = json.Unmarshal(rec.Body.Bytes(), &pi)
+	if len(pi.MediaSources) != 1 || pi.MediaSources[0].TranscodingUrl == "" {
+		t.Fatalf("PlaybackInfo: %s", rec.Body)
+	}
+	tu := pi.MediaSources[0].TranscodingUrl
+	get := func(path string) *httptest.ResponseRecorder {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		rt.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), "GET", path, nil))
+		return rec
+	}
+	master := get(tu)
+	lines := strings.Split(strings.TrimSpace(master.Body.String()), "\n")
+	if master.Code != 200 || len(lines) < 3 {
+		t.Fatalf("master: %d %s", master.Code, master.Body)
+	}
+	base := strings.TrimSuffix(strings.SplitN(tu, "?", 2)[0], "master.m3u8")
+	var seg string
+	for _, l := range strings.Split(get(base+lines[2]).Body.String(), "\n") {
+		if strings.HasPrefix(l, "hls1/") {
+			seg = base + l
+			break
+		}
+	}
+	if rec := get(seg); rec.Code != 200 {
+		t.Fatalf("segment: %d %s", rec.Code, rec.Body)
+	}
+
+	// ffmpeg finishes the copy in moments; the bytes are added as its
+	// requests end.
+	var entry playbackEntry
+	deadline := time.Now().Add(30 * time.Second)
+	for time.Now().Before(deadline) {
+		var log playbackResponse
+		_ = json.Unmarshal(call(t, rt, "GET", "/blockbustr/playback", authz, "").Body.Bytes(), &log)
+		if len(log.Entries) == 1 {
+			entry = log.Entries[0]
+			if entry.Bytes >= fi.Size()*9/10 {
+				break
+			}
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	if entry.Delivery != deliveryRemuxed || entry.LinkHost != "127.0.0.1" || entry.Bytes < fi.Size()*9/10 || entry.Bytes > fi.Size()*2 {
+		t.Errorf("play: delivery %q host %q bytes %d, source is %d bytes", entry.Delivery, entry.LinkHost, entry.Bytes, fi.Size())
 	}
 }

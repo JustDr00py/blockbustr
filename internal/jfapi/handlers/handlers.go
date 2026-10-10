@@ -118,6 +118,8 @@ type api struct {
 	// probeSem and probeFlight bound stream choice probes (probeChoice).
 	probeSem    chan struct{}
 	probeFlight singleflight.Group
+	// hlsIn is the loopback ffmpeg reads remote sources through (hlsinput.go).
+	hlsIn hlsInput
 }
 
 // Register mounts every implemented endpoint on rt.

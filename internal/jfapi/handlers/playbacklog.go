@@ -17,6 +17,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/metrics"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
+	"github.com/sysadmin/blockbustr/internal/transcode"
 )
 
 // The playback log (admin UI's Playback page): a row per play, so admins
@@ -41,7 +42,17 @@ const (
 	deliveryLocal      = "local"      // a file served by blockbustr
 	deliveryProxied    = "proxied"    // a remote link fetched through blockbustr
 	deliveryRedirected = "redirected" // the player was sent to the link
+	deliveryRemuxed    = "remuxed"    // ffmpeg copies the video into HLS; its input download counts
+	deliveryTranscoded = "transcoded" // ffmpeg re-encodes into HLS; its input download counts
 )
+
+// hlsDelivery is how an HLS session's output reaches the player.
+func hlsDelivery(o transcode.StartOptions) string {
+	if o.CopyVideo {
+		return deliveryRemuxed
+	}
+	return deliveryTranscoded
+}
 
 // logPlayStart starts the play's row; 0 when it isn't logged.
 func (a *api) logPlayStart(ctx context.Context, s auth.Session, rep playReport) int64 {
