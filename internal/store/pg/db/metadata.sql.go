@@ -168,7 +168,7 @@ func (q *Queries) InsertItemStudio(ctx context.Context, arg InsertItemStudioPara
 const itemsNeedingMetadata = `-- name: ItemsNeedingMetadata :many
 
 SELECT id, type, name, production_year, path, parent_id, index_number, parent_index_number,
-       provider_ids, metadata_source
+       provider_ids, metadata_source, premiere_date
 FROM items
 WHERE library_id = $1
   AND type IN ('Movie', 'Series', 'Season', 'Episode')
@@ -197,6 +197,7 @@ type ItemsNeedingMetadataRow struct {
 	ParentIndexNumber *int32
 	ProviderIds       json.RawMessage
 	MetadataSource    *string
+	PremiereDate      *time.Time
 }
 
 // Metadata refresh queries (TASKS P1.16).
@@ -222,6 +223,7 @@ func (q *Queries) ItemsNeedingMetadata(ctx context.Context, arg ItemsNeedingMeta
 			&i.ParentIndexNumber,
 			&i.ProviderIds,
 			&i.MetadataSource,
+			&i.PremiereDate,
 		); err != nil {
 			return nil, err
 		}

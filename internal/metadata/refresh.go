@@ -85,7 +85,7 @@ func (r *Refresher) Refresh(ctx context.Context, lib db.Library) error {
 	if err != nil || len(rows) == 0 {
 		return err
 	}
-	run := &run{r: r, items: map[uuid.UUID]db.Item{}, seasons: map[[2]int]*tmdb.SeasonDetails{}}
+	run := &run{r: r, items: map[uuid.UUID]db.Item{}, seasons: map[[2]int]*tmdb.SeasonDetails{}, lists: map[int][]tmdb.Season{}}
 	var st Stats
 	for _, row := range rows {
 		if ctx.Err() != nil {
@@ -119,6 +119,7 @@ type run struct {
 	r       *Refresher
 	items   map[uuid.UUID]db.Item          // parent lookups
 	seasons map[[2]int]*tmdb.SeasonDetails // (show, season) → details, fetched once per run
+	lists   map[int][]tmdb.Season          // show → its seasons, for matching by air date
 }
 
 func (u *run) item(ctx context.Context, row db.ItemsNeedingMetadataRow) (Meta, error) {
@@ -261,9 +262,80 @@ func (u *run) episode(ctx context.Context, row db.ItemsNeedingMetadataRow) (Meta
 			if s != nil {
 				m = fromEpisode(s, int(*row.IndexNumber))
 			}
+			if m.empty() && row.PremiereDate != nil {
+				if m, err = u.episodeByAirDate(ctx, showID, *row.PremiereDate); err != nil {
+					return Meta{}, err
+				}
+			}
 		}
 	}
 	return merge(m, local), nil
+}
+
+// episodeByAirDate is the TMDB episode that aired on day, for an episode
+// TMDB numbers differently. IMDb (whose numbering Cinemeta's catalog and
+// the addons' stream ids use) and TMDB can split a show into seasons
+// differently: Frieren's 2026 episodes are IMDb's season 2 but TMDB's
+// S1E29–38. The one episode that aired that very day wins; failing that,
+// the one a day off (a Japanese broadcast against a US listing). Several
+// on the same day (a double bill) match none: better no metadata than
+// another episode's.
+func (u *run) episodeByAirDate(ctx context.Context, showID int, day time.Time) (Meta, error) {
+	seasons, err := u.seasonList(ctx, showID)
+	if err != nil {
+		return Meta{}, err
+	}
+	day = time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC)
+	type match struct {
+		s *tmdb.SeasonDetails
+		n int
+	}
+	var exact, near []match
+	for _, sn := range seasons {
+		// A season that began after the day can't have aired it.
+		if begin, err := time.Parse(time.DateOnly, sn.AirDate); err == nil && begin.After(day.AddDate(0, 0, 1)) {
+			continue
+		}
+		s, err := u.seasonDetails(ctx, showID, sn.SeasonNumber)
+		if err != nil {
+			return Meta{}, err
+		}
+		if s == nil {
+			continue
+		}
+		for _, e := range s.Episodes {
+			aired, err := time.Parse(time.DateOnly, e.AirDate)
+			if err != nil {
+				continue
+			}
+			switch aired.Sub(day) {
+			case 0:
+				exact = append(exact, match{s, e.EpisodeNumber})
+			case 24 * time.Hour, -24 * time.Hour:
+				near = append(near, match{s, e.EpisodeNumber})
+			}
+		}
+	}
+	switch {
+	case len(exact) == 1:
+		return fromEpisode(exact[0].s, exact[0].n), nil
+	case len(exact) == 0 && len(near) == 1:
+		return fromEpisode(near[0].s, near[0].n), nil
+	}
+	return Meta{}, nil
+}
+
+// seasonList is the show's seasons on TMDB, specials left out.
+func (u *run) seasonList(ctx context.Context, showID int) ([]tmdb.Season, error) {
+	if l, ok := u.lists[showID]; ok {
+		return l, nil
+	}
+	l, err := u.r.tmdb.TVSeasons(ctx, showID)
+	if err != nil && !errors.Is(err, tmdb.ErrNotFound) {
+		return nil, err
+	}
+	u.lists[showID] = l
+	return l, nil
 }
 
 // showID is the TMDB id of the series item seriesID (0 if unmatched).

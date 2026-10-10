@@ -4,7 +4,7 @@
 -- Never refreshed, matched but stale, or unmatched and due for a retry.
 -- Series before Seasons before Episodes, so parents are matched first.
 SELECT id, type, name, production_year, path, parent_id, index_number, parent_index_number,
-       provider_ids, metadata_source
+       provider_ids, metadata_source, premiere_date
 FROM items
 WHERE library_id = @library_id
   AND type IN ('Movie', 'Series', 'Season', 'Episode')

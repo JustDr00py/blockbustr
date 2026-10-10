@@ -47,7 +47,7 @@ func fakeTMDB(t *testing.T, calls *atomic.Int32) *tmdb.Client {
 		"/tv/235493": `{"id":235493,"name":"MF Ghost","overview":"Racing.","first_air_date":"2023-10-02","status":"Returning Series","vote_average":7.1,
 			"genres":[{"name":"Animation"}],"networks":[{"name":"Tokyo MX"}],"external_ids":{"imdb_id":"tt27526575","tvdb_id":425707},
 			"content_ratings":{"results":[{"iso_3166_1":"US","rating":"TV-14"}]},"credits":{"cast":[{"id":7,"name":"Daisuke Hirose","character":"Kanata Rivington"}]},
-			"images":{"posters":[{"file_path":"/mfp.jpg","iso_639_1":"en"}]}}`,
+			"images":{"posters":[{"file_path":"/mfp.jpg","iso_639_1":"en"}]},"seasons":[{"season_number":1,"air_date":"2023-10-02"}]}`,
 		"/tv/235493/season/1": `{"season_number":1,"name":"MF GHOST","overview":"First season.","air_date":"2023-10-02","poster_path":"/s1.jpg",
 			"episodes":[{"id":4615001,"episode_number":1,"name":"The Challenger from England","overview":"Ep one.","air_date":"2023-10-02","still_path":"/e1.jpg","vote_average":7.5,
 				"guest_stars":[{"id":8,"name":"Guest Voice","character":"Commentator"}],"crew":[{"id":9,"name":"Ep Director","job":"Director"}]},
