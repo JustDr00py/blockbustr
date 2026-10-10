@@ -242,6 +242,11 @@ type PlaybackLog struct {
 	StoppedAt     *time.Time
 }
 
+type ProxiedBytesMonthly struct {
+	Month time.Time
+	Bytes int64
+}
+
 type ServerSetting struct {
 	Key       string
 	Value     json.RawMessage

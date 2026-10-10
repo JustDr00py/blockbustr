@@ -31,6 +31,7 @@ interface Host {
 
 interface Stats {
   Host: Host;
+  ProxiedMonths: { Month: string; Bytes: number }[] | null; // newest first, UTC months
   UptimeSeconds: number;
   ActiveStreams: number;
   ProxiedBytes: number;
@@ -139,7 +140,7 @@ export default function StatsPage() {
   return (
     <>
       <PageHeader title="Stats">
-        <span className="muted small">Updates every {POLL_MS / 1000} s · totals since the server started</span>
+        <span className="muted small">Updates every {POLL_MS / 1000} s · request timings since the server started · proxied bytes by month</span>
       </PageHeader>
       <ErrorNote error={error} />
       {stats && (
@@ -176,7 +177,7 @@ export default function StatsPage() {
             <Stat
               label="Proxy throughput"
               value={rate === undefined ? "…" : `${((rate * 8) / 1e6).toFixed(1)} Mbit/s`}
-              note={`${bytes(stats.ProxiedBytes)} in total`}
+              note={`${bytes(stats.ProxiedMonths?.[0]?.Bytes ?? 0)} this month`}
             />
             <Stat label="Transcodes running" value={stats.Transcodes} />
             <Stat label="Uptime" value={uptime(stats.UptimeSeconds)} />
@@ -189,6 +190,19 @@ export default function StatsPage() {
               note={stats.Search.Count ? `95th percentile of ${stats.Search.Count} searches` : "no searches yet"}
             />
           </div>
+          {(stats.ProxiedMonths ?? []).length > 1 && (
+            <div className="card">
+              <h2>Proxied per month</h2>
+              <table>
+                <thead><tr><th>Month (UTC)</th><th>Proxied</th></tr></thead>
+                <tbody>
+                  {(stats.ProxiedMonths ?? []).map((m) => (
+                    <tr key={m.Month}><td>{m.Month}</td><td>{bytes(m.Bytes)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <Timings title="Busiest requests" rows={requests} empty="No requests yet." />
           <Timings
             title="Addon requests"

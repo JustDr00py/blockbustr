@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"net/http/pprof"
+	"time"
 
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
@@ -26,6 +28,7 @@ func (a *api) registerOps(rt *jfapi.Router) {
 		s.Host = metrics.ReadHost(map[string]string{
 			"Cache": a.Config.Paths.Cache, "Transcode": a.Config.Paths.TranscodeDir(), "Images": a.Config.Paths.ImagesDir(),
 		})
+		s.ProxiedMonths = a.proxiedMonths(r.Context())
 		jfapi.WriteJSON(w, r, http.StatusOK, s)
 	}))
 	admin := func(h http.HandlerFunc) http.HandlerFunc {
@@ -36,4 +39,27 @@ func (a *api) registerOps(rt *jfapi.Router) {
 	rt.Get("/debug/pprof/symbol", admin(pprof.Symbol))
 	rt.Get("/debug/pprof/trace", admin(pprof.Trace))
 	rt.Get("/debug/pprof/*", admin(pprof.Index)) // index and named profiles (heap, goroutine…)
+}
+
+// proxiedMonths is the stored monthly proxied-bytes totals, newest first,
+// with the bytes not stored yet added to this month's.
+func (a *api) proxiedMonths(ctx context.Context) []metrics.MonthBytes {
+	rows, err := a.Queries.ListProxiedBytes(ctx, 12)
+	if err != nil {
+		a.Log.WarnContext(ctx, "reading the monthly proxied bytes failed", "err", err)
+	}
+	var out []metrics.MonthBytes
+	for _, r := range rows {
+		out = append(out, metrics.MonthBytes{Month: r.Month.Format("2006-01"), Bytes: float64(r.Bytes)})
+	}
+	var pending int64
+	if a.MonthlyBytes != nil {
+		pending = a.MonthlyBytes.Unflushed()
+	}
+	this := metrics.MonthStart(time.Now()).Format("2006-01")
+	if len(out) == 0 || out[0].Month != this {
+		out = append([]metrics.MonthBytes{{Month: this}}, out...)
+	}
+	out[0].Bytes += float64(pending)
+	return out
 }

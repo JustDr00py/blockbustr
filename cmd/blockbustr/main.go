@@ -178,6 +178,8 @@ func run() error {
 	}()
 
 	go prunePlaybackLog(ctx, queries, log)
+	monthly := metrics.NewMonthlyBytes(monthStore{queries}, log)
+	go monthly.Run(ctx, time.Minute)
 
 	router := jfapi.NewRouter(log, jfapi.Options{LegacyAuth: cfg.Compat.LegacyAuth})
 	addons := &stremio.Registry{Pool: pool, Client: &stremio.Client{Cache: rc}}
@@ -236,10 +238,10 @@ func run() error {
 	handlers.Register(router, handlers.Deps{
 		Config: cfg, ServerID: dto.IDFromUUID(serverID), Auth: authSvc, Queries: queries, DB: pool, Log: log, Library: scanner, Images: imageStore, Cache: rc,
 		Resolver: &resolve.Resolver{Cache: rc, Accounts: accounts, Torrents: torrents, Log: log}, Probe: scanner,
-		Transcoding: transcoding,
-		Settings:    settingsStore,
-		Subtitles:   &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
-		Events:      bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams, RemoteSearch: remote,
+		Transcoding: transcoding, MonthlyBytes: monthly,
+		Settings:  settingsStore,
+		Subtitles: &subtitles.Store{Dir: filepath.Join(cfg.Paths.Cache, "subtitles")},
+		Events:    bus, Hub: hub, Addons: addons, CatalogSync: catalogs, Streams: streams, RemoteSearch: remote,
 		StreamSigner: &urlsign.Signer{Key: streamKey, TTL: cfg.Server.StreamURLTTL},
 		Debrid:       debridAdmin,
 		ChoiceProber: media.Prober{},
@@ -301,7 +303,18 @@ func run() error {
 	if err := <-errc; err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("http server: %w", err)
 	}
+	// The last streams have finished: store what they proxied.
+	flushCtx, flushCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer flushCancel()
+	monthly.Flush(flushCtx)
 	return nil
+}
+
+// monthStore keeps the proxied-bytes totals in Postgres (metrics.MonthStore).
+type monthStore struct{ q *sqlcdb.Queries }
+
+func (s monthStore) AddProxiedBytes(ctx context.Context, month time.Time, n int64) error {
+	return s.q.AddProxiedBytes(ctx, sqlcdb.AddProxiedBytesParams{Month: month, Bytes: n})
 }
 
 // bootstrapDebrid adds the configured debrid API keys, sealed with

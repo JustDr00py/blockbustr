@@ -21,6 +21,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/logbuf"
+	"github.com/sysadmin/blockbustr/internal/metrics"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/settings"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
@@ -54,6 +55,9 @@ type Deps struct {
 	// Probe probes a .strm item's source at first play (library.Scanner);
 	// nil leaves unprobed sources undecided.
 	Probe RemoteProber
+	// MonthlyBytes stores the proxied-bytes total per month; nil leaves the
+	// Stats page without monthly totals beyond the unstored ones.
+	MonthlyBytes *metrics.MonthlyBytes
 	// Transcoding runs HLS sessions; nil answers HLS requests with 404.
 	Transcoding *Transcoding
 	// Subtitles extracts and converts text subtitles; nil answers subtitle

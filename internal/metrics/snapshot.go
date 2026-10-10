@@ -30,7 +30,8 @@ type Stats struct {
 	Addons         []Timing // by resource (stream, meta, catalog…)
 	Resolves       []Count  // by kind and result
 	Search         Timing
-	Host           Host // filled by the caller (ReadHost); it needs the configured paths
+	ProxiedMonths  []MonthBytes // newest first, this month included (filled by the caller)
+	Host           Host         // filled by the caller (ReadHost); it needs the configured paths
 }
 
 // Timing summarises a histogram: how many, how many failed (5xx for
@@ -44,6 +45,12 @@ type Timing struct {
 	AvgMs    float64
 	P95Ms    float64
 	P95Bound bool `json:",omitempty"`
+}
+
+// MonthBytes is what was proxied in a calendar month (UTC).
+type MonthBytes struct {
+	Month string // 2026-10
+	Bytes float64
 }
 
 // Count is one labelled counter.
