@@ -73,58 +73,93 @@ func (a *api) logPlayProgress(ctx context.Context, id int64, rep playReport, pos
 	}
 }
 
-// logStream records what a stream request of a play session served and
-// how; it returns the play session to count proxied bytes for ("" when the
-// request has none, so nothing is logged).
-func (a *api) logStream(r *http.Request, it db.Item, src db.MediaSource, delivery, link string) string {
+// streamLog says where a stream's proxied bytes are logged: on the row of
+// its play session, or, when the request names none (Streamyfin's direct
+// play sends no PlaySessionId), on the latest play of the item by the user
+// its token names. The zero value logs nothing.
+type streamLog struct {
+	playSession string
+	user, item  uuid.UUID
+	// What a sessionless stream adds to the play it joins.
+	delivery, source, addon, host string
+}
+
+// logStream records what a stream request served and how, and says where
+// to count its proxied bytes.
+func (a *api) logStream(r *http.Request, it db.Item, src db.MediaSource, delivery, link string) streamLog {
 	ctx := r.Context()
-	id := jfapi.QueryOf(r).Get("PlaySessionId")
-	ps, ok := a.loadPlaySession(ctx, id)
-	if !ok || ps.UserID == uuid.Nil {
-		return ""
-	}
-	p := db.UpsertPlaybackParams{
-		UserID: ps.UserID, ItemID: it.ID, PlaySessionID: &id, SourceName: src.Name, Delivery: delivery,
-	}
+	var host, addon string
 	if u, err := url.Parse(link); err == nil {
-		p.LinkHost = u.Hostname()
-	}
-	// The device, from its session (stream requests carry no token).
-	var cs clientSession
-	if a.Cache != nil && ps.DeviceID != "" {
-		if ok, err := a.Cache.GetJSON(ctx, cache.SessionKey(ps.DeviceID), &cs); err == nil && ok && cs.UserID == ps.UserID {
-			p.DeviceName, p.Client = cs.DeviceName, cs.Client
-		}
+		host = u.Hostname()
 	}
 	if _, _, catalog := stremioRef(it); catalog {
 		if set, ok := a.loadStreamSet(ctx, it.ID); ok {
 			for _, c := range set.All() {
 				if c.ID == src.ID {
-					p.Addon = c.Addon
+					addon = c.Addon
 					break
 				}
 			}
 		}
 	}
-	if _, err := a.Queries.UpsertPlayback(ctx, p); err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			a.Log.WarnContext(ctx, "playback log failed", "item", it.ID, "err", err)
+	id := jfapi.QueryOf(r).Get("PlaySessionId")
+	if ps, ok := a.loadPlaySession(ctx, id); ok && ps.UserID != uuid.Nil {
+		p := db.UpsertPlaybackParams{
+			UserID: ps.UserID, ItemID: it.ID, PlaySessionID: &id, SourceName: src.Name, Delivery: delivery,
+			LinkHost: host, Addon: addon,
 		}
-		return ""
+		// The device, from its session (stream requests carry no token).
+		var cs clientSession
+		if a.Cache != nil && ps.DeviceID != "" {
+			if ok, err := a.Cache.GetJSON(ctx, cache.SessionKey(ps.DeviceID), &cs); err == nil && ok && cs.UserID == ps.UserID {
+				p.DeviceName, p.Client = cs.DeviceName, cs.Client
+			}
+		}
+		if _, err := a.Queries.UpsertPlayback(ctx, p); err != nil {
+			if !errors.Is(err, pgx.ErrNoRows) {
+				a.Log.WarnContext(ctx, "playback log failed", "item", it.ID, "err", err)
+			}
+			return streamLog{}
+		}
+		return streamLog{playSession: id}
 	}
-	return id
+	// No play session: the request's token, if it has one, names the user.
+	sess, err := a.Auth.Resolve(ctx, jfapi.AuthFrom(ctx).Token)
+	if err != nil {
+		return streamLog{}
+	}
+	sl := streamLog{user: sess.UserID, item: it.ID, delivery: delivery, source: src.Name, addon: addon, host: host}
+	sl.attach(ctx, a, 0)
+	return sl
+}
+
+// attach adds bytes (and what the stream served) to the play it belongs to.
+// False: no play of the item is logged yet, so the caller keeps the bytes
+// for later, when the player's Playing report has started the row.
+func (l streamLog) attach(ctx context.Context, a *api, bytes int64) bool {
+	_, err := a.Queries.AttachPlaybackStream(ctx, db.AttachPlaybackStreamParams{
+		UserID: &l.user, ItemID: l.item, Delivery: l.delivery, SourceName: l.source, Addon: l.addon, LinkHost: l.host, Bytes: bytes,
+	})
+	switch {
+	case err == nil:
+		return true
+	case errors.Is(err, pgx.ErrNoRows):
+		return false
+	}
+	a.Log.WarnContext(ctx, "playback log failed", "item", l.item, "err", err)
+	return true // a database error: drop the bytes rather than retry forever
 }
 
 // countingWriter counts proxied bytes as they go (a stream can last hours),
-// and adds them to the play session's log row every playbackLogFlush and
-// when done (flush).
+// and adds them to the play's log row every playbackLogFlush and when done
+// (flush).
 type countingWriter struct {
-	w           io.Writer
-	a           *api
-	ctx         context.Context
-	playSession string // "": not logged
-	pending     int64
-	last        time.Time
+	w       io.Writer
+	a       *api
+	ctx     context.Context
+	sl      streamLog // zero: not logged
+	pending int64
+	last    time.Time
 }
 
 func (c *countingWriter) Write(p []byte) (int, error) {
@@ -139,16 +174,24 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 
 func (c *countingWriter) flush() {
 	c.last = time.Now()
-	if c.playSession == "" || c.pending == 0 {
+	if c.pending == 0 || (c.sl.playSession == "" && c.sl.user == uuid.Nil) {
+		return
+	}
+	// The client may have hung up already: the bytes still count.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(c.ctx), 5*time.Second)
+	defer cancel()
+	if c.sl.playSession == "" {
+		// Without a play session the row may not exist until the player's
+		// Playing report arrives: keep the bytes until it does.
+		if c.sl.attach(ctx, c.a, c.pending) {
+			c.pending = 0
+		}
 		return
 	}
 	n := c.pending
 	c.pending = 0
-	// The client may have hung up already: the bytes still count.
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(c.ctx), 5*time.Second)
-	defer cancel()
-	if err := c.a.Queries.AddPlaybackBytes(ctx, db.AddPlaybackBytesParams{Bytes: n, PlaySessionID: &c.playSession}); err != nil {
-		c.a.Log.WarnContext(ctx, "playback log failed", "playSession", c.playSession, "err", err)
+	if err := c.a.Queries.AddPlaybackBytes(ctx, db.AddPlaybackBytesParams{Bytes: n, PlaySessionID: &c.sl.playSession}); err != nil {
+		c.a.Log.WarnContext(ctx, "playback log failed", "playSession", c.sl.playSession, "err", err)
 	}
 }
 

@@ -102,3 +102,56 @@ func TestPlaybackLog(t *testing.T) {
 		t.Errorf("another user's log: %+v", got.Entries)
 	}
 }
+
+// A stream request without a PlaySessionId (Streamyfin's direct play) joins
+// the play its token's user reported, by item.
+func TestPlaybackLogStreamWithoutPlaySession(t *testing.T) {
+	_, d := newIntegrationServer(t)
+	seedRecon(t, d)
+	seedCaptureToken(t, d)
+	f := newRemoteFixture(t, d, nil)
+	authz := `MediaBrowser Token="` + captureToken + `"`
+	stream := func(hdr map[string]string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/Videos/"+fockers+"/stream?static=true", nil)
+		for k, v := range hdr {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		f.h.ServeHTTP(rec, req)
+		return rec
+	}
+	plays := func() []playbackEntry {
+		t.Helper()
+		rec := call(t, f.h, "GET", "/blockbustr/playback", authz, "")
+		var got playbackResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+			t.Fatal(err)
+		}
+		return got.Entries
+	}
+
+	// No row yet: the bytes aren't lost track of, but nothing is logged.
+	if rec := stream(map[string]string{"Authorization": authz}); rec.Code != 200 {
+		t.Fatalf("stream before the report: %d", rec.Code)
+	}
+	if got := plays(); len(got) != 0 {
+		t.Fatalf("a play appeared from a stream alone: %+v", got)
+	}
+
+	if rec := call(t, f.h, "POST", "/Sessions/Playing", authz,
+		`{"ItemId":"`+fockers+`","PlaySessionId":"ps-streamyfin","PositionTicks":0,"PlayMethod":"DirectPlay"}`); rec.Code != 204 {
+		t.Fatalf("report = %d", rec.Code)
+	}
+	if rec := stream(map[string]string{"Authorization": authz}); rec.Code != 200 || rec.Body.Len() != 10 {
+		t.Fatalf("stream: %d %q", rec.Code, rec.Body)
+	}
+	// A stream with no token can't be told apart by user: not attributed.
+	if rec := stream(nil); rec.Code != 200 {
+		t.Fatalf("anonymous stream: %d", rec.Code)
+	}
+	got := plays()
+	if len(got) != 1 || got[0].Delivery != deliveryProxied || got[0].Bytes != 10 || got[0].LinkHost != "127.0.0.1" {
+		t.Errorf("play: %+v", got)
+	}
+}

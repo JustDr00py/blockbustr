@@ -216,7 +216,7 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, s
 	}
 	w.WriteHeader(resp.StatusCode)
 	if r.Method != http.MethodHead {
-		cw := &countingWriter{w: w, a: a, ctx: ctx, playSession: a.logStream(r, it, src, deliveryProxied, link.URL), last: time.Now()}
+		cw := &countingWriter{w: w, a: a, ctx: ctx, sl: a.logStream(r, it, src, deliveryProxied, link.URL), last: time.Now()}
 		metrics.ActiveProxies.Inc()
 		_, _ = io.Copy(cw, resp.Body) // ends when either side hangs up
 		metrics.ActiveProxies.Dec()

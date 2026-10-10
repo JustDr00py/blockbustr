@@ -29,6 +29,54 @@ func (q *Queries) AddPlaybackBytes(ctx context.Context, arg AddPlaybackBytesPara
 	return err
 }
 
+const attachPlaybackStream = `-- name: AttachPlaybackStream :one
+UPDATE playback_log
+SET delivery     = $1,
+    source_name  = coalesce(nullif($2::text, ''), playback_log.source_name),
+    addon        = coalesce(nullif($3::text, ''), playback_log.addon),
+    link_host    = coalesce(nullif($4::text, ''), playback_log.link_host),
+    bytes        = playback_log.bytes + $5,
+    last_seen_at = now()
+WHERE playback_log.id = (
+  SELECT p.id FROM playback_log p
+  WHERE p.user_id = $6 AND p.item_id = $7
+    AND p.started_at > now() - interval '12 hours'
+    AND (p.stopped_at IS NULL OR p.stopped_at > now() - interval '2 minutes')
+  ORDER BY p.last_seen_at DESC, p.id DESC
+  LIMIT 1)
+RETURNING id
+`
+
+type AttachPlaybackStreamParams struct {
+	Delivery   string
+	SourceName string
+	Addon      string
+	LinkHost   string
+	Bytes      int64
+	UserID     *uuid.UUID
+	ItemID     uuid.UUID
+}
+
+// What a stream request without a play session id served (Streamyfin's
+// direct play sends none): the user's latest play of the item that is
+// still reporting, or stopped in the last two minutes (the stream outlives
+// the Stopped report), gets its delivery and bytes. No row: the player's
+// Playing report hasn't come yet.
+func (q *Queries) AttachPlaybackStream(ctx context.Context, arg AttachPlaybackStreamParams) (int64, error) {
+	row := q.db.QueryRow(ctx, attachPlaybackStream,
+		arg.Delivery,
+		arg.SourceName,
+		arg.Addon,
+		arg.LinkHost,
+		arg.Bytes,
+		arg.UserID,
+		arg.ItemID,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const listPlaybackLog = `-- name: ListPlaybackLog :many
 SELECT id, user_id, user_name, device_name, client, item_id, item_name, runtime_ticks, play_method,
        source_name, addon, delivery, link_host, bytes, position_ticks, started_at, last_seen_at, stopped_at

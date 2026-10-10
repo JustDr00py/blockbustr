@@ -45,6 +45,28 @@ UPDATE playback_log
 SET bytes = bytes + @bytes, last_seen_at = now()
 WHERE play_session_id = @play_session_id;
 
+-- name: AttachPlaybackStream :one
+-- What a stream request without a play session id served (Streamyfin's
+-- direct play sends none): the user's latest play of the item that is
+-- still reporting, or stopped in the last two minutes (the stream outlives
+-- the Stopped report), gets its delivery and bytes. No row: the player's
+-- Playing report hasn't come yet.
+UPDATE playback_log
+SET delivery     = @delivery,
+    source_name  = coalesce(nullif(@source_name::text, ''), playback_log.source_name),
+    addon        = coalesce(nullif(@addon::text, ''), playback_log.addon),
+    link_host    = coalesce(nullif(@link_host::text, ''), playback_log.link_host),
+    bytes        = playback_log.bytes + @bytes,
+    last_seen_at = now()
+WHERE playback_log.id = (
+  SELECT p.id FROM playback_log p
+  WHERE p.user_id = @user_id AND p.item_id = @item_id
+    AND p.started_at > now() - interval '12 hours'
+    AND (p.stopped_at IS NULL OR p.stopped_at > now() - interval '2 minutes')
+  ORDER BY p.last_seen_at DESC, p.id DESC
+  LIMIT 1)
+RETURNING id;
+
 -- name: ListPlaybackLog :many
 -- The newest plays first, before the id given (0: from the newest), for
 -- one user or (no user_id) everyone.
