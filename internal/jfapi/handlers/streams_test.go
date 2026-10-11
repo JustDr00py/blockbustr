@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -262,7 +263,7 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	if code := call(t, sf.h, "GET", signed, "", "").Code; code != 200 {
 		t.Errorf("signed path: %d", code)
 	}
-	if code := call(t, sf.h, "GET", signed+"x", "", "").Code; code != 403 {
+	if code := call(t, sf.h, "GET", strings.Replace(signed, "&Signature=", "&Signature=x", 1), "", "").Code; code != 403 {
 		t.Errorf("tampered signature: %d", code)
 	}
 	if code := call(t, sf.h, "GET", strings.Replace(signed, "MediaSourceId="+srcs[0].Id, "MediaSourceId="+srcs[2].Id, 1), "", "").Code; code != 403 {
@@ -1019,7 +1020,7 @@ func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
 	sf.syncAll(t)
 	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
 	type source struct {
-		Id, Name           string
+		Id, Name, Path     string
 		SupportsDirectPlay bool
 	}
 	var playSession string
@@ -1062,6 +1063,15 @@ func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
 	rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&mediaSourceId="+matrix.Id+"&PlaySessionId="+playSession, "", "")
 	if rec.Code != 200 || rec.Body.String() != "/sd.mkv" {
 		t.Errorf("default stream of the session = %d %q, want the 720p (/sd.mkv)", rec.Code, rec.Body)
+	}
+	// The Roku opens Path as is, adding no PlaySessionId: Path carries it.
+	u, err := url.Parse(got[0].Path)
+	if err != nil || u.Query().Get("PlaySessionId") != playSession {
+		t.Fatalf("Path %q lacks the play session %q", got[0].Path, playSession)
+	}
+	rec = call(t, sf.h, "GET", u.RequestURI(), "", "")
+	if rec.Code != 200 || rec.Body.String() != "/sd.mkv" {
+		t.Errorf("default version's Path = %d %q, want the 720p (/sd.mkv)", rec.Code, rec.Body)
 	}
 }
 

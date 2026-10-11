@@ -240,6 +240,15 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		}
 	}
 	dtos := mediaSourceDtos(it, rows, b.streams, baseURL(r.Context()), a.StreamSigner)
+	// A player opens a remote source's Path as is (Roku sends no
+	// PlaySessionId of its own), so Path carries the session: without it the
+	// stream reads rank order, where the item id names another version than
+	// the one decided here, and loses the user's version caps.
+	for i := range dtos {
+		if deref(dtos[i].IsRemote) && dtos[i].Path != nil {
+			dtos[i].Path = ptr(*dtos[i].Path + "&PlaySessionId=" + url.QueryEscape(playSessionID))
+		}
+	}
 	u := urlParams{playSession: playSessionID, device: s.DeviceID, token: jfapi.AuthFrom(r.Context()).Token,
 		audio: session.AudioStreamIndex, subtitle: session.SubtitleStreamIndex}
 
