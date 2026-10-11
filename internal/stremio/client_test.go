@@ -232,7 +232,7 @@ func TestStreams(t *testing.T) {
 		t.Fatal(err)
 	}
 	rdb := redis.NewClient(opt)
-	defer rdb.Close()
+	t.Cleanup(func() { _ = rdb.Close() })
 	ttls := map[string]time.Duration{"tt0000001": cache.StremioNoneTTL, "tt0133093": cache.StremioStreamsTTL}
 	for id, want := range ttls {
 		got, err := rdb.TTL(t.Context(), c.Cache.Prefix()+string(cache.StremioStreamsKey(AddonKey(base), "movie", id))).Result()
