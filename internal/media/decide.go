@@ -601,7 +601,10 @@ func Decide(p DeviceProfile, src Source, o PlayOptions) Decision {
 			reasons = append(reasons, "AudioCodecNotSupported")
 		}
 		d.Reasons = sortReasons(reasons)
-		d.Transcode = transcodeTarget(*tp, video, audio, limit, d.Mode == ModeRemux)
+		// A transcode for the audio or container alone copies the video
+		// the client takes (Jellyfin's AllowVideoStreamCopy): re-encoding
+		// it would only spend the CPU.
+		d.Transcode = transcodeTarget(*tp, video, audio, limit, d.Mode == ModeRemux || (copyVideo && onlyAudioOrContainer(dpReasons)))
 	}
 
 	direct := d.Mode == ModeDirect || d.Mode == ModeRemux

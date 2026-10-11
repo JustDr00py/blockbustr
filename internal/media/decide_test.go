@@ -374,9 +374,10 @@ func TestDecideNoVideoEncode(t *testing.T) {
 		d.Transcode == nil || !d.Transcode.CopyVideo || strings.Join(d.Reasons, ",") != "AudioCodecNotSupported" {
 		t.Errorf("truehd without the video encoder: %s %+v %v", d.Mode, d.Transcode, d.Reasons)
 	}
-	// Without the restriction it's a full transcode, as Jellyfin does.
-	if d := Decide(browser, src, PlayOptions{AudioStreamIndex: idx(2)}); d.Mode != ModeTranscode {
-		t.Errorf("truehd: %s", d.Mode)
+	// Without the restriction it's a transcode, as Jellyfin reports it,
+	// still with the video copied.
+	if d := Decide(browser, src, PlayOptions{AudioStreamIndex: idx(2)}); d.Mode != ModeTranscode || d.Transcode == nil || !d.Transcode.CopyVideo {
+		t.Errorf("truehd: %s %+v", d.Mode, d.Transcode)
 	}
 	// The client turning transcoding off rules out converting audio too.
 	if d := Decide(browser, src, PlayOptions{AudioStreamIndex: idx(2), DisableTranscoding: true, NoVideoEncode: true}); d.Mode != ModeNone {
@@ -406,5 +407,31 @@ func TestDecideNoVideoEncode(t *testing.T) {
 	cpu.SubtitleStreamIndex = idx(3)
 	if d := Decide(browser, src, cpu); d.Mode != ModeNone {
 		t.Errorf("pgs burn-in, no CPU filters: %s", d.Mode)
+	}
+}
+
+// Only the video's own problems re-encode it: a transcode for the audio
+// or container copies it, one for its codec or bitrate doesn't.
+func TestDecideCopiesVideoForAudio(t *testing.T) {
+	src := func(container, video, audio string) Source {
+		return Source{Container: container, Bitrate: 5_000_000, Streams: []Stream{
+			{Index: 0, Type: StreamVideo, Codec: video, Bitrate: 4_800_000},
+			{Index: 1, Type: StreamAudio, Codec: audio, Channels: 6},
+		}}
+	}
+	for _, c := range []struct {
+		name string
+		src  Source
+		o    PlayOptions
+		copy bool
+	}{
+		{"dts in mp4", src("mp4", "h264", "dts"), PlayOptions{}, true},
+		{"hevc", src("mp4", "hevc", "aac"), PlayOptions{}, false},
+		{"over the limit", src("mp4", "h264", "dts"), PlayOptions{MaxBitrate: 3_000_000}, false},
+	} {
+		d := Decide(browser, c.src, c.o)
+		if d.Mode != ModeTranscode || d.Transcode == nil || d.Transcode.CopyVideo != c.copy {
+			t.Errorf("%s: %s %+v, want a transcode with CopyVideo %v", c.name, d.Mode, d.Transcode, c.copy)
+		}
 	}
 }
