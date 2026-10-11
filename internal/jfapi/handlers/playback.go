@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"slices"
@@ -282,6 +283,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		}
 		return 0
 	})
+	a.logPlaybackInfo(r, profile, maxBitrate, out, session)
 	if a.Cache != nil {
 		if err := a.Cache.SetJSON(r.Context(), cache.PlaySessionKey(playSessionID), session, cache.PlaySessionTTL); err != nil {
 			a.internalError(w, r, err)
@@ -289,6 +291,55 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		}
 	}
 	jfapi.WriteJSON(w, r, http.StatusOK, dto.PlaybackInfoResponse{MediaSources: &out, PlaySessionId: &playSessionID})
+}
+
+// logPlaybackInfo logs, at debug, the client's video limits and what each
+// offered source got, so a client that drops the answer without asking
+// for a stream can be told apart from one the server sent nothing to.
+// URLs are logged without their query (it carries the token).
+func (a *api) logPlaybackInfo(r *http.Request, p media.DeviceProfile, maxBitrate int64, out []dto.MediaSourceInfo, session PlaySession) {
+	ctx := r.Context()
+	if !a.Log.Enabled(ctx, slog.LevelDebug) {
+		return
+	}
+	var conds []string
+	for _, cp := range p.CodecProfiles {
+		if !strings.EqualFold(cp.Type, "Video") {
+			continue
+		}
+		for _, c := range cp.Conditions {
+			conds = append(conds, cp.Codec+":"+c.Property+" "+c.Condition+" "+c.Value)
+		}
+	}
+	var tps []string
+	for _, tp := range p.TranscodingProfiles {
+		if strings.EqualFold(tp.Type, "Video") {
+			tps = append(tps, tp.Container+"/"+tp.Protocol+" v="+tp.VideoCodec+" a="+tp.AudioCodec)
+		}
+	}
+	a.Log.DebugContext(ctx, "playback info profile", "client", p.Name, "max_streaming_bitrate", p.MaxStreamingBitrate,
+		"request_max_bitrate", maxBitrate, "max_height", session.MaxHeight, "video_conditions", conds, "transcoding_profiles", tps)
+	for _, ms := range out {
+		attrs := []any{"source", deref(ms.Id), "container", deref(ms.Container),
+			"direct_play", deref(ms.SupportsDirectPlay), "direct_stream", deref(ms.SupportsDirectStream),
+			"transcoding", deref(ms.SupportsTranscoding)}
+		if ms.Bitrate != nil {
+			attrs = append(attrs, "bitrate", *ms.Bitrate)
+		}
+		if ms.TranscodingUrl != nil {
+			path, _, _ := strings.Cut(*ms.TranscodingUrl, "?")
+			attrs = append(attrs, "transcoding_url", path)
+		}
+		if d, ok := session.Sources[deref(ms.Id)]; ok {
+			attrs = append(attrs, "mode", d.Mode, "reasons", d.Reasons)
+			if t := d.Transcode; t != nil {
+				attrs = append(attrs, "target_video_bitrate", t.VideoBitrate, "target_codecs", t.VideoCodecs)
+			}
+		} else {
+			attrs = append(attrs, "mode", "undecided")
+		}
+		a.Log.DebugContext(ctx, "playback info source", attrs...)
+	}
 }
 
 // offerStreams picks a catalog item's streams for this client (DESIGN
