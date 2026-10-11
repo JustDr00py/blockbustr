@@ -104,6 +104,11 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
+	// A player that names no play session and sends no token (Infuse opens
+	// the details' signed Path) gets the item's only recent one, if any.
+	if r2, ok := a.withItemPlaySession(r, q, it.ID); ok {
+		r, q = r2, jfapi.QueryOf(r2)
+	}
 	// No token here: the user's caps come with their play session.
 	ps, _ := a.loadPlaySession(r.Context(), q.Get("PlaySessionId"))
 	r = r.WithContext(withVersionCaps(r.Context(), versionCaps{Height: ps.MaxHeight, Size: ps.MaxSize}))

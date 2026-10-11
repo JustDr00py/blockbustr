@@ -1,8 +1,10 @@
 package jfapi
 
 import (
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -35,6 +37,11 @@ func QueryOf(r *http.Request) Query {
 func (q Query) Has(name string) bool {
 	_, ok := q.v[strings.ToLower(name)]
 	return ok
+}
+
+// Keys returns the names present, lower-cased and sorted.
+func (q Query) Keys() []string {
+	return slices.Sorted(maps.Keys(q.v))
 }
 
 // Get returns the first value for name, or "".

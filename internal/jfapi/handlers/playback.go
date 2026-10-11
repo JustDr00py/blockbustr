@@ -298,6 +298,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 			a.internalError(w, r, err)
 			return
 		}
+		a.rememberItemPlay(r.Context(), it.ID, user, playSessionID)
 	}
 	jfapi.WriteJSON(w, r, http.StatusOK, dto.PlaybackInfoResponse{MediaSources: &out, PlaySessionId: &playSessionID})
 }

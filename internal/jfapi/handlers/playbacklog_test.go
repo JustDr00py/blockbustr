@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -246,5 +247,71 @@ func TestPlaybackLogMergeBounds(t *testing.T) {
 	execSQL(t, `UPDATE playback_log SET stopped_at = now() - interval '3 minutes' WHERE id = $1`, first)
 	if play(fockers, "tv") == first {
 		t.Error("a play stopped 3 minutes ago took the new session")
+	}
+}
+
+// A stream request with neither a play session nor a token (Infuse opens
+// the details' signed Path) takes the item's play session when only one
+// user asked PlaybackInfo for it: the row gets its delivery and bytes, and
+// the bytes count against the user's quota. With two users it isn't
+// guessed.
+func TestPlaybackLogAnonymousStreamTakesItemPlay(t *testing.T) {
+	_, d := newIntegrationServer(t)
+	seedRecon(t, d)
+	seedCaptureToken(t, d)
+	f := newRemoteFixture(t, d, nil)
+	authz := `MediaBrowser Token="` + captureToken + `"`
+	u, err := d.Queries.GetUserByName(t.Context(), "user1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	anonymous := func() {
+		t.Helper()
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/Videos/"+fockers+"/stream?static=true", nil)
+		rec := httptest.NewRecorder()
+		f.h.ServeHTTP(rec, req)
+		if rec.Code != 200 || rec.Body.Len() != 10 {
+			t.Fatalf("stream: %d %q", rec.Code, rec.Body)
+		}
+	}
+	used := func() int64 {
+		t.Helper()
+		n, err := d.Queries.UserBytesSince(t.Context(), db.UserBytesSinceParams{UserID: u.ID, Since: time.Now().Add(-time.Hour)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+
+	rec := call(t, f.h, "POST", "/Items/"+fockers+"/PlaybackInfo", authz, `{"DeviceProfile":{}}`)
+	var info struct{ PlaySessionId string }
+	if rec.Code != 200 || json.Unmarshal(rec.Body.Bytes(), &info) != nil || info.PlaySessionId == "" {
+		t.Fatalf("PlaybackInfo = %d %s", rec.Code, rec.Body)
+	}
+	anonymous()
+	rows, err := d.Queries.ListPlaybackLog(t.Context(), db.ListPlaybackLogParams{Lim: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || rows[0].Delivery != deliveryProxied || rows[0].Bytes != 10 || rows[0].UserID == nil || *rows[0].UserID != u.ID {
+		t.Fatalf("rows: %+v", rows)
+	}
+	if n := used(); n != 10 {
+		t.Errorf("user's bytes = %d, want 10", n)
+	}
+
+	// Another user's play of the item: which one streams is a guess now.
+	a := &api{Deps: Deps{Cache: d.Cache, Log: testutil.Discard()}}
+	a.rememberItemPlay(t.Context(), uuid.MustParse(fockers), uuid.New(), "ps-someone-else")
+	anonymous()
+	rows, err = d.Queries.ListPlaybackLog(t.Context(), db.ListPlaybackLogParams{Lim: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || rows[0].Bytes != 10 {
+		t.Errorf("rows after an ambiguous stream: %+v", rows)
+	}
+	if n := used(); n != 10 {
+		t.Errorf("user's bytes = %d after an ambiguous stream, want 10", n)
 	}
 }

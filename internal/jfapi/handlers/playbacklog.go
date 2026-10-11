@@ -28,7 +28,10 @@ import (
 // session id. Stream requests without a play session (Findroid builds its
 // own URL) can't be told apart by user and aren't logged. A new play
 // session of a play still going on the same device (Void asks again on
-// every track change) joins that play's row (logPlayback).
+// every track change) joins that play's row (logPlayback). A request with
+// neither a play session nor a token (Infuse opens the details' signed
+// Path and sends no headers) takes the item's play session when only one
+// user recently asked for one (withItemPlaySession).
 //
 // GET /blockbustr/playback?userId=&before=<id>&limit=<n>&days=<n> returns
 // the newest plays before the id and each user's totals over the days.
@@ -37,6 +40,10 @@ const (
 	playbackLogFlush = 30 * time.Second // proxied bytes are added at least this often
 	playbackLogPage  = 100
 	playbackLogDays  = 30
+	// itemPlayRecent is how long after PlaybackInfo a stream request with
+	// neither a play session nor a token is taken to be that play's: a long
+	// film with pauses and seeks.
+	itemPlayRecent = 6 * time.Hour
 )
 
 // Deliveries: how a stream reached the player.
@@ -133,7 +140,11 @@ func (a *api) logStream(r *http.Request, it db.Item, src db.MediaSource, deliver
 			}
 		}
 	}
-	id := jfapi.QueryOf(r).Get("PlaySessionId")
+	if r2, ok := a.withItemPlaySession(r, jfapi.QueryOf(r), it.ID); ok {
+		r = r2
+	}
+	q := jfapi.QueryOf(r)
+	id := q.Get("PlaySessionId")
 	if ps, ok := a.loadPlaySession(ctx, id); ok && ps.UserID != uuid.Nil {
 		p := db.UpsertPlaybackParams{
 			UserID: ps.UserID, DeviceID: ps.DeviceID, ItemID: it.ID, PlaySessionID: &id, SourceName: src.Name, Delivery: delivery,
@@ -156,13 +167,93 @@ func (a *api) logStream(r *http.Request, it db.Item, src db.MediaSource, deliver
 		return streamLog{row: row, owner: ps.UserID}
 	}
 	// No play session: the request's token, if it has one, names the user.
-	sess, err := a.Auth.Resolve(ctx, jfapi.AuthFrom(ctx).Token)
+	info := jfapi.AuthFrom(ctx)
+	sess, err := a.Auth.Resolve(ctx, info.Token)
 	if err != nil {
+		// Logged so a client whose plays go unattributed can be told apart.
+		a.Log.DebugContext(ctx, "stream not attributed", append([]any{"item", it.ID, "playSession", id != "", "token", info.Token != ""},
+			streamRequestAttrs(r, q)...)...)
 		return streamLog{}
 	}
 	sl := streamLog{owner: sess.UserID, user: sess.UserID, item: it.ID, delivery: delivery, source: src.Name, addon: addon, host: host}
 	sl.attach(ctx, a, 0)
 	return sl
+}
+
+// rememberItemPlay notes user's latest play session of an item, for
+// withItemPlaySession.
+func (a *api) rememberItemPlay(ctx context.Context, item, user uuid.UUID, playSession string) {
+	if a.Cache == nil || user == uuid.Nil {
+		return
+	}
+	k := item.String()
+	if err := a.Cache.SetJSON(ctx, cache.ItemPlayKey(k, user.String()), itemPlay{PlaySession: playSession, At: time.Now()}, cache.PlaySessionTTL); err != nil {
+		a.Log.WarnContext(ctx, "remembering a play session failed", "item", item, "err", err)
+		return
+	}
+	if err := a.Cache.AddToSet(ctx, cache.ItemPlaysKey(k), cache.PlaySessionTTL, user.String()); err != nil {
+		a.Log.WarnContext(ctx, "remembering a play session failed", "item", item, "err", err)
+	}
+}
+
+// itemPlay is a user's latest play session of an item (cache.ItemPlayKey).
+type itemPlay struct {
+	PlaySession string
+	At          time.Time
+}
+
+// withItemPlaySession gives a stream request that has neither a play
+// session nor a token the item's latest one, when exactly one user asked
+// PlaybackInfo for the item in the last itemPlayRecent: with several, it
+// would be a guess. ok is false when r is left as it is.
+func (a *api) withItemPlaySession(r *http.Request, q jfapi.Query, item uuid.UUID) (*http.Request, bool) {
+	ctx := r.Context()
+	if a.Cache == nil || q.Get("PlaySessionId") != "" || jfapi.AuthFrom(ctx).Token != "" {
+		return r, false
+	}
+	k := item.String()
+	users, err := a.Cache.SetMembers(ctx, cache.ItemPlaysKey(k))
+	if err != nil {
+		return r, false
+	}
+	var found string
+	for _, u := range users {
+		var p itemPlay
+		if ok, err := a.Cache.GetJSON(ctx, cache.ItemPlayKey(k, u), &p); err != nil || !ok || time.Since(p.At) > itemPlayRecent {
+			continue
+		}
+		if found != "" {
+			return r, false
+		}
+		found = p.PlaySession
+	}
+	if found == "" {
+		return r, false
+	}
+	a.Log.DebugContext(ctx, "stream given the item's play session", append([]any{"item", item, "playSession", found},
+		streamRequestAttrs(r, q)...)...)
+	u := *r.URL
+	if u.RawQuery != "" {
+		u.RawQuery += "&"
+	}
+	u.RawQuery += "PlaySessionId=" + url.QueryEscape(found)
+	r = r.WithContext(ctx)
+	r.URL = &u
+	return r, true
+}
+
+// streamRequestAttrs describes how a stream request identifies itself, for
+// debug logs: the names of its query parameters and auth headers (never
+// their values), the token's source, the client and the user agent.
+func streamRequestAttrs(r *http.Request, q jfapi.Query) []any {
+	var headers []string
+	for _, h := range []string{"Authorization", "X-Emby-Authorization", "X-Emby-Token", "X-MediaBrowser-Token"} {
+		if r.Header.Get(h) != "" {
+			headers = append(headers, h)
+		}
+	}
+	info := jfapi.AuthFrom(r.Context())
+	return []any{"tokenSource", info.TokenSource, "client", info.Client, "query", q.Keys(), "authHeaders", headers, "userAgent", r.UserAgent()}
 }
 
 // attach adds bytes (and what the stream served) to the play it belongs to.

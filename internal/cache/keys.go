@@ -103,6 +103,14 @@ func QueryKey(kind string, gen int64, hash string) Key {
 // PlaySessionKey holds the decisions PlaybackInfo made for a play session.
 func PlaySessionKey(playSessionID string) Key { return Key("play:" + playSessionID) }
 
+// ItemPlaysKey is the set of users with a recent play session of an item
+// (ItemPlayKey holds each one's latest), so a stream request that names no
+// play session and carries no token (Infuse) can still be attributed.
+func ItemPlaysKey(itemID string) Key { return Key("playitem:" + itemID) }
+
+// ItemPlayKey holds a user's latest play session of an item.
+func ItemPlayKey(itemID, userID string) Key { return Key("playitem:" + itemID + ":" + userID) }
+
 // TranscodeLockKey guards one transcode session across instances.
 func TranscodeLockKey(playSessionID string) Key { return Key("lock:transcode:" + playSessionID) }
 
