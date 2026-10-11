@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/redis/go-redis/v9"
+
+	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/testutil"
 )
 
@@ -222,6 +225,20 @@ func TestStreams(t *testing.T) {
 	}
 	if hits.Load() != before+1 {
 		t.Errorf("empty result refetched: %d", hits.Load()-before)
+	}
+	// ...but only briefly, so one empty answer doesn't hide the title.
+	opt, err := redis.ParseURL(os.Getenv("BLOCKBUSTR_TEST_REDIS_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rdb := redis.NewClient(opt)
+	defer rdb.Close()
+	ttls := map[string]time.Duration{"tt0000001": cache.StremioNoneTTL, "tt0133093": cache.StremioStreamsTTL}
+	for id, want := range ttls {
+		got, err := rdb.TTL(t.Context(), c.Cache.Prefix()+string(cache.StremioStreamsKey(AddonKey(base), "movie", id))).Result()
+		if err != nil || got <= 0 || got > want || got < want-time.Minute {
+			t.Errorf("%s ttl %v (%v), want about %v", id, got, err, want)
+		}
 	}
 
 	if (Stream{ExternalURL: "https://x"}).Playable() || (Stream{YtID: "abc"}).Playable() {

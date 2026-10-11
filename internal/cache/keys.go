@@ -19,6 +19,7 @@ const (
 	LinkTTL           = 4 * time.Hour
 	ProbeTTL          = 30 * 24 * time.Hour
 	StremioStreamsTTL = 30 * time.Minute
+	StremioNoneTTL    = 2 * time.Minute // an addon's "no streams": often a cold lookup that timed out upstream
 	StremioMetaTTL    = 24 * time.Hour
 	StremioSubsTTL    = 6 * time.Hour
 	QueryTTL          = 5 * time.Minute // cached query results (q:*), retired by events

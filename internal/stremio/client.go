@@ -41,7 +41,7 @@ type Client struct {
 	HTTP *http.Client
 	// Timeout bounds each request; 0 means DefaultTimeout.
 	Timeout time.Duration
-	// Cache keeps streams (30 min) and metas (24 h); nil disables caching.
+	// Cache keeps streams (30 min, 2 min when there are none) and metas (24 h); nil disables caching.
 	Cache *cache.Cache
 	// UserAgent is sent with every request; "" means "blockbustr".
 	UserAgent string
@@ -162,10 +162,14 @@ func (c *Client) Streams(ctx context.Context, base, typ, id string) ([]Stream, e
 	for i := range out.Streams {
 		out.Streams[i].InfoHash = strings.ToLower(out.Streams[i].InfoHash)
 	}
-	if out.Streams == nil {
-		out.Streams = []Stream{} // cache "none" too
+	ttl := cache.StremioStreamsTTL
+	if len(out.Streams) == 0 {
+		// "None" is cached too, briefly: aggregators such as AIOStreams
+		// answer a title they haven't looked up yet with nothing when their
+		// services are slow, and a long-held "none" hid it for half an hour.
+		out.Streams, ttl = []Stream{}, cache.StremioNoneTTL
 	}
-	c.store(ctx, key, out.Streams, cache.StremioStreamsTTL)
+	c.store(ctx, key, out.Streams, ttl)
 	return out.Streams, nil
 }
 
