@@ -311,6 +311,12 @@ func (a *api) logPlaybackInfo(r *http.Request, p media.DeviceProfile, maxBitrate
 			conds = append(conds, cp.Codec+":"+c.Property+" "+c.Condition+" "+c.Value)
 		}
 	}
+	var dps []string
+	for _, dp := range p.DirectPlayProfiles {
+		if strings.EqualFold(dp.Type, "Video") {
+			dps = append(dps, dp.Container+" v="+dp.VideoCodec+" a="+dp.AudioCodec)
+		}
+	}
 	var tps []string
 	for _, tp := range p.TranscodingProfiles {
 		if strings.EqualFold(tp.Type, "Video") {
@@ -318,13 +324,16 @@ func (a *api) logPlaybackInfo(r *http.Request, p media.DeviceProfile, maxBitrate
 		}
 	}
 	a.Log.DebugContext(ctx, "playback info profile", "client", p.Name, "max_streaming_bitrate", p.MaxStreamingBitrate,
-		"request_max_bitrate", maxBitrate, "max_height", session.MaxHeight, "video_conditions", conds, "transcoding_profiles", tps)
+		"request_max_bitrate", maxBitrate, "max_height", session.MaxHeight, "video_conditions", conds, "direct_play_profiles", dps, "transcoding_profiles", tps)
 	for _, ms := range out {
 		attrs := []any{"source", deref(ms.Id), "container", deref(ms.Container),
 			"direct_play", deref(ms.SupportsDirectPlay), "direct_stream", deref(ms.SupportsDirectStream),
 			"transcoding", deref(ms.SupportsTranscoding)}
 		if ms.Bitrate != nil {
 			attrs = append(attrs, "bitrate", *ms.Bitrate)
+		}
+		if au := playedAudio(ms); au != nil {
+			attrs = append(attrs, "audio", strings.TrimSpace(deref(au.Codec)+" "+deref(au.Profile)), "audio_channels", deref(au.Channels))
 		}
 		if ms.TranscodingUrl != nil {
 			path, _, _ := strings.Cut(*ms.TranscodingUrl, "?")
@@ -340,6 +349,23 @@ func (a *api) logPlaybackInfo(r *http.Request, p media.DeviceProfile, maxBitrate
 		}
 		a.Log.DebugContext(ctx, "playback info source", attrs...)
 	}
+}
+
+// playedAudio is the source's default audio stream (else its first).
+func playedAudio(ms dto.MediaSourceInfo) *dto.MediaStream {
+	var first *dto.MediaStream
+	for _, st := range deref(ms.MediaStreams) {
+		if deref(st.Type) != dto.MediaStreamTypeAudio {
+			continue
+		}
+		if ms.DefaultAudioStreamIndex != nil && deref(st.Index) == *ms.DefaultAudioStreamIndex {
+			return &st
+		}
+		if first == nil {
+			first = &st
+		}
+	}
+	return first
 }
 
 // offerStreams picks a catalog item's streams for this client (DESIGN
