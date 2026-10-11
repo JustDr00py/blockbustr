@@ -46,6 +46,27 @@ type hlsInputEntry struct {
 
 	mu  sync.Mutex
 	url string // the link now in use
+	row int64  // the play's log row (0: not logged)
+}
+
+func (e *hlsInputEntry) logRow() int64 {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.row
+}
+
+// setHLSInputRow says which log row a play session's input bytes go on: a
+// merged play session has none of its own.
+func (a *api) setHLSInputRow(playSession string, row int64) {
+	h := &a.hlsIn
+	h.mu.Lock()
+	e := h.bySession[playSession]
+	h.mu.Unlock()
+	if e != nil {
+		e.mu.Lock()
+		e.row = row
+		e.mu.Unlock()
+	}
 }
 
 func (e *hlsInputEntry) link() string {
@@ -164,7 +185,7 @@ func (a *api) serveHLSInput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ps, _ := a.loadPlaySession(ctx, e.playSession)
-	cw := &countingWriter{w: w, a: a, ctx: ctx, sl: streamLog{playSession: e.playSession, owner: ps.UserID}, last: time.Now()}
+	cw := &countingWriter{w: w, a: a, ctx: ctx, sl: streamLog{row: e.logRow(), owner: ps.UserID}, last: time.Now()}
 	metrics.ActiveProxies.Inc()
 	_, _ = io.Copy(cw, resp.Body) // ends when ffmpeg hangs up
 	metrics.ActiveProxies.Dec()

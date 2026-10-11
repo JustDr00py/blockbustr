@@ -240,6 +240,7 @@ type PlaybackLog struct {
 	StartedAt     time.Time
 	LastSeenAt    time.Time
 	StoppedAt     *time.Time
+	DeviceID      string
 }
 
 type ProxiedBytesHourly struct {

@@ -26,7 +26,9 @@ import (
 // report starts a row and Progress/Stopped keep it current (applyPlayback);
 // a stream request adds what it served, meeting the report on the play
 // session id. Stream requests without a play session (Findroid builds its
-// own URL) can't be told apart by user and aren't logged.
+// own URL) can't be told apart by user and aren't logged. A new play
+// session of a play still going on the same device (Void asks again on
+// every track change) joins that play's row (logPlayback).
 //
 // GET /blockbustr/playback?userId=&before=<id>&limit=<n>&days=<n> returns
 // the newest plays before the id and each user's totals over the days.
@@ -54,10 +56,25 @@ func hlsDelivery(o transcode.StartOptions) string {
 	return deliveryTranscoded
 }
 
+// logPlayback updates the device's running play of the item
+// (MergePlayback), or else starts or updates the play session's row, and
+// returns the row's id.
+func (a *api) logPlayback(ctx context.Context, p db.UpsertPlaybackParams) (int64, error) {
+	id, err := a.Queries.MergePlayback(ctx, db.MergePlaybackParams{
+		DeviceName: p.DeviceName, Client: p.Client, PlayMethod: p.PlayMethod, SourceName: p.SourceName,
+		Addon: p.Addon, Delivery: p.Delivery, LinkHost: p.LinkHost, Reopen: p.Reopen,
+		UserID: &p.UserID, ItemID: p.ItemID, DeviceID: p.DeviceID, PlaySessionID: p.PlaySessionID,
+	})
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return id, err
+	}
+	return a.Queries.UpsertPlayback(ctx, p)
+}
+
 // logPlayStart starts the play's row; 0 when it isn't logged.
 func (a *api) logPlayStart(ctx context.Context, s auth.Session, rep playReport) int64 {
-	id, err := a.Queries.UpsertPlayback(ctx, db.UpsertPlaybackParams{
-		UserID: s.UserID, DeviceName: s.DeviceName, Client: s.AppName, ItemID: rep.ItemID,
+	id, err := a.logPlayback(ctx, db.UpsertPlaybackParams{
+		UserID: s.UserID, DeviceID: s.DeviceID, DeviceName: s.DeviceName, Client: s.AppName, ItemID: rep.ItemID,
 		PlaySessionID: nonEmpty(rep.PlaySessionID), PlayMethod: rep.PlayMethod, Reopen: true,
 	})
 	if err != nil {
@@ -84,12 +101,12 @@ func (a *api) logPlayProgress(ctx context.Context, id int64, rep playReport, pos
 	}
 }
 
-// streamLog says where a stream's proxied bytes are logged: on the row of
-// its play session, or, when the request names none (Streamyfin's direct
-// play sends no PlaySessionId), on the latest play of the item by the user
-// its token names. The zero value logs nothing.
+// streamLog says where a stream's proxied bytes are logged: on the row its
+// play session was logged on, or, when the request names none (Streamyfin's
+// direct play sends no PlaySessionId), on the latest play of the item by
+// the user its token names. The zero value logs nothing.
 type streamLog struct {
-	playSession string
+	row int64 // the play's row (0: none)
 	// owner is whose monthly data quota the bytes count against, whether
 	// or not a logged play claims them (a download doesn't).
 	owner      uuid.UUID
@@ -119,7 +136,7 @@ func (a *api) logStream(r *http.Request, it db.Item, src db.MediaSource, deliver
 	id := jfapi.QueryOf(r).Get("PlaySessionId")
 	if ps, ok := a.loadPlaySession(ctx, id); ok && ps.UserID != uuid.Nil {
 		p := db.UpsertPlaybackParams{
-			UserID: ps.UserID, ItemID: it.ID, PlaySessionID: &id, SourceName: src.Name, Delivery: delivery,
+			UserID: ps.UserID, DeviceID: ps.DeviceID, ItemID: it.ID, PlaySessionID: &id, SourceName: src.Name, Delivery: delivery,
 			LinkHost: host, Addon: addon,
 		}
 		// The device, from its session (stream requests carry no token).
@@ -129,13 +146,14 @@ func (a *api) logStream(r *http.Request, it db.Item, src db.MediaSource, deliver
 				p.DeviceName, p.Client = cs.DeviceName, cs.Client
 			}
 		}
-		if _, err := a.Queries.UpsertPlayback(ctx, p); err != nil {
+		row, err := a.logPlayback(ctx, p)
+		if err != nil {
 			if !errors.Is(err, pgx.ErrNoRows) {
 				a.Log.WarnContext(ctx, "playback log failed", "item", it.ID, "err", err)
 			}
 			return streamLog{owner: ps.UserID}
 		}
-		return streamLog{playSession: id, owner: ps.UserID}
+		return streamLog{row: row, owner: ps.UserID}
 	}
 	// No play session: the request's token, if it has one, names the user.
 	sess, err := a.Auth.Resolve(ctx, jfapi.AuthFrom(ctx).Token)
@@ -202,10 +220,10 @@ func (c *countingWriter) flush() {
 			c.a.Log.WarnContext(ctx, "counting a user's bytes failed", "user", c.sl.owner, "err", err)
 		}
 	}
-	if c.pending == 0 || (c.sl.playSession == "" && c.sl.user == uuid.Nil) {
+	if c.pending == 0 || (c.sl.row == 0 && c.sl.user == uuid.Nil) {
 		return
 	}
-	if c.sl.playSession == "" {
+	if c.sl.row == 0 {
 		// Without a play session the row may not exist until the player's
 		// Playing report arrives: keep the bytes until it does.
 		if c.sl.attach(ctx, c.a, c.pending) {
@@ -215,8 +233,8 @@ func (c *countingWriter) flush() {
 	}
 	n := c.pending
 	c.pending = 0
-	if err := c.a.Queries.AddPlaybackBytes(ctx, db.AddPlaybackBytesParams{Bytes: n, PlaySessionID: &c.sl.playSession}); err != nil {
-		c.a.Log.WarnContext(ctx, "playback log failed", "playSession", c.sl.playSession, "err", err)
+	if err := c.a.Queries.AddPlaybackBytes(ctx, db.AddPlaybackBytesParams{Bytes: n, ID: c.sl.row}); err != nil {
+		c.a.Log.WarnContext(ctx, "playback log failed", "row", c.sl.row, "err", err)
 	}
 }
 

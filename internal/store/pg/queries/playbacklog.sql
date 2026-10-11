@@ -4,9 +4,9 @@
 -- replace stored ones, so the report adds the device and play method and
 -- the stream request what was played and how. reopen (a Playing report)
 -- clears an earlier stop. No row when the item or user doesn't exist.
-INSERT INTO playback_log (user_id, user_name, device_name, client, item_id, item_name, runtime_ticks,
+INSERT INTO playback_log (user_id, user_name, device_id, device_name, client, item_id, item_name, runtime_ticks,
                           play_session_id, play_method, source_name, addon, delivery, link_host)
-SELECT u.id, u.name, @device_name, @client, i.id,
+SELECT u.id, u.name, @device_id, @device_name, @client, i.id,
        CASE WHEN i.type = 'Episode' THEN
               coalesce(CASE WHEN p.type = 'Series' THEN p.name WHEN g.type = 'Series' THEN g.name END || ' ', '')
               || 'S' || lpad(coalesce(i.parent_index_number, 0)::text, 2, '0')
@@ -19,7 +19,8 @@ LEFT JOIN items p ON p.id = i.parent_id
 LEFT JOIN items g ON g.id = p.parent_id
 WHERE i.id = @item_id
 ON CONFLICT (play_session_id) WHERE play_session_id IS NOT NULL DO UPDATE
-SET device_name  = coalesce(nullif(EXCLUDED.device_name, ''), playback_log.device_name),
+SET device_id    = coalesce(nullif(EXCLUDED.device_id, ''), playback_log.device_id),
+    device_name  = coalesce(nullif(EXCLUDED.device_name, ''), playback_log.device_name),
     client       = coalesce(nullif(EXCLUDED.client, ''), playback_log.client),
     play_method  = coalesce(nullif(EXCLUDED.play_method, ''), playback_log.play_method),
     source_name  = coalesce(nullif(EXCLUDED.source_name, ''), playback_log.source_name),
@@ -28,6 +29,35 @@ SET device_name  = coalesce(nullif(EXCLUDED.device_name, ''), playback_log.devic
     link_host    = coalesce(nullif(EXCLUDED.link_host, ''), playback_log.link_host),
     last_seen_at = now(),
     stopped_at   = CASE WHEN @reopen::boolean THEN NULL ELSE playback_log.stopped_at END
+RETURNING id;
+
+-- name: MergePlayback :one
+-- A new play session of a play that is still going: clients ask again
+-- (Void on every track change) and get a new play session id. The newest
+-- play of the item on the same device, started in the last 12 hours and
+-- still reporting or stopped in the last two minutes (as for
+-- AttachPlaybackStream), takes the update and keeps its own play session
+-- id. No row: nothing to merge into (or the session already has its row),
+-- so UpsertPlayback starts one. An empty device id never merges.
+UPDATE playback_log
+SET device_name  = coalesce(nullif(@device_name::text, ''), playback_log.device_name),
+    client       = coalesce(nullif(@client::text, ''), playback_log.client),
+    play_method  = coalesce(nullif(@play_method::text, ''), playback_log.play_method),
+    source_name  = coalesce(nullif(@source_name::text, ''), playback_log.source_name),
+    addon        = coalesce(nullif(@addon::text, ''), playback_log.addon),
+    delivery     = coalesce(nullif(@delivery::text, ''), playback_log.delivery),
+    link_host    = coalesce(nullif(@link_host::text, ''), playback_log.link_host),
+    last_seen_at = now(),
+    stopped_at   = CASE WHEN @reopen::boolean THEN NULL ELSE playback_log.stopped_at END
+WHERE playback_log.id = (
+  SELECT p.id FROM playback_log p
+  WHERE p.user_id = @user_id AND p.item_id = @item_id
+    AND @device_id::text <> '' AND p.device_id = @device_id::text
+    AND p.started_at > now() - interval '12 hours'
+    AND (p.stopped_at IS NULL OR p.stopped_at > now() - interval '2 minutes')
+    AND NOT EXISTS (SELECT 1 FROM playback_log s WHERE s.play_session_id = sqlc.narg('play_session_id')::text)
+  ORDER BY p.last_seen_at DESC, p.id DESC
+  LIMIT 1)
 RETURNING id;
 
 -- name: UpdatePlaybackProgress :exec
@@ -40,10 +70,10 @@ SET position_ticks = @position_ticks,
 WHERE id = @id;
 
 -- name: AddPlaybackBytes :exec
--- Bytes blockbustr proxied for a play session's stream.
+-- Bytes blockbustr proxied for a logged play's stream.
 UPDATE playback_log
 SET bytes = bytes + @bytes, last_seen_at = now()
-WHERE play_session_id = @play_session_id;
+WHERE id = @id;
 
 -- name: AttachPlaybackStream :one
 -- What a stream request without a play session id served (Streamyfin's

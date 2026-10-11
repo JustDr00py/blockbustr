@@ -15,17 +15,17 @@ import (
 const addPlaybackBytes = `-- name: AddPlaybackBytes :exec
 UPDATE playback_log
 SET bytes = bytes + $1, last_seen_at = now()
-WHERE play_session_id = $2
+WHERE id = $2
 `
 
 type AddPlaybackBytesParams struct {
-	Bytes         int64
-	PlaySessionID *string
+	Bytes int64
+	ID    int64
 }
 
-// Bytes blockbustr proxied for a play session's stream.
+// Bytes blockbustr proxied for a logged play's stream.
 func (q *Queries) AddPlaybackBytes(ctx context.Context, arg AddPlaybackBytesParams) error {
-	_, err := q.db.Exec(ctx, addPlaybackBytes, arg.Bytes, arg.PlaySessionID)
+	_, err := q.db.Exec(ctx, addPlaybackBytes, arg.Bytes, arg.ID)
 	return err
 }
 
@@ -155,6 +155,71 @@ func (q *Queries) ListPlaybackLog(ctx context.Context, arg ListPlaybackLogParams
 	return items, nil
 }
 
+const mergePlayback = `-- name: MergePlayback :one
+UPDATE playback_log
+SET device_name  = coalesce(nullif($1::text, ''), playback_log.device_name),
+    client       = coalesce(nullif($2::text, ''), playback_log.client),
+    play_method  = coalesce(nullif($3::text, ''), playback_log.play_method),
+    source_name  = coalesce(nullif($4::text, ''), playback_log.source_name),
+    addon        = coalesce(nullif($5::text, ''), playback_log.addon),
+    delivery     = coalesce(nullif($6::text, ''), playback_log.delivery),
+    link_host    = coalesce(nullif($7::text, ''), playback_log.link_host),
+    last_seen_at = now(),
+    stopped_at   = CASE WHEN $8::boolean THEN NULL ELSE playback_log.stopped_at END
+WHERE playback_log.id = (
+  SELECT p.id FROM playback_log p
+  WHERE p.user_id = $9 AND p.item_id = $10
+    AND $11::text <> '' AND p.device_id = $11::text
+    AND p.started_at > now() - interval '12 hours'
+    AND (p.stopped_at IS NULL OR p.stopped_at > now() - interval '2 minutes')
+    AND NOT EXISTS (SELECT 1 FROM playback_log s WHERE s.play_session_id = $12::text)
+  ORDER BY p.last_seen_at DESC, p.id DESC
+  LIMIT 1)
+RETURNING id
+`
+
+type MergePlaybackParams struct {
+	DeviceName    string
+	Client        string
+	PlayMethod    string
+	SourceName    string
+	Addon         string
+	Delivery      string
+	LinkHost      string
+	Reopen        bool
+	UserID        *uuid.UUID
+	ItemID        uuid.UUID
+	DeviceID      string
+	PlaySessionID *string
+}
+
+// A new play session of a play that is still going: clients ask again
+// (Void on every track change) and get a new play session id. The newest
+// play of the item on the same device, started in the last 12 hours and
+// still reporting or stopped in the last two minutes (as for
+// AttachPlaybackStream), takes the update and keeps its own play session
+// id. No row: nothing to merge into (or the session already has its row),
+// so UpsertPlayback starts one. An empty device id never merges.
+func (q *Queries) MergePlayback(ctx context.Context, arg MergePlaybackParams) (int64, error) {
+	row := q.db.QueryRow(ctx, mergePlayback,
+		arg.DeviceName,
+		arg.Client,
+		arg.PlayMethod,
+		arg.SourceName,
+		arg.Addon,
+		arg.Delivery,
+		arg.LinkHost,
+		arg.Reopen,
+		arg.UserID,
+		arg.ItemID,
+		arg.DeviceID,
+		arg.PlaySessionID,
+	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const playbackTotals = `-- name: PlaybackTotals :many
 SELECT user_id, user_name,
        count(*)::bigint AS plays,
@@ -245,22 +310,23 @@ func (q *Queries) UpdatePlaybackProgress(ctx context.Context, arg UpdatePlayback
 }
 
 const upsertPlayback = `-- name: UpsertPlayback :one
-INSERT INTO playback_log (user_id, user_name, device_name, client, item_id, item_name, runtime_ticks,
+INSERT INTO playback_log (user_id, user_name, device_id, device_name, client, item_id, item_name, runtime_ticks,
                           play_session_id, play_method, source_name, addon, delivery, link_host)
-SELECT u.id, u.name, $1, $2, i.id,
+SELECT u.id, u.name, $1, $2, $3, i.id,
        CASE WHEN i.type = 'Episode' THEN
               coalesce(CASE WHEN p.type = 'Series' THEN p.name WHEN g.type = 'Series' THEN g.name END || ' ', '')
               || 'S' || lpad(coalesce(i.parent_index_number, 0)::text, 2, '0')
               || 'E' || lpad(coalesce(i.index_number, 0)::text, 2, '0') || ' · ' || i.name
             ELSE i.name || coalesce(' (' || i.production_year || ')', '') END,
-       i.runtime_ticks, $3, $4, $5, $6, $7, $8
+       i.runtime_ticks, $4, $5, $6, $7, $8, $9
 FROM items i
-JOIN users u ON u.id = $9
+JOIN users u ON u.id = $10
 LEFT JOIN items p ON p.id = i.parent_id
 LEFT JOIN items g ON g.id = p.parent_id
-WHERE i.id = $10
+WHERE i.id = $11
 ON CONFLICT (play_session_id) WHERE play_session_id IS NOT NULL DO UPDATE
-SET device_name  = coalesce(nullif(EXCLUDED.device_name, ''), playback_log.device_name),
+SET device_id    = coalesce(nullif(EXCLUDED.device_id, ''), playback_log.device_id),
+    device_name  = coalesce(nullif(EXCLUDED.device_name, ''), playback_log.device_name),
     client       = coalesce(nullif(EXCLUDED.client, ''), playback_log.client),
     play_method  = coalesce(nullif(EXCLUDED.play_method, ''), playback_log.play_method),
     source_name  = coalesce(nullif(EXCLUDED.source_name, ''), playback_log.source_name),
@@ -268,11 +334,12 @@ SET device_name  = coalesce(nullif(EXCLUDED.device_name, ''), playback_log.devic
     delivery     = coalesce(nullif(EXCLUDED.delivery, ''), playback_log.delivery),
     link_host    = coalesce(nullif(EXCLUDED.link_host, ''), playback_log.link_host),
     last_seen_at = now(),
-    stopped_at   = CASE WHEN $11::boolean THEN NULL ELSE playback_log.stopped_at END
+    stopped_at   = CASE WHEN $12::boolean THEN NULL ELSE playback_log.stopped_at END
 RETURNING id
 `
 
 type UpsertPlaybackParams struct {
+	DeviceID      string
 	DeviceName    string
 	Client        string
 	PlaySessionID *string
@@ -293,6 +360,7 @@ type UpsertPlaybackParams struct {
 // clears an earlier stop. No row when the item or user doesn't exist.
 func (q *Queries) UpsertPlayback(ctx context.Context, arg UpsertPlaybackParams) (int64, error) {
 	row := q.db.QueryRow(ctx, upsertPlayback,
+		arg.DeviceID,
 		arg.DeviceName,
 		arg.Client,
 		arg.PlaySessionID,

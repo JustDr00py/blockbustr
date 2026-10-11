@@ -488,7 +488,8 @@ func (a *api) sessionFor(r *http.Request, j hlsJob, n int, owner string) (*trans
 	o.StartSegment = n
 	// Logged first: ffmpeg's input bytes are added to the play's row as they
 	// arrive, so the row has to be there.
-	a.logStream(r, j.item, j.src, hlsDelivery(o), a.hlsUpstream(j.playSession))
+	sl := a.logStream(r, j.item, j.src, hlsDelivery(o), a.hlsUpstream(j.playSession))
+	a.setHLSInputRow(j.playSession, sl.row)
 	return t.Sessions.Start(r.Context(), j.playSession, o, hlsStartTimeout)
 }
 
