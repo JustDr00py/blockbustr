@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -221,8 +222,11 @@ func mediaStreamRow(st media.Stream) db.MediaStream {
 
 // applyProbes gives the sources of probed choices their container,
 // bitrate, runtime and tracks (ahead of the addon subtitles), with the
-// preferred language's audio as the default.
+// preferred language's audio as the default. Sources whose file starts in
+// another language go last, keeping their order: a proxied direct play
+// plays the file's own default tracks, whatever the menu says.
 func applyProbes(sources []db.MediaSource, streams map[uuid.UUID][]db.MediaStream, probes map[uuid.UUID]choiceProbe, lang string) {
+	foreign := map[uuid.UUID]bool{}
 	for i := range sources {
 		p, ok := probes[sources[i].ID]
 		if !ok {
@@ -243,14 +247,51 @@ func applyProbes(sources []db.MediaSource, streams map[uuid.UUID][]db.MediaStrea
 			st.MediaSourceID = src.ID
 			own[j] = st
 		}
+		if start := startingAudio(own); lang != "" && start != "" && start != "und" && start != lang {
+			foreign[src.ID] = true
+		}
 		preferAudio(own, lang)
 		streams[src.ID] = append(own, streams[src.ID]...)
 	}
+	if len(foreign) > 0 {
+		slices.SortStableFunc(sources, func(a, b db.MediaSource) int {
+			switch fa, fb := foreign[a.ID], foreign[b.ID]; {
+			case fa == fb:
+				return 0
+			case fa:
+				return 1
+			}
+			return -1
+		})
+	}
+}
+
+// startingAudio is the language (ISO 639-2) of the audio track a player
+// starts with: the first flagged default, else the first; "" when unknown.
+func startingAudio(streams []db.MediaStream) string {
+	first := -1
+	for i, st := range streams {
+		if st.Type != "Audio" {
+			continue
+		}
+		if st.IsDefault {
+			first = i
+			break
+		}
+		if first < 0 {
+			first = i
+		}
+	}
+	if first < 0 || streams[first].Language == nil {
+		return ""
+	}
+	return subtitleLanguage(*streams[first].Language)
 }
 
 // preferAudio makes the first audio track in lang (ISO 639-2, "eng") the
 // default when there is one: a multi-audio release often starts with
-// another language.
+// another language. Subtitles then aren't default unless in lang (forced
+// French subtitles under English audio would be wrong); forced flags stay.
 func preferAudio(streams []db.MediaStream, lang string) {
 	if lang == "" {
 		return
@@ -266,8 +307,13 @@ func preferAudio(streams []db.MediaStream, lang string) {
 		return
 	}
 	for i := range streams {
-		if streams[i].Type == "Audio" {
+		switch streams[i].Type {
+		case "Audio":
 			streams[i].IsDefault = i == pick
+		case "Subtitle":
+			if l := streams[i].Language; l == nil || subtitleLanguage(*l) != lang {
+				streams[i].IsDefault = false
+			}
 		}
 	}
 }
