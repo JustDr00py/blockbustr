@@ -1392,3 +1392,47 @@ func TestEstimateBitrate(t *testing.T) {
 		}
 	}
 }
+
+// Moonfin asks for a version picked from the list as an item of its own
+// (stock Jellyfin's alternate versions are items): its id answers with the
+// title, and PlaybackInfo on it plays that version.
+func TestVersionIDAsItem(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("bytes")) }))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "AIOStreams", Stream: stremio.Stream{Name: "1080p", Title: "The Matrix 1080p x264 💾 1.5 GB", URL: cdn.URL + "/a.mkv"}},
+		{Addon: "AIOStreams", Stream: stremio.Stream{Name: "720p", Title: "The Matrix 720p x264 💾 900 MB", URL: cdn.URL + "/b.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs })
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
+	auth := `MediaBrowser Token="` + captureToken + `"`
+	rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", auth, `{}`)
+	var all playbackSources
+	if err := json.Unmarshal(rec.Body.Bytes(), &all); rec.Code != 200 || err != nil || len(all.MediaSources) != 2 {
+		t.Fatalf("PlaybackInfo: %d %v %s", rec.Code, err, rec.Body)
+	}
+	version := all.MediaSources[1].Id
+	if version == matrix.Id {
+		t.Fatalf("second version has the item's id %s", version)
+	}
+
+	rec = call(t, sf.h, "GET", "/Items/"+version, auth, "")
+	var item struct{ Id string }
+	if err := json.Unmarshal(rec.Body.Bytes(), &item); rec.Code != 200 || err != nil || item.Id != matrix.Id {
+		t.Fatalf("GET /Items/{version}: %d %v %s; want the title %s", rec.Code, err, rec.Body, matrix.Id)
+	}
+
+	rec = call(t, sf.h, "POST", "/Items/"+version+"/PlaybackInfo", auth, `{}`)
+	var got playbackSources
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); rec.Code != 200 || err != nil {
+		t.Fatalf("PlaybackInfo on the version: %d %v %s", rec.Code, err, rec.Body)
+	}
+	if len(got.MediaSources) != 1 || got.MediaSources[0].Id != version {
+		t.Errorf("PlaybackInfo on the version offered %+v; want just %s", got.MediaSources, version)
+	}
+
+	if rec := call(t, sf.h, "GET", "/Items/"+strings.ReplaceAll(uuid.NewString(), "-", ""), auth, ""); rec.Code != 404 {
+		t.Errorf("GET /Items/{unknown}: %d, want 404", rec.Code)
+	}
+}

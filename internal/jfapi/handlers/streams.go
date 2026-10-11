@@ -447,7 +447,24 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	if err := a.Cache.SetJSON(ctx, cache.StreamSetKey(it.ID.String()), streamSet{Choices: choices, Earlier: earlier, Subtitles: pick.Subtitles}, cache.StreamSetTTL); err != nil {
 		return streamSet{}, err
 	}
+	for _, c := range choices {
+		if err := a.Cache.SetJSON(ctx, cache.ChoiceItemKey(c.ID.String()), it.ID, cache.StreamSetTTL); err != nil {
+			return streamSet{}, err
+		}
+	}
 	return pick, nil
+}
+
+// choiceOwner is the item an addon stream choice id belongs to. Stock
+// Jellyfin keeps each alternate version as an item of its own, so clients
+// such as Moonfin ask for a version picked from the list by its id.
+func (a *api) choiceOwner(ctx context.Context, choice uuid.UUID) (uuid.UUID, bool) {
+	if a.Cache == nil {
+		return uuid.Nil, false
+	}
+	var owner uuid.UUID
+	ok, err := a.Cache.GetJSON(ctx, cache.ChoiceItemKey(choice.String()), &owner)
+	return owner, err == nil && ok
 }
 
 // maxAddonSubtitles bounds the subtitles offered per title.

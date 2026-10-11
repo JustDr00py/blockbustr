@@ -64,6 +64,10 @@ func StremioStreamsKey(addon, typ, id string) Key {
 // (DESIGN §7.3), so stream requests find the one a client picked.
 func StreamSetKey(item string) Key { return Key("streamset:" + item) }
 
+// ChoiceItemKey holds the item an addon stream choice belongs to, so a
+// client that asks for a version as an item of its own finds its title.
+func ChoiceItemKey(choice string) Key { return Key("choiceitem:" + choice) }
+
 // StremioSubtitlesKey caches an addon's subtitle list for one title.
 func StremioSubtitlesKey(addon, typ, id string) Key {
 	return Key("stremio:subs:" + addon + ":" + typ + ":" + id)

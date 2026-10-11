@@ -170,10 +170,14 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	it, found, err := a.visibleItem(r, user, id.UUID())
+	// A version's id plays that version of its title.
+	it, version, found, err := a.visibleItemOrVersion(r, user, id.UUID())
 	if err != nil {
 		a.internalError(w, r, err)
 		return
+	}
+	if version != uuid.Nil && (req.MediaSourceId == nil || *req.MediaSourceId == "") {
+		req.MediaSourceId = ptr(dto.IDFromUUID(version).String())
 	}
 	if !found || (it.Type != "Movie" && it.Type != "Episode") {
 		w.WriteHeader(http.StatusNotFound)

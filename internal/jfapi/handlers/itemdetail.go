@@ -51,6 +51,24 @@ func (a *api) visibleItem(r *http.Request, user, id uuid.UUID) (db.Item, bool, e
 	return res.Items[0], true, nil
 }
 
+// visibleItemOrVersion is visibleItem, or for the id of an addon version
+// (stream choice), the title it belongs to; version is then that id.
+func (a *api) visibleItemOrVersion(r *http.Request, user, id uuid.UUID) (it db.Item, version uuid.UUID, found bool, err error) {
+	it, found, err = a.visibleItem(r, user, id)
+	if err != nil || found {
+		return it, uuid.Nil, found, err
+	}
+	owner, ok := a.choiceOwner(r.Context(), id)
+	if !ok {
+		return db.Item{}, uuid.Nil, false, nil
+	}
+	it, found, err = a.visibleItem(r, user, owner)
+	if err != nil || !found {
+		return db.Item{}, uuid.Nil, false, err
+	}
+	return it, id, true, nil
+}
+
 // itemDetail is the full dto of any item, library folder or the root folder.
 func (a *api) itemDetail(r *http.Request, user uuid.UUID, it db.Item) (dto.BaseItemDto, error) {
 	if it.Type == "CollectionFolder" {
@@ -86,7 +104,9 @@ func (a *api) getItem(w http.ResponseWriter, r *http.Request, s auth.Session) {
 		jfapi.WriteJSON(w, r, http.StatusOK, a.rootFolderDto(user))
 		return
 	}
-	it, ok, err := a.visibleItem(r, user, id.UUID())
+	// A version's id (Moonfin, after a version is picked) answers with
+	// its title.
+	it, _, ok, err := a.visibleItemOrVersion(r, user, id.UUID())
 	switch {
 	case err != nil:
 		a.internalError(w, r, err)
