@@ -40,6 +40,7 @@ func newRemoteFixture(t *testing.T, d Deps, configure func(*Deps)) *remoteFixtur
 			w.WriteHeader(http.StatusGone)
 			return
 		}
+		w.Header().Set("Content-Type", "video/x-matroska") // a few bytes standing in for a video
 		http.ServeContent(w, r, "", f.modified, bytes.NewReader(f.content))
 	}))
 	f.origin = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

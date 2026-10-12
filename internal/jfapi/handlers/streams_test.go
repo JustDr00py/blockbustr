@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -22,6 +25,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/provider"
+	"github.com/sysadmin/blockbustr/internal/redact"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
 	"github.com/sysadmin/blockbustr/internal/stremio"
@@ -124,7 +128,7 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "video/x-matroska")
-		_, _ = w.Write([]byte("matroska bytes"))
+		serveVideo(w, "matroska bytes")
 	}))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
@@ -717,7 +721,7 @@ func TestCatalogStreamFallback(t *testing.T) {
 			w.WriteHeader(http.StatusUnavailableForLegalReasons)
 			return
 		}
-		_, _ = w.Write([]byte("matroska bytes"))
+		serveVideo(w, "matroska bytes")
 	}))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
@@ -781,7 +785,7 @@ func TestCatalogStreamFallsBack(t *testing.T) {
 			w.WriteHeader(http.StatusUnavailableForLegalReasons)
 			return
 		}
-		_, _ = w.Write([]byte("matroska bytes"))
+		serveVideo(w, "matroska bytes")
 	}))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
@@ -911,7 +915,7 @@ func (f *multiAudioProber) Probe(_ context.Context, target string, _ media.Optio
 // can switch audio) with the preferred language's audio as the default.
 // Choices still downloading and torrents aren't probed ahead of play.
 func TestChoiceProbes(t *testing.T) {
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { serveVideo(w, "x") }))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
 		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ FHD", Description: "iTA-ENG", URL: cdn.URL + "/ready.mkv", Hints: stremio.StreamHints{Filename: "The.Matrix.1999.iTA-ENG.1080p.mkv"}}},
@@ -996,7 +1000,7 @@ func (f targetProber) Probe(_ context.Context, target string, _ media.Options) (
 // 60 Mb/s, and the probe is what the offered order listens to.
 func TestPlaybackInfoPrefersDirectPlaySource(t *testing.T) {
 	// The CDN answers with the path asked for, so a stream shows which version it got.
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(r.URL.Path)) }))
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { serveVideo(w, r.URL.Path) }))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
 		{Addon: "Torrentio", Stream: stremio.Stream{Name: "4k", Title: "The.Matrix.1999.2160p.BluRay.x264-GRP", URL: cdn.URL + "/uhd.mkv"}},
@@ -1144,7 +1148,7 @@ func (p *slowProber) Probe(ctx context.Context, target string, o media.Options) 
 // slow probes running afterwards don't stop the next titles opened from
 // collecting (they once held both slots, so a third title got none).
 func TestDetailsCollectWhileProbing(t *testing.T) {
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { serveVideo(w, "x") }))
 	t.Cleanup(cdn.Close)
 	offers := map[string][]stremio.Offer{}
 	for _, id := range []string{"tt0133093", "tt0234215", "tt10838180"} {
@@ -1208,7 +1212,7 @@ func TestPlaySourcesUseEarlierChoiceProbes(t *testing.T) {
 func TestCatalogStreamRedirectHosts(t *testing.T) {
 	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "video/x-matroska")
-		_, _ = w.Write([]byte("matroska bytes"))
+		serveVideo(w, "matroska bytes")
 	}))
 	t.Cleanup(proxy.Close)
 	proxied := proxy.URL + "/proxy/stream?d=https%3A%2F%2Fcdn.example%2Fm.mkv&api_password=pw"
@@ -1256,7 +1260,7 @@ func TestCatalogStreamRedirectHosts(t *testing.T) {
 // and able to play, whichever device asks, even while another user's pick
 // keeps the 4K among the remembered versions; clearing it brings 4K back.
 func TestCatalogVersionsUserCapped(t *testing.T) {
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("bytes")) }))
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { serveVideo(w, "bytes") }))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
 		{Addon: "A", Stream: stremio.Stream{Name: "4k", URL: cdn.URL + "/4a.mkv"}},
@@ -1341,7 +1345,7 @@ func TestCatalogVersionsUserCapped(t *testing.T) {
 // stremio.streams.probe_versions bounds the versions probed ahead of play,
 // best first; a version the client picks is probed when it's asked for.
 func TestChoiceProbesLimited(t *testing.T) {
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("x")) }))
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { serveVideo(w, "x") }))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
 		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 4k", URL: cdn.URL + "/a.mkv"}},
@@ -1407,7 +1411,7 @@ func TestEstimateBitrate(t *testing.T) {
 // (stock Jellyfin's alternate versions are items): its id answers with the
 // title, and PlaybackInfo on it plays that version.
 func TestVersionIDAsItem(t *testing.T) {
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("bytes")) }))
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { serveVideo(w, "bytes") }))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
 		{Addon: "AIOStreams", Stream: stremio.Stream{Name: "1080p", Title: "The Matrix 1080p x264 💾 1.5 GB", URL: cdn.URL + "/a.mkv"}},
@@ -1444,5 +1448,155 @@ func TestVersionIDAsItem(t *testing.T) {
 
 	if rec := call(t, sf.h, "GET", "/Items/"+strings.ReplaceAll(uuid.NewString(), "-", ""), auth, ""); rec.Code != 404 {
 		t.Errorf("GET /Items/{unknown}: %d, want 404", rec.Code)
+	}
+}
+
+// serveVideo answers like a debrid CDN serving a video (the bytes stand in
+// for it): untyped, a few bytes would be sniffed as text and refused.
+func serveVideo(w http.ResponseWriter, body string) {
+	w.Header().Set("Content-Type", "video/x-matroska")
+	_, _ = w.Write([]byte(body))
+}
+
+// garbageProber finds no media in links whose path says garbage, as ffprobe
+// does in a web page or text file; the rest are a plain video.
+type garbageProber struct {
+	mu    sync.Mutex
+	calls map[string]int
+}
+
+func (f *garbageProber) Probe(_ context.Context, target string, _ media.Options) (*media.Info, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	u, _ := url.Parse(target)
+	f.calls[u.Path]++
+	if strings.Contains(target, "garbage") {
+		return nil, fmt.Errorf("ffprobe: exit status 1: %s: Invalid data found when processing input", target)
+	}
+	return &media.Info{Container: "matroska,webm", Streams: []media.Stream{{Index: 0, Type: media.StreamVideo, Codec: "h264"}}}, nil
+}
+
+func (f *garbageProber) total() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	n := 0
+	for _, c := range f.calls {
+		n += c
+	}
+	return n
+}
+
+// A choice whose link serves no video (production: TorBox served
+// "Downloaded from TPB.txt", 54 bytes of text/plain, probed three times in
+// 15 s) is marked bad: not offered again, nor probed again. One ffprobe
+// can't read is probed once more on a fresh link first.
+func TestChoiceServingNoVideo(t *testing.T) {
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/txt") {
+			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Range", "bytes 0-0/54")
+			w.WriteHeader(http.StatusPartialContent)
+			_, _ = w.Write([]byte("D"))
+			return
+		}
+		serveVideo(w, "x")
+	}))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 2160p", URL: cdn.URL + "/txt/Downloaded from TPB.txt?token=SECRET"}},
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 1080p", URL: cdn.URL + "/garbage.mkv"}},
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 720p", URL: cdn.URL + "/good.mkv"}},
+	}}}
+	pr := &garbageProber{calls: map[string]int{}}
+	var logs bytes.Buffer
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.ChoiceProber = pr
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+		d.Log = slog.New(redact.Handler(slog.NewTextHandler(&logs, nil)))
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
+	playback := func() []string {
+		t.Helper()
+		rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`)
+		var out struct{ MediaSources []struct{ Name string } }
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil || rec.Code != 200 {
+			t.Fatalf("PlaybackInfo: %d %v", rec.Code, err)
+		}
+		var names []string
+		for _, s := range out.MediaSources {
+			names = append(names, s.Name)
+		}
+		return names
+	}
+	playback()
+	// The probes PlaybackInfo started may outlive its wait.
+	for deadline := time.Now().Add(5 * time.Second); pr.total() < 3 && time.Now().Before(deadline); {
+		time.Sleep(10 * time.Millisecond)
+	}
+	pr.mu.Lock()
+	calls := maps.Clone(pr.calls)
+	pr.mu.Unlock()
+	if calls["/txt/Downloaded from TPB.txt"] != 0 || calls["/garbage.mkv"] != 2 || calls["/good.mkv"] != 1 {
+		t.Errorf("probes = %v, want the text file none (refused at resolve), the garbage twice (a fresh link), the good once", calls)
+	}
+	names := playback()
+	if len(names) != 1 || !strings.Contains(names[0], "720p") {
+		t.Errorf("offered after the probes: %q, want only the 720p", names)
+	}
+	before := pr.total()
+	playback()
+	if pr.total() != before {
+		t.Errorf("probed again: %d → %d", before, pr.total())
+	}
+	if strings.Contains(logs.String(), "SECRET") {
+		t.Errorf("token logged:\n%s", logs.String())
+	}
+}
+
+// A link that turns out to serve no video at play time (it changed since it
+// was resolved) isn't passed on: the client gets a 502, and the choice
+// isn't offered again.
+func TestStreamServingNoVideo(t *testing.T) {
+	var text atomic.Bool
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if text.Load() {
+			w.Header().Set("Content-Type", "text/html")
+			_, _ = w.Write([]byte("<html>gone</html>"))
+			return
+		}
+		serveVideo(w, "x")
+	}))
+	t.Cleanup(cdn.Close)
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 1080p", URL: cdn.URL + "/a.mkv"}},
+		{Addon: "AIO", Stream: stremio.Stream{Name: "⚡ 720p", URL: cdn.URL + "/b.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) {
+		d.Streams = fs
+		d.Resolver = &resolve.Resolver{Cache: d.Cache, Log: testutil.Discard()}
+	})
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
+	rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`)
+	var out struct{ MediaSources []struct{ Id, Name string } }
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil || len(out.MediaSources) != 2 {
+		t.Fatalf("PlaybackInfo: %d %s", rec.Code, rec.Body)
+	}
+	first := out.MediaSources[0]
+	stream := func() int {
+		return call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&mediaSourceId="+first.Id, `MediaBrowser Token="`+captureToken+`"`, "").Code
+	}
+	if code := stream(); code != 200 {
+		t.Fatalf("stream while it's a video: %d", code)
+	}
+	text.Store(true)
+	if code := stream(); code != http.StatusBadGateway {
+		t.Errorf("stream of a web page: %d, want 502", code)
+	}
+	rec = call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo", `MediaBrowser Token="`+captureToken+`"`, `{}`)
+	if strings.Contains(rec.Body.String(), first.Name) {
+		t.Errorf("%q still offered: %s", first.Name, rec.Body)
 	}
 }

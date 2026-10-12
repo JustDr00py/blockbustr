@@ -7,12 +7,14 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/provider"
 	"github.com/sysadmin/blockbustr/internal/testutil"
 )
@@ -33,7 +35,7 @@ func (f *fakeDebrid) FileLink(_ context.Context, torrentID, fileID string) (stri
 }
 
 // origin plays a jellybird or CDN: it redirects to /cdn, which answers a
-// 1-byte range of a 1000-byte file.
+// 1-byte range of a 1 GB file.
 func origin(t *testing.T) (*httptest.Server, *atomic.Int32) {
 	t.Helper()
 	var hits atomic.Int32
@@ -43,7 +45,7 @@ func origin(t *testing.T) (*httptest.Server, *atomic.Int32) {
 			http.Redirect(w, r, "/cdn/movie.mkv", http.StatusFound)
 			return
 		}
-		w.Header().Set("Content-Range", "bytes 0-0/1000")
+		w.Header().Set("Content-Range", "bytes 0-0/1000000000")
 		w.WriteHeader(http.StatusPartialContent)
 		_, _ = w.Write([]byte{0})
 	}))
@@ -127,7 +129,7 @@ func TestJellybirdTargetResolvedDirectly(t *testing.T) {
 		return "", time.Time{}, errors.New("realdebrid: HTTP 404 (code 7): unknown_ressource")
 	}
 	l, err = r.Resolve(t.Context(), FromURL(jb.URL+"/stream/realdebrid/OTHER/1?sig=s"))
-	if err != nil || l.URL != jb.URL+"/cdn/movie.mkv" || l.Size != 1000 {
+	if err != nil || l.URL != jb.URL+"/cdn/movie.mkv" || l.Size != 1_000_000_000 {
 		t.Errorf("fallback: %+v %v", l, err)
 	}
 }
@@ -136,7 +138,7 @@ func TestURLWithoutProviderIsFollowed(t *testing.T) {
 	jb, hits := origin(t)
 	r := &Resolver{} // no debrid account
 	l, err := r.Resolve(t.Context(), FromURL(jb.URL+"/stream/realdebrid/ABC/1?sig=s"))
-	if err != nil || l.URL != jb.URL+"/cdn/movie.mkv" || l.Size != 1000 || hits.Load() != 2 {
+	if err != nil || l.URL != jb.URL+"/cdn/movie.mkv" || l.Size != 1_000_000_000 || hits.Load() != 2 {
 		t.Errorf("%+v %v, hits %d", l, err, hits.Load())
 	}
 }
@@ -222,13 +224,13 @@ func TestUserAgent(t *testing.T) {
 			w.WriteHeader(http.StatusForbidden) // like Torrentio's Cloudflare
 			return
 		}
-		w.Header().Set("Content-Range", "bytes 0-0/10")
+		w.Header().Set("Content-Range", "bytes 0-0/5000000")
 		w.WriteHeader(http.StatusPartialContent)
 	}))
 	t.Cleanup(srv.Close)
 	r := &Resolver{}
 	l, err := r.Resolve(t.Context(), FromURL(srv.URL+"/resolve/x"))
-	if err != nil || l.Size != 10 {
+	if err != nil || l.Size != 5_000_000 {
 		t.Fatalf("Resolve = %+v, %v", l, err)
 	}
 	resp, err := r.Open(t.Context(), http.MethodGet, l.URL, http.Header{})
@@ -277,5 +279,85 @@ func TestPlaceholders(t *testing.T) {
 		if _, err := r.Resolve(t.Context(), src); !errors.Is(err, ErrPlaceholder) {
 			t.Errorf("Resolve: %v", err)
 		}
+	}
+}
+
+// A link serving a web page, JSON or a tiny file isn't a video: it fails
+// with ErrNotVideo and isn't cached (production: TorBox served "Downloaded
+// from TPB.txt", 54 bytes of text/plain). One whose size is unknown, a big
+// file labelled wrongly, or a small one labelled a video still plays.
+func TestNotVideo(t *testing.T) {
+	type answer struct {
+		ctype, body string
+		total       string // Content-Range total; "" sends a whole 200 instead
+	}
+	answers := map[string]answer{
+		"/txt":     {"text/plain", "Downloaded from TPB.txt -- visit us", "54"},
+		"/html":    {"text/html; charset=utf-8", "<html>error</html>", "5000000000"},
+		"/json":    {"application/json", `{"error":"expired"}`, ""},
+		"/tiny":    {"application/octet-stream", "x", "200"},
+		"/tinymp4": {"video/mp4", "x", "200"}, // the host says it's a video
+		"/chunked": {"application/octet-stream", "x", ""},
+		"/textbig": {"text/plain", "x", "5000000000"},
+		"/video":   {"video/x-matroska", "x", "5000000000"},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		a := answers[r.URL.Path]
+		w.Header().Set("Content-Type", a.ctype)
+		if a.total == "" {
+			if r.URL.Path == "/json" {
+				w.Header().Set("Content-Length", strconv.Itoa(len(a.body)))
+			}
+			w.(http.Flusher).Flush() // chunked: no length
+			_, _ = w.Write([]byte(a.body))
+			return
+		}
+		w.Header().Set("Content-Range", "bytes 0-0/"+a.total)
+		w.WriteHeader(http.StatusPartialContent)
+		_, _ = w.Write([]byte(a.body[:1]))
+	}))
+	t.Cleanup(srv.Close)
+	r := &Resolver{Cache: testutil.Cache(t)}
+	for p, bad := range map[string]bool{
+		"/txt": true, "/html": true, "/json": true, "/tiny": true,
+		"/chunked": false, "/textbig": false, "/video": false, "/tinymp4": false,
+	} {
+		src := FromURL(srv.URL + p)
+		_, err := r.Resolve(t.Context(), src)
+		if bad != errors.Is(err, ErrNotVideo) || !bad && err != nil {
+			t.Errorf("%s: err = %v, want not video %v", p, err, bad)
+		}
+		var l Link
+		if ok, _ := r.Cache.GetJSON(t.Context(), cache.LinkKey(src.key()), &l); ok == bad {
+			t.Errorf("%s: cached %v", p, ok)
+		}
+	}
+}
+
+// A debrid file's link is looked at before it's handed out; one that
+// doesn't answer still is, as before the check.
+func TestDebridLinkNotVideo(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Range", "bytes 0-0/54")
+		w.WriteHeader(http.StatusPartialContent)
+	}))
+	t.Cleanup(srv.Close)
+	down := httptest.NewServer(http.NotFoundHandler())
+	down.Close()
+	rd := &fakeDebrid{link: func(tid, fid string) (string, time.Time, error) {
+		if fid == "txt" {
+			return srv.URL + "/dl/Downloaded%20from%20TPB.txt?token=SECRET", time.Time{}, nil
+		}
+		return down.URL + "/dl/movie.mkv", time.Time{}, nil
+	}}
+	r := &Resolver{Providers: map[provider.Name]provider.Provider{provider.RealDebrid: rd}}
+	_, err := r.Resolve(t.Context(), Source{Kind: Debrid, Provider: provider.RealDebrid, TorrentID: "t", FileID: "txt"})
+	if !errors.Is(err, ErrNotVideo) || strings.Contains(err.Error(), "SECRET") {
+		t.Errorf("text file: %v", err)
+	}
+	l, err := r.Resolve(t.Context(), Source{Kind: Debrid, Provider: provider.RealDebrid, TorrentID: "t", FileID: "mkv"})
+	if err != nil || !l.Private {
+		t.Errorf("unreachable link: %+v, %v", l, err)
 	}
 }

@@ -400,7 +400,7 @@ func (a *api) offerStreams(r *http.Request, b *itemBatch, it db.Item, prefs stre
 	// Probe the ready choices (waiting a little): their tracks let the
 	// client switch audio, and start in the preferred language. The one
 	// the client asked for goes first, so a probe limit never skips it.
-	a.probeChoices(r.Context(), pickedFirst(choices, want), probeWait)
+	a.probeChoices(r.Context(), it.ID, pickedFirst(choices, want), probeWait)
 	rows, streams := choiceSources(it, choices, pick.Subtitles)
 	applyProbes(rows, streams, a.loadChoiceProbes(r.Context(), choices), a.preferredAudio())
 	for id, st := range streams {

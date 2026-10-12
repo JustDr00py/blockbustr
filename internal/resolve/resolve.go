@@ -15,6 +15,7 @@
 package resolve
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -22,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -188,6 +190,45 @@ func placeholder(l Link) error {
 	return fmt.Errorf("%w (%s)", ErrPlaceholder, m[1])
 }
 
+// ErrNotVideo is a link that serves something other than a video: a web
+// page, a JSON error, or a file too small to be one (a torrent's "Downloaded
+// from …txt" picked by an addon).
+var ErrNotVideo = errors.New("resolve: the link serves no video")
+
+// minLinkBytes is the smallest a link's file can be and be a video.
+const minLinkBytes = 1 << 20
+
+// notVideo reports whether resp, for a file of size bytes (0: unknown),
+// can't be a video: a web page or JSON, or a small file the host doesn't
+// call a video. A big file with the wrong type still plays.
+func notVideo(resp *http.Response, size int64) error {
+	mt, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	switch {
+	case mt == "text/html" || mt == "application/xhtml+xml" || mt == "application/json":
+		return fmt.Errorf("%w (%s)", ErrNotVideo, mt)
+	case size > 0 && size < minLinkBytes && !strings.HasPrefix(mt, "video/"):
+		return fmt.Errorf("%w (%d bytes of %s)", ErrNotVideo, size, cmp.Or(mt, "unknown type"))
+	}
+	return nil
+}
+
+// CheckVideo is ErrNotVideo when resp, a link's answer, can't be a video
+// (notVideo).
+func CheckVideo(resp *http.Response) error { return notVideo(resp, fileSize(resp)) }
+
+// fileSize is the size of the file resp is (part of): Content-Range's
+// total, else a whole answer's length; 0 when unknown.
+func fileSize(resp *http.Response) int64 {
+	if cr := resp.Header.Get("Content-Range"); cr != "" {
+		n, _ := strconv.ParseInt(cr[strings.LastIndex(cr, "/")+1:], 10, 64)
+		return n
+	}
+	if resp.StatusCode == http.StatusOK {
+		return max(resp.ContentLength, 0)
+	}
+	return 0
+}
+
 // UserAgent is sent when following and fetching links. Some addon hosts
 // (Torrentio's resolve URLs, behind Cloudflare) answer Go's default agent
 // with 403.
@@ -352,8 +393,12 @@ func (r *Resolver) resolve(ctx context.Context, src Source) (Link, time.Duration
 		}
 	}
 	l, err := r.follow(ctx, src.URL)
-	if err == nil {
-		err = placeholder(l)
+	if err == nil || errors.Is(err, ErrNotVideo) && l.URL != "" {
+		// An addon's notice video is small: say what it means (still
+		// downloading, blocked) rather than that it's no video.
+		if perr := placeholder(l); perr != nil {
+			err = perr
+		}
 	}
 	l.Private = err == nil && IsPrivate(l)
 	return l, cache.LinkTTL, err
@@ -370,8 +415,20 @@ func (r *Resolver) debrid(ctx context.Context, src Source) (Link, time.Duration,
 	if err != nil {
 		return Link{}, 0, fmt.Errorf("resolve: %s: %w", src.Provider, err)
 	}
+	// What the file is, before it's offered or played. Only a link that
+	// answers with no video fails: one that doesn't answer in time may
+	// still play, as before the check.
+	cctx, cancel := context.WithTimeout(ctx, checkTimeout)
+	_, err = r.follow(cctx, link)
+	cancel()
+	if errors.Is(err, ErrNotVideo) {
+		return Link{}, 0, fmt.Errorf("resolve: %s file %s: %w", src.Provider, src.FileID, err)
+	}
 	return Link{URL: link, Private: true}, linkTTL(expiry, time.Now()), nil
 }
+
+// checkTimeout bounds the look at a debrid link's file.
+const checkTimeout = 5 * time.Second
 
 func linkTTL(expiry, now time.Time) time.Duration {
 	if expiry.IsZero() {
@@ -400,10 +457,9 @@ func (r *Resolver) follow(ctx context.Context, target string) (Link, error) {
 		return l, fmt.Errorf("resolve: %s answered %s", resp.Request.URL.Host, resp.Status)
 	}
 	l.URL = resp.Request.URL.String()
-	if cr := resp.Header.Get("Content-Range"); cr != "" {
-		l.Size, _ = strconv.ParseInt(cr[strings.LastIndex(cr, "/")+1:], 10, 64)
-	} else if resp.StatusCode == http.StatusOK {
-		l.Size = max(resp.ContentLength, 0)
+	l.Size = fileSize(resp)
+	if err := notVideo(resp, l.Size); err != nil {
+		return l, err
 	}
 	return l, nil
 }

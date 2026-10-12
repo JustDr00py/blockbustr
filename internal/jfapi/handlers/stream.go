@@ -187,12 +187,21 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, s
 		return
 	}
 	resp, err := a.Resolver.Open(ctx, r.Method, link.URL, r.Header)
-	if err == nil && linkExpired(resp.StatusCode) {
+	if err == nil && (linkExpired(resp.StatusCode) || servesNoVideo(resp)) {
+		// Expired, or onto an error page: a fresh link may play.
 		_ = resp.Body.Close()
 		a.Resolver.Forget(ctx, target)
 		if link, err = a.Resolver.Resolve(ctx, target); err == nil {
 			resp, err = a.Resolver.Open(ctx, r.Method, link.URL, r.Header)
 		}
+	}
+	if err == nil && servesNoVideo(resp) {
+		_ = resp.Body.Close()
+		err = resolve.CheckVideo(resp)
+		a.Resolver.Forget(ctx, target)
+	}
+	if errors.Is(err, resolve.ErrNotVideo) && catalog {
+		a.markBadChoice(ctx, it.ID, src.ID) // not offered again
 	}
 	if err != nil {
 		a.Log.WarnContext(ctx, "remote stream failed", "item", src.ItemID, "err", err)
@@ -261,8 +270,8 @@ func (a *api) playLink(ctx context.Context, it db.Item, src db.MediaSource, sour
 				// It plays now (a torrent too, once added): probe its tracks
 				// for the next PlaybackInfo, in the background.
 				c := StreamChoice{ID: s.ID, Target: s.PathOrUrl, Ready: true}
-				if _, probed := a.loadChoiceProbes(ctx, []StreamChoice{c})[c.ID]; !probed && a.ChoiceProber != nil {
-					go a.probeChoice(context.WithoutCancel(ctx), c)
+				if _, probed := a.loadChoiceProbes(ctx, []StreamChoice{c})[c.ID]; !probed && a.ChoiceProber != nil && !a.probeFailed(ctx, c) {
+					go a.probeChoice(context.WithoutCancel(ctx), it.ID, c)
 				}
 			}
 			return s, target, link, nil
@@ -286,6 +295,12 @@ func (a *api) playLink(ctx context.Context, it db.Item, src db.MediaSource, sour
 		firstErr = fmt.Errorf("%w (and no other version plays now)", resolve.ErrDownloading)
 	}
 	return src, resolve.FromURL(src.PathOrUrl), resolve.Link{}, firstErr
+}
+
+// servesNoVideo reports whether resp, a link's answer, can't be a video (a
+// range past the end has no body to judge).
+func servesNoVideo(resp *http.Response) bool {
+	return resp.StatusCode < 300 && resolve.CheckVideo(resp) != nil
 }
 
 func (a *api) badChoices(ctx context.Context, item uuid.UUID) map[uuid.UUID]bool {

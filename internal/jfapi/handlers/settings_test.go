@@ -17,7 +17,7 @@ import (
 // hosts, which take an addon stream from proxied to redirected.
 func TestSettingsEndpoints(t *testing.T) {
 	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte("matroska bytes"))
+		serveVideo(w, "matroska bytes")
 	}))
 	t.Cleanup(proxy.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {

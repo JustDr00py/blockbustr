@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -42,6 +44,10 @@ const (
 	probeWait = 5 * time.Second
 	// probeTimeout bounds one probe (resolve + ffprobe).
 	probeTimeout = 45 * time.Second
+	// probeFailTTL is how long a choice whose probe failed isn't probed
+	// again: details and PlaybackInfo each probe, so a failure would
+	// otherwise be retried on every request.
+	probeFailTTL = 10 * time.Minute
 	// probeParallel bounds probes across all requests. Probes mostly wait
 	// on round trips (header reads through the addon's proxy), so many can
 	// run at once: a title's versions finish in about the slowest's time.
@@ -49,6 +55,21 @@ const (
 )
 
 func choiceProbeKey(id uuid.UUID) cache.Key { return cache.ProbeKey("choice:" + id.String()) }
+
+// choiceProbeFailKey marks a choice whose probe failed recently.
+func choiceProbeFailKey(id uuid.UUID) cache.Key {
+	return cache.ProbeKey("choicefail:" + id.String())
+}
+
+// probeFailed reports whether c's probe failed in the last probeFailTTL.
+func (a *api) probeFailed(ctx context.Context, c StreamChoice) bool {
+	if a.Cache == nil {
+		return false
+	}
+	var failed bool
+	ok, err := a.Cache.GetJSON(ctx, choiceProbeFailKey(c.ID), &failed)
+	return err == nil && ok
+}
 
 // loadChoiceProbes returns the cached probes of choices.
 func (a *api) loadChoiceProbes(ctx context.Context, choices []StreamChoice) map[uuid.UUID]choiceProbe {
@@ -65,13 +86,13 @@ func (a *api) loadChoiceProbes(ctx context.Context, choices []StreamChoice) map[
 	return out
 }
 
-// probeChoices probes the ready, unprobed choices in the background, the
+// probeChoices probes the ready, unprobed choices of item in the background, the
 // best-ranked first (it takes a slot first), and waits up to wait for them
 // (0: doesn't wait). Only the first stremio.streams.probe_versions ready
 // choices are probed (0: all), probed or not; callers put a choice the
 // client picked first. The channel closes when every probe it started
 // ended.
-func (a *api) probeChoices(ctx context.Context, choices []StreamChoice, wait time.Duration) <-chan struct{} {
+func (a *api) probeChoices(ctx context.Context, item uuid.UUID, choices []StreamChoice, wait time.Duration) <-chan struct{} {
 	done := make(chan struct{})
 	if a.ChoiceProber == nil || a.Resolver == nil || a.Cache == nil {
 		close(done)
@@ -89,7 +110,7 @@ func (a *api) probeChoices(ctx context.Context, choices []StreamChoice, wait tim
 	have := a.loadChoiceProbes(ctx, ready)
 	var todo []StreamChoice
 	for _, c := range ready {
-		if _, ok := have[c.ID]; !ok {
+		if _, ok := have[c.ID]; !ok && !a.probeFailed(ctx, c) {
 			todo = append(todo, c)
 		}
 	}
@@ -106,7 +127,7 @@ func (a *api) probeChoices(ctx context.Context, choices []StreamChoice, wait tim
 			go func() {
 				defer wg.Done()
 				defer func() { <-a.probeSem }()
-				a.probeHeld(bg, c)
+				a.probeHeld(bg, item, c)
 			}()
 		}
 		wg.Wait()
@@ -122,32 +143,35 @@ func (a *api) probeChoices(ctx context.Context, choices []StreamChoice, wait tim
 	return done
 }
 
-// probeChoice probes one choice, taking a slot first.
-func (a *api) probeChoice(ctx context.Context, c StreamChoice) {
+// probeChoice probes one choice of item, taking a slot first.
+func (a *api) probeChoice(ctx context.Context, item uuid.UUID, c StreamChoice) {
 	select {
 	case a.probeSem <- struct{}{}:
 	case <-ctx.Done():
 		return
 	}
 	defer func() { <-a.probeSem }()
-	a.probeHeld(ctx, c)
+	a.probeHeld(ctx, item, c)
 }
 
-// probeHeld resolves and probes one choice (holding a slot) and caches the
-// result; concurrent probes of one choice share the work.
-func (a *api) probeHeld(ctx context.Context, c StreamChoice) {
+// probeHeld resolves and probes one choice of item (holding a slot) and
+// caches the result; concurrent probes of one choice share the work. A
+// choice that serves no video is marked bad, so it's no longer offered or
+// fallen back to; any failure isn't retried for probeFailTTL.
+func (a *api) probeHeld(ctx context.Context, item uuid.UUID, c StreamChoice) {
 	_, _, _ = a.probeFlight.Do(c.ID.String(), func() (any, error) {
 		ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 		defer cancel()
 		start := time.Now()
-		link, err := a.Resolver.Resolve(ctx, resolve.FromURL(c.Target))
+		info, err := a.resolveAndProbe(ctx, c)
 		if err != nil {
-			a.Log.DebugContext(ctx, "choice probe: not resolvable", "choice", c.ID, "err", err)
-			return nil, err
-		}
-		info, err := a.ChoiceProber.Probe(ctx, link.URL, media.Options{Remote: true, SkipChapters: true})
-		if err != nil {
-			a.Log.InfoContext(ctx, "choice probe failed", "choice", c.ID, "err", err)
+			_ = a.Cache.SetJSON(context.WithoutCancel(ctx), choiceProbeFailKey(c.ID), true, probeFailTTL)
+			if errors.Is(err, resolve.ErrNotVideo) {
+				a.markBadChoice(context.WithoutCancel(ctx), item, c.ID)
+				a.Log.WarnContext(ctx, "stream choice serves no video; no longer offered", "item", item, "choice", c.ID, "err", err)
+			} else {
+				a.Log.InfoContext(ctx, "choice probe failed", "item", item, "choice", c.ID, "err", err)
+			}
 			return nil, err
 		}
 		p := choiceProbe{Container: probedContainer(info.Container), Bitrate: info.Bitrate, RuntimeTicks: int64(info.Duration / 100)}
@@ -160,6 +184,27 @@ func (a *api) probeHeld(ctx context.Context, c StreamChoice) {
 		a.Log.InfoContext(ctx, "probed stream choice", "choice", c.ID, "streams", len(p.Streams), "took", time.Since(start).Round(time.Millisecond))
 		return nil, nil
 	})
+}
+
+// resolveAndProbe resolves c and probes its link. ffprobe finding no media
+// in it is ErrNotVideo once a fresh link says the same: a cached link may
+// have expired onto an error page.
+func (a *api) resolveAndProbe(ctx context.Context, c StreamChoice) (*media.Info, error) {
+	target := resolve.FromURL(c.Target)
+	for fresh := false; ; fresh = true {
+		link, err := a.Resolver.Resolve(ctx, target)
+		if err != nil {
+			return nil, err
+		}
+		info, err := a.ChoiceProber.Probe(ctx, link.URL, media.Options{Remote: true, SkipChapters: true})
+		if err == nil || !media.IsInvalidData(err) {
+			return info, err
+		}
+		a.Resolver.Forget(ctx, target)
+		if fresh {
+			return nil, fmt.Errorf("%w: %w", resolve.ErrNotVideo, err)
+		}
+	}
 }
 
 // probedContainer maps ffprobe's format names ("matroska,webm",

@@ -124,6 +124,12 @@ type Prober struct {
 	run func(ctx context.Context, bin string, args []string) ([]byte, error)
 }
 
+// IsInvalidData reports whether err is ffprobe finding no media it knows in
+// its input: a web page, a text file.
+func IsInvalidData(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "Invalid data found when processing input")
+}
+
 // Probe runs ffprobe on target (a local path or URL).
 func (p Prober) Probe(ctx context.Context, target string, opts Options) (*Info, error) {
 	args := []string{"-v", "error", "-print_format", "json", "-show_format", "-show_streams"}

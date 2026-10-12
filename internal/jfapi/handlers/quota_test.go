@@ -21,7 +21,7 @@ import (
 // used up PlaybackInfo answers RateLimitExceeded and downloads 403, while
 // users without a quota play on.
 func TestMonthlyDataQuota(t *testing.T) {
-	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("bytes")) }))
+	cdn := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { serveVideo(w, "bytes") }))
 	t.Cleanup(cdn.Close)
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
 		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: cdn.URL + "/f.mkv"}},

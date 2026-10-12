@@ -300,7 +300,7 @@ func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) *prefetch {
 			a.itemUpdated(pctx, it.ID) // the details answer went out without them
 		}
 		// Tracks ready by the time it's played; then tell the clients again.
-		<-a.probeChoices(pctx, pick.Choices, 0)
+		<-a.probeChoices(pctx, it.ID, pick.Choices, 0)
 		a.itemUpdated(pctx, it.ID)
 	}()
 	return pf
