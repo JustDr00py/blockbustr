@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -867,6 +868,95 @@ func streamLabel(r stremio.Ranked, runtime time.Duration) string {
 		parts = append(parts, "not cached")
 	}
 	return strings.Join(parts, " • ")
+}
+
+// shortStreamLabel is a streamLabel name cut down for a row of cards: the
+// picture without its codec, the size (whole GB from 10 GB) and "not
+// cached" ("2160p DV HEVC Remux • Atmos TrueHD 7.1 • 60.3 GB • ~26 Mbps •
+// cached" is "2160p DV Remux • 60 GB"). audio, when there is one, is the
+// audio part it left out. A name streamLabel didn't make (a title's
+// placeholder) comes back as is, with ok false.
+func shortStreamLabel(full string) (short, audio string, ok bool) {
+	parts := strings.Split(full, " • ")
+	var pic []string
+	for _, w := range strings.Fields(parts[0]) {
+		switch {
+		case labelP.MatchString(w), w == "DV", w == "HDR", w == "Remux", w == "Stream":
+			pic = append(pic, w)
+		case codecLabel(w):
+		default:
+			return full, "", false
+		}
+	}
+	if len(pic) == 0 {
+		pic = []string{"Stream"}
+	}
+	out := []string{strings.Join(pic, " ")}
+	uncached := false
+	for i, p := range parts[1:] {
+		switch {
+		case p == "cached", labelMbps.MatchString(p):
+		case p == "not cached":
+			uncached = true
+		case labelGB.MatchString(p):
+			gb, _ := strconv.ParseFloat(strings.TrimSuffix(p, " GB"), 64)
+			if gb >= 10 {
+				p = fmt.Sprintf("%.0f GB", gb)
+			}
+			out = append(out, p)
+		case i == 0: // the audio comes right after the picture
+			audio = p
+		default:
+			return full, "", false
+		}
+	}
+	if uncached {
+		out = append(out, "not cached")
+	}
+	return strings.Join(out, " • "), audio, true
+}
+
+// codecLabel says whether w is one of codecLabels' words.
+func codecLabel(w string) bool {
+	for _, l := range codecLabels {
+		if l == w {
+			return true
+		}
+	}
+	return false
+}
+
+var (
+	labelP    = regexp.MustCompile(`^\d{3,4}p$`)
+	labelGB   = regexp.MustCompile(`^\d+(\.\d+)? GB$`)
+	labelMbps = regexp.MustCompile(`^~\d+ Mbps$`)
+)
+
+// shortStreamLabels shortens a title's version names (shortStreamLabel).
+// Versions whose short names would be the same get their audio back, so
+// the cards stay told apart.
+func shortStreamLabels(names []string) []string {
+	out := make([]string, len(names))
+	audio := make([]string, len(names))
+	ok := make([]bool, len(names))
+	seen := map[string]int{}
+	for i, n := range names {
+		out[i], audio[i], ok[i] = shortStreamLabel(n)
+		if ok[i] {
+			seen[out[i]]++
+		}
+	}
+	for i := range out {
+		if !ok[i] || seen[out[i]] < 2 || audio[i] == "" {
+			continue
+		}
+		short, uncached := strings.CutSuffix(out[i], " • not cached")
+		out[i] = short + " • " + audio[i]
+		if uncached {
+			out[i] += " • not cached"
+		}
+	}
+	return out
 }
 
 var codecLabels = map[string]string{"hevc": "HEVC", "av1": "AV1", "h264": "H.264", "vp9": "VP9"}

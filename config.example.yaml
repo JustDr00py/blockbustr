@@ -20,6 +20,7 @@ compat:
   product_name: Jellyfin Server
   proxy_clients: []            # clients that always get proxied remote streams
   redirect_clients: []         # clients that may follow http->https redirects
+  short_label_clients: [VidHub] # clients shown short addon version names ("2160p DV Remux • 60 GB")
   legacy_auth: true            # also accept X-Emby-* headers / ?api_key= (stock 12.1.0 rejects them)
 transcode:
   hwaccel: auto                # auto | none | qsv | vaapi

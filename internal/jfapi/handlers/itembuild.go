@@ -74,6 +74,7 @@ type itemBatch struct {
 	chapters map[uuid.UUID][]db.Chapter
 	sources  map[uuid.UUID][]db.MediaSource
 	base     string                         // server URL for remote sources' stream URLs
+	short    bool                           // the client gets short version names (shortLabels)
 	streams  map[uuid.UUID][]db.MediaStream // by media source
 }
 
@@ -110,7 +111,8 @@ func (a *api) loadItemBatch(ctx context.Context, user *uuid.UUID, items []db.Ite
 		userData: map[uuid.UUID]*db.UserDatum{}, episodes: map[uuid.UUID]db.UnplayedEpisodeCountsRow{}, children: map[uuid.UUID]int64{},
 		genres: map[uuid.UUID][]db.ListGenresForItemsRow{}, studios: map[uuid.UUID][]db.ListStudiosForItemsRow{},
 		people: map[uuid.UUID][]db.ListPeopleForItemsRow{}, chapters: map[uuid.UUID][]db.Chapter{},
-		sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}, base: baseURL(ctx)}
+		sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}, base: baseURL(ctx),
+		short: a.shortLabels(ctx)}
 	ids := make([]uuid.UUID, 0, len(items))
 	var folders, playable []uuid.UUID
 	for _, it := range items {
@@ -434,6 +436,9 @@ func (a *api) itemDto(b *itemBatch, it db.Item, withUser bool, o dtoOptions) dto
 		}
 		if o.has("mediasources") || o.has("mediastreams") {
 			srcs := mediaSourceDtos(it, b.sources[it.ID], b.streams, b.base, a.StreamSigner)
+			if b.short {
+				shortSourceNames(it, srcs)
+			}
 			if o.has("mediasources") {
 				d.MediaSources = &srcs
 			}

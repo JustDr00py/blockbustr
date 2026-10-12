@@ -1635,3 +1635,114 @@ func TestStreamServingNoVideo(t *testing.T) {
 		t.Errorf("%q still offered: %s", first.Name, rec.Body)
 	}
 }
+
+func TestShortStreamLabel(t *testing.T) {
+	for _, c := range []struct{ full, short, audio string }{
+		{"2160p DV HEVC Remux • Atmos TrueHD 7.1 • 60.3 GB • ~26 Mbps • cached", "2160p DV Remux • 60 GB", "Atmos TrueHD 7.1"},
+		{"2160p DV HDR HEVC • DD+ 5.1 • 12.4 GB • ~9 Mbps", "2160p DV HDR • 12 GB", "DD+ 5.1"},
+		{"1080p HEVC • 1.5 GB • cached", "1080p • 1.5 GB", ""},
+		{"720p H.264 • AAC 2.0 • 0.9 GB • ~2 Mbps • not cached", "720p • 0.9 GB • not cached", "AAC 2.0"},
+		{"1080p • 9.9 GB", "1080p • 9.9 GB", ""},
+		{"1080p • 10.0 GB", "1080p • 10 GB", ""},
+		{"Stream • 3.2 GB • cached", "Stream • 3.2 GB", ""},
+		{"HEVC • 2.0 GB", "Stream • 2.0 GB", ""},
+		{"2160p Remux • cached", "2160p Remux", ""},
+	} {
+		short, audio, ok := shortStreamLabel(c.full)
+		if !ok || short != c.short || audio != c.audio {
+			t.Errorf("shortStreamLabel(%q) = %q, %q, %v; want %q, %q", c.full, short, audio, ok, c.short, c.audio)
+		}
+	}
+	// Names streamLabel didn't make (a title's placeholder, a file) as is.
+	for _, name := range []string{"Step Brothers", "The.Movie.2008.1080p.mkv", "1917", "1080p HEVC • Torrentio • 2.0 GB • x"} {
+		if short, _, ok := shortStreamLabel(name); ok || short != name {
+			t.Errorf("shortStreamLabel(%q) = %q, %v; want it unchanged", name, short, ok)
+		}
+	}
+}
+
+// Versions that shorten alike get their audio back; the rest don't.
+func TestShortStreamLabelsTellApart(t *testing.T) {
+	got := shortStreamLabels([]string{
+		"2160p HEVC Remux • Atmos TrueHD 7.1 • 60.3 GB • ~40 Mbps • cached",
+		"2160p HEVC Remux • DTS-HD MA 5.1 • 59.8 GB • ~39 Mbps • cached",
+		"1080p HEVC • DD+ 5.1 • 1.5 GB • cached",
+		"Step Brothers",
+	})
+	want := []string{"2160p Remux • 60 GB • Atmos TrueHD 7.1", "2160p Remux • 60 GB • DTS-HD MA 5.1", "1080p • 1.5 GB", "Step Brothers"}
+	if strings.Join(got, " | ") != strings.Join(want, " | ") {
+		t.Errorf("got\n %q\nwant\n %q", got, want)
+	}
+}
+
+// VidHub (compat.short_label_clients) gets short version names; other
+// clients the full ones. Ids are the same, and the stored names stay full
+// for labelVideo.
+func TestPlaybackInfoShortLabels(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "AIO", Stream: stremio.Stream{Name: "AIO 4k", Title: "The.Matrix.1999.2160p.UHD.BluRay.REMUX.DV.HEVC.TrueHD.7.1.Atmos 💾 60.3 GB", URL: "https://cdn.example/a.mkv"}},
+		{Addon: "AIO", Stream: stremio.Stream{Name: "AIO 1080p", Title: "The.Matrix.1999.1080p.BluRay.x265.HEVC.DDP5.1 💾 1.5 GB", URL: "https://cdn.example/b.mkv"}},
+	}}}
+	var rc *cache.Cache
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = fs; rc = d.Cache })
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
+	sources := func(client string) playbackSources {
+		t.Helper()
+		rec := call(t, sf.h, "POST", "/Items/"+matrix.Id+"/PlaybackInfo",
+			`MediaBrowser Client="`+client+`", Device="d", DeviceId="d1", Version="1", Token="`+captureToken+`"`, `{}`)
+		if rec.Code != 200 {
+			t.Fatalf("PlaybackInfo (%s): %d %s", client, rec.Code, rec.Body)
+		}
+		var out playbackSources
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		return out
+	}
+	full, short := sources("Infuse-Direct"), sources("VidHub")
+	if len(full.MediaSources) != 2 || len(short.MediaSources) != 2 {
+		t.Fatalf("sources: %d full, %d short", len(full.MediaSources), len(short.MediaSources))
+	}
+	var fullNames []string
+	for _, s := range full.MediaSources {
+		fullNames = append(fullNames, s.Name)
+	}
+	want := shortStreamLabels(fullNames)
+	for i, s := range short.MediaSources {
+		if s.Id != full.MediaSources[i].Id {
+			t.Errorf("source %d: id %s for VidHub, %s for Infuse", i, s.Id, full.MediaSources[i].Id)
+		}
+		if s.Name != want[i] || s.Name == fullNames[i] || strings.Contains(s.Name, "Mbps") || strings.HasSuffix(s.Name, " • cached") {
+			t.Errorf("source %d: VidHub got %q (full %q), want %q", i, s.Name, fullNames[i], want[i])
+		}
+	}
+	// Item details too.
+	rec := call(t, sf.h, "GET", "/Items/"+matrix.Id+"?Fields=MediaSources",
+		`MediaBrowser Client="VidHub", Device="d", DeviceId="d1", Version="1", Token="`+captureToken+`"`, "")
+	var detail struct{ MediaSources []struct{ Name string } }
+	if err := json.Unmarshal(rec.Body.Bytes(), &detail); err != nil || rec.Code != 200 {
+		t.Fatalf("details: %d %s", rec.Code, rec.Body)
+	}
+	for _, s := range detail.MediaSources {
+		if !slices.Contains(want, s.Name) {
+			t.Errorf("VidHub details: %q, want a short name of %q", s.Name, want)
+		}
+	}
+	id, err := dto.ParseID(matrix.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var set streamSet
+	if ok, err := rc.GetJSON(t.Context(), cache.StreamSetKey(id.UUID().String()), &set); err != nil || !ok {
+		t.Fatalf("stream set: %v %v", ok, err)
+	}
+	for _, c := range set.All() {
+		if !slices.Contains(fullNames, c.Name) {
+			t.Errorf("stored name %q isn't a full name", c.Name)
+		}
+		if codec, height := labelVideo(c.Name); codec != "hevc" || height == 0 {
+			t.Errorf("labelVideo(%q) = %q %d", c.Name, codec, height)
+		}
+	}
+}

@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/jfapi/dto"
 	"github.com/sysadmin/blockbustr/internal/media"
 	"github.com/sysadmin/blockbustr/internal/store/pg/db"
@@ -64,6 +67,31 @@ func mediaSourceDtos(it db.Item, sources []db.MediaSource, streams map[uuid.UUID
 		}
 	}
 	return out
+}
+
+// shortLabels says whether the request's client gets short version names
+// (compat.short_label_clients, matched on the auth Client field).
+func (a *api) shortLabels(ctx context.Context) bool {
+	client := jfapi.AuthFrom(ctx).Client
+	return client != "" && slices.ContainsFunc(a.Config.Compat.ShortLabelClients, func(c string) bool { return strings.EqualFold(c, client) })
+}
+
+// shortSourceNames gives a catalog title's addon versions their short names
+// (shortStreamLabels). Only the response changes: the stored names, which
+// labelVideo reads, stay full.
+func shortSourceNames(it db.Item, srcs []dto.MediaSourceInfo) {
+	if it.SourceKind != "stremio" {
+		return
+	}
+	names := make([]string, len(srcs))
+	for i, s := range srcs {
+		names[i] = deref(s.Name)
+	}
+	for i, n := range shortStreamLabels(names) {
+		if srcs[i].Name != nil {
+			srcs[i].Name = ptr(n)
+		}
+	}
 }
 
 func mediaSourceDto(it db.Item, id string, src db.MediaSource, streams []db.MediaStream) dto.MediaSourceInfo {

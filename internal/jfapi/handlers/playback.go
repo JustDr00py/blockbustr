@@ -242,6 +242,9 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		}
 	}
 	dtos := mediaSourceDtos(it, rows, b.streams, baseURL(r.Context()), a.StreamSigner)
+	if a.shortLabels(r.Context()) {
+		shortSourceNames(it, dtos)
+	}
 	// A player opens a remote source's Path as is (Roku sends no
 	// PlaySessionId of its own), so Path carries the session: without it the
 	// stream reads rank order, where the item id names another version than

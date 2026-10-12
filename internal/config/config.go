@@ -202,6 +202,10 @@ type Compat struct {
 	// rule per client (matched on the auth header's Client field, DESIGN §8.2).
 	ProxyClients    []string `yaml:"proxy_clients"`
 	RedirectClients []string `yaml:"redirect_clients"`
+	// ShortLabelClients get short addon version names ("2160p DV Remux •
+	// 60 GB"): clients that show versions as a row of cards (VidHub), which
+	// the full names make scroll. Matched like ProxyClients.
+	ShortLabelClients []string `yaml:"short_label_clients"`
 	// LegacyAuth also accepts the auth forms stock Jellyfin 12.1.0 rejects
 	// (X-Emby-Authorization, X-Emby-Token, X-MediaBrowser-Token, ?api_key=,
 	// "Emby" scheme), for older clients (DESIGN §3.2). Env: BLOCKBUSTR_LEGACY_AUTH.
@@ -257,9 +261,10 @@ func Defaults() Config {
 		Redis:    Redis{URL: "redis://localhost:6379/0"},
 		Paths:    Paths{Cache: "/cache"},
 		Compat: Compat{
-			ReportedVersion: "12.1.0",
-			ProductName:     "Jellyfin Server",
-			LegacyAuth:      true,
+			ReportedVersion:   "12.1.0",
+			ProductName:       "Jellyfin Server",
+			ShortLabelClients: []string{"VidHub"},
+			LegacyAuth:        true,
 		},
 		Transcode: Transcode{HWAccel: "auto", SegmentSeconds: 3, MaxSessions: 4, Software: true},
 		Metadata:  Metadata{Language: "en-US"},
