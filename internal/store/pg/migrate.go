@@ -33,6 +33,15 @@ func newProvider(db *sql.DB) (*goose.Provider, error) {
 }
 
 // Migrate runs a migration command against db and logs what it did.
+// PendingMigrations reports whether MigrateUp has migrations to apply.
+func PendingMigrations(ctx context.Context, db *sql.DB) (bool, error) {
+	p, err := newProvider(db)
+	if err != nil {
+		return false, fmt.Errorf("migrations: %w", err)
+	}
+	return p.HasPending(ctx)
+}
+
 func Migrate(ctx context.Context, db *sql.DB, command string, log *slog.Logger) error {
 	p, err := newProvider(db)
 	if err != nil {

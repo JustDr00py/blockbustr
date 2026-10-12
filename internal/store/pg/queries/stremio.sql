@@ -211,31 +211,49 @@ WHERE i.id = n.id;
 -- The library's titles' library_ids are the libraries they're live in; a
 -- title live in none is missing (deleted after the grace, like a file).
 -- Titles found by search (in no catalog) aren't the library's.
+WITH titles AS (
+    SELECT c.id
+    FROM items c
+    WHERE c.canonical_key IS NOT NULL
+      AND (c.library_id = @library_id
+           OR c.id IN (SELECT m.item_id FROM item_libraries m WHERE m.library_id = @library_id))
+), live AS (
+    SELECT il.item_id, array_agg(il.library_id ORDER BY il.library_id) AS ids
+    FROM item_libraries il JOIN titles x ON x.id = il.item_id
+    WHERE il.missing_since IS NULL
+    GROUP BY il.item_id
+)
 UPDATE items t SET
     library_ids   = coalesce(live.ids, '{}'),
     is_missing    = live.ids IS NULL,
     missing_since = CASE WHEN live.ids IS NULL THEN coalesce(t.missing_since, now()) END
-FROM (
-    SELECT c.id, (SELECT array_agg(il.library_id ORDER BY il.library_id) FROM item_libraries il
-                  WHERE il.item_id = c.id AND il.missing_since IS NULL) AS ids
-    FROM items c
-    WHERE c.canonical_key IS NOT NULL
-      AND (c.library_id = @library_id
-           OR EXISTS (SELECT 1 FROM item_libraries m WHERE m.item_id = c.id AND m.library_id = @library_id))
-) live
-WHERE t.id = live.id
+FROM titles x LEFT JOIN live ON live.item_id = x.id
+WHERE t.id = x.id
   AND (t.library_ids, t.is_missing) IS DISTINCT FROM (coalesce(live.ids, '{}'), live.ids IS NULL);
 
 -- name: SyncTitleDescendants :exec
 -- Seasons and episodes follow their title: its home and its libraries.
-UPDATE items c SET library_id = t.library_id, top_parent_id = t.top_parent_id, library_ids = t.library_ids
-FROM items t
-WHERE t.canonical_key IS NOT NULL
-  AND (t.library_id = @library_id
-       OR EXISTS (SELECT 1 FROM item_libraries m WHERE m.item_id = t.id AND m.library_id = @library_id))
-  AND c.type IN ('Season', 'Episode')
-  AND (c.parent_id = t.id OR c.parent_id IN (SELECT s.id FROM items s WHERE s.parent_id = t.id AND s.type = 'Season'))
-  AND (c.library_id, c.top_parent_id, c.library_ids) IS DISTINCT FROM (t.library_id, t.top_parent_id, t.library_ids);
+-- The children are found by joins (title → season → episode), not an OR'd
+-- correlated subquery, which ran a subplan per (item, title) pair.
+WITH titles AS (
+    SELECT t.id, t.library_id, t.top_parent_id, t.library_ids
+    FROM items t
+    WHERE t.canonical_key IS NOT NULL
+      AND (t.library_id = @library_id
+           OR t.id IN (SELECT m.item_id FROM item_libraries m WHERE m.library_id = @library_id))
+), children AS (
+    SELECT c.id, t.library_id, t.top_parent_id, t.library_ids
+    FROM titles t JOIN items c ON c.parent_id = t.id AND c.type IN ('Season', 'Episode')
+    UNION ALL
+    SELECT e.id, t.library_id, t.top_parent_id, t.library_ids
+    FROM titles t
+    JOIN items s ON s.parent_id = t.id AND s.type = 'Season'
+    JOIN items e ON e.parent_id = s.id AND e.type = 'Episode'
+)
+UPDATE items c SET library_id = k.library_id, top_parent_id = k.top_parent_id, library_ids = k.library_ids
+FROM children k
+WHERE c.id = k.id
+  AND (c.library_id, c.top_parent_id, c.library_ids) IS DISTINCT FROM (k.library_id, k.top_parent_id, k.library_ids);
 
 -- name: MarkUnseenEpisodesMissing :execrows
 -- Episodes the sync that started at @scan_start didn't write (titles are

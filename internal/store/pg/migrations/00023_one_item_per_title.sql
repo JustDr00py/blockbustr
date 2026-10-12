@@ -99,17 +99,24 @@ UPDATE playback_log p SET item_id = x.new_id FROM id_map x WHERE p.item_id = x.o
 
 DELETE FROM items WHERE id IN (SELECT old_id FROM title_map WHERE old_id <> new_id);
 
-UPDATE items t SET
-    library_ids   = coalesce((SELECT array_agg(il.library_id ORDER BY il.library_id) FROM item_libraries il
-                              WHERE il.item_id = t.id AND il.missing_since IS NULL), '{}'),
-    is_missing    = false,
-    missing_since = NULL
-WHERE t.canonical_key IS NOT NULL
-  AND EXISTS (SELECT 1 FROM item_libraries il WHERE il.item_id = t.id AND il.missing_since IS NULL);
+-- The delete took most episodes' rows: plan the updates on fresh numbers.
+ANALYZE items;
+ANALYZE item_libraries;
+
+-- Each step a plain join (hash or index), never a subquery per row: the
+-- seasons-or-episodes update as one OR'd, correlated condition ran for
+-- over 10 minutes at 99k items (v0.2.13).
+UPDATE items t SET library_ids = live.ids, is_missing = false, missing_since = NULL
+FROM (SELECT item_id, array_agg(library_id ORDER BY library_id) AS ids
+      FROM item_libraries WHERE missing_since IS NULL GROUP BY item_id) live
+WHERE t.id = live.item_id AND t.canonical_key IS NOT NULL;
 UPDATE items c SET library_ids = t.library_ids
 FROM items t
-WHERE t.canonical_key IS NOT NULL AND c.type IN ('Season', 'Episode')
-  AND (c.parent_id = t.id OR c.parent_id IN (SELECT s.id FROM items s WHERE s.parent_id = t.id AND s.type = 'Season'));
+WHERE c.parent_id = t.id AND c.type IN ('Season', 'Episode')
+  AND t.canonical_key IS NOT NULL AND t.library_ids <> '{}';
+UPDATE items e SET library_ids = s.library_ids
+FROM items s
+WHERE e.parent_id = s.id AND e.type = 'Episode' AND s.type = 'Season' AND s.library_ids <> '{}';
 
 CREATE UNIQUE INDEX items_canonical_key ON items (canonical_key) WHERE canonical_key IS NOT NULL;
 CREATE INDEX items_library_ids_idx ON items USING gin (library_ids);

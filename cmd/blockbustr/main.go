@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"slices"
+	"sync/atomic"
 	"syscall"
 	"time"
 	_ "time/tzdata" // zone names work in the slim container image, which has no tzdata
@@ -90,10 +91,31 @@ func run() error {
 	if *migrateCmd != "" {
 		return pg.Migrate(ctx, db, *migrateCmd, log)
 	}
+	// The server listens from here on, answering 503 until it's ready, so a
+	// long start (a schema upgrade) shows clients and the admin what's
+	// happening rather than a refused connection.
+	front := &startingHandler{}
+	front.starting("blockbustr is starting")
+	srv := &http.Server{
+		Addr:              cfg.Server.Listen,
+		Handler:           front,
+		ReadHeaderTimeout: 10 * time.Second,
+		// No WriteTimeout: video streams and HLS sessions are long-lived.
+		ErrorLog: slog.NewLogLogger(log.Handler(), slog.LevelWarn),
+	}
+	errc := make(chan error, 1)
+	go func() { errc <- srv.ListenAndServe() }()
+	defer func() { _ = srv.Close() }() // a start that fails part way; Shutdown below otherwise
+
 	// Schema upgrades run on every start, like Jellyfin's own migrations.
+	if pending, err := pg.PendingMigrations(ctx, db); err == nil && pending {
+		log.Info("running database migrations; clients are told the server is upgrading")
+		front.starting("blockbustr is upgrading its database")
+	}
 	if err := pg.Migrate(ctx, db, pg.MigrateUp, log); err != nil {
 		return err
 	}
+	front.starting("blockbustr is starting")
 	rc, err := cache.New(ctx, cfg.Redis.URL)
 	if err != nil {
 		return err
@@ -254,13 +276,7 @@ func run() error {
 		_, _ = io.WriteString(w, "ok\n")
 	})
 
-	srv := &http.Server{
-		Addr:              cfg.Server.Listen,
-		Handler:           router,
-		ReadHeaderTimeout: 10 * time.Second,
-		// No WriteTimeout: video streams and HLS sessions are long-lived.
-		ErrorLog: slog.NewLogLogger(log.Handler(), slog.LevelWarn),
-	}
+	front.ready(router)
 
 	// LAN discovery (TASKS P2.11): answer "who is JellyfinServer?".
 	if cfg.Server.Discovery {
@@ -275,8 +291,6 @@ func run() error {
 		}
 	}
 
-	errc := make(chan error, 1)
-	go func() { errc <- srv.ListenAndServe() }()
 	// Scans run in the background so the server answers while a large
 	// library is first indexed.
 	go scanner.Run(ctx, libs)
@@ -310,6 +324,36 @@ func run() error {
 	defer flushCancel()
 	monthly.Flush(flushCtx)
 	return nil
+}
+
+// startingHandler serves the router once it's ready (ready) and, until
+// then, 503 with a Retry-After and what the server is doing (starting): a
+// schema upgrade can take a while, and a client should say so rather than
+// fail to connect. /healthz answers 200 meanwhile, so a container
+// healthcheck doesn't restart the server in the middle of an upgrade.
+type startingHandler struct {
+	router atomic.Pointer[http.Handler]
+	status atomic.Pointer[string]
+}
+
+func (h *startingHandler) starting(status string) { h.status.Store(&status) }
+
+func (h *startingHandler) ready(router http.Handler) { h.router.Store(&router) }
+
+func (h *startingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if router := h.router.Load(); router != nil {
+		(*router).ServeHTTP(w, r)
+		return
+	}
+	status := *h.status.Load()
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if r.URL.Path == "/healthz" {
+		_, _ = io.WriteString(w, "starting: "+status+"\n")
+		return
+	}
+	w.Header().Set("Retry-After", "30")
+	w.WriteHeader(http.StatusServiceUnavailable)
+	_, _ = io.WriteString(w, status+"; try again in a minute.\n")
 }
 
 // monthStore keeps the hourly proxied-bytes totals in Postgres (metrics.MonthStore).

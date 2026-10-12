@@ -56,3 +56,27 @@ func TestHealthcheck(t *testing.T) {
 		t.Error("expected error when nothing listens")
 	}
 }
+
+// While the server starts (a schema upgrade can take minutes), clients get
+// a 503 saying so and the healthcheck passes; once ready, the router answers.
+func TestStartingHandler(t *testing.T) {
+	h := &startingHandler{}
+	h.starting("blockbustr is upgrading its database")
+	get := func(path string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil))
+		return rec
+	}
+	rec := get("/Users/AuthenticateByName")
+	if rec.Code != http.StatusServiceUnavailable || rec.Header().Get("Retry-After") == "" ||
+		rec.Body.String() != "blockbustr is upgrading its database; try again in a minute.\n" {
+		t.Errorf("login while upgrading: %d %v %q", rec.Code, rec.Header(), rec.Body)
+	}
+	if rec := get("/healthz"); rec.Code != http.StatusOK {
+		t.Errorf("healthz while upgrading: %d", rec.Code)
+	}
+	h.ready(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusTeapot) }))
+	if rec := get("/Users/AuthenticateByName"); rec.Code != http.StatusTeapot {
+		t.Errorf("once ready: %d", rec.Code)
+	}
+}
