@@ -1180,10 +1180,11 @@ func TestDetailsCollectWhileProbing(t *testing.T) {
 // didn't know the source codec and decoded HEVC on the CPU instead of the
 // GPU (2026-10-07, a 1080p HEVC "Earlier" version at 450% CPU).
 func TestPlaySourcesUseEarlierChoiceProbes(t *testing.T) {
-	c := testutil.Cache(t)
-	a := &api{Deps: Deps{Cache: c, Log: testutil.Discard()}}
+	_, d := newIntegrationServer(t)
+	c := d.Cache
+	a := &api{Deps: d}
 	path := "stremio:movie:tt0295297"
-	it := db.Item{ID: uuid.New(), Type: "Movie", SourceKind: "stremio", Path: &path}
+	it := insertCatalogMovie(t, path)
 	latest := StreamChoice{ID: uuid.New(), Name: "1080p", Target: "https://cdn/latest.mkv", Ready: true}
 	earlier := StreamChoice{ID: uuid.New(), Name: "1080p HEVC", Target: "https://cdn/earlier.mkv", Ready: true}
 	set := streamSet{Choices: []StreamChoice{latest}, Earlier: []StreamChoice{earlier}}
@@ -1192,9 +1193,7 @@ func TestPlaySourcesUseEarlierChoiceProbes(t *testing.T) {
 	}
 	for _, ch := range []StreamChoice{latest, earlier} {
 		p := choiceProbe{Container: "mkv", Streams: []db.MediaStream{{Idx: 0, Type: "Video", Codec: ptr("hevc")}}}
-		if err := c.SetJSON(t.Context(), choiceProbeKey(ch.ID), p, time.Hour); err != nil {
-			t.Fatal(err)
-		}
+		saveChoiceProbe(t, d.Queries, it.ID, ch.ID, p)
 	}
 	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
 	if err := a.addStreamChoices(t.Context(), b, it, false, stremio.Prefs{}); err != nil {

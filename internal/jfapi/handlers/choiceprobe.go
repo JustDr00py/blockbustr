@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -31,7 +32,9 @@ type ChoiceProber interface {
 	Probe(ctx context.Context, target string, opts media.Options) (*media.Info, error)
 }
 
-// choiceProbe is what a probe found, cached per choice (probe:choice:{id}).
+// choiceProbe is what a probe found, kept per choice in Postgres
+// (choice_probes): a version's file doesn't change, and probes held only
+// in Redis were all redone after a restart.
 type choiceProbe struct {
 	Container    string
 	Bitrate      int64
@@ -64,6 +67,9 @@ const (
 	// refusedRetry is how long a probe waits before asking again after a
 	// refusal that may pass (resolve.Passing).
 	refusedRetry = 750 * time.Millisecond
+	// probeTouchEvery is how often reading a probe marks it used; one not
+	// used for a while is pruned (cmd/blockbustr: choiceProbeKeep).
+	probeTouchEvery = 24 * time.Hour
 )
 
 // hostSlots bounds concurrent requests per host.
@@ -103,8 +109,6 @@ func targetHost(target string) string {
 	return strings.ToLower(u.Host)
 }
 
-func choiceProbeKey(id uuid.UUID) cache.Key { return cache.ProbeKey("choice:" + id.String()) }
-
 // choiceProbeFailKey marks a choice whose probe failed recently.
 func choiceProbeFailKey(id uuid.UUID) cache.Key {
 	return cache.ProbeKey("choicefail:" + id.String())
@@ -120,16 +124,40 @@ func (a *api) probeFailed(ctx context.Context, c StreamChoice) bool {
 	return err == nil && ok
 }
 
-// loadChoiceProbes returns the cached probes of choices.
+// loadChoiceProbes returns the stored probes of choices, marking those
+// not marked in probeTouchEvery as used: a version still offered keeps
+// its probe.
 func (a *api) loadChoiceProbes(ctx context.Context, choices []StreamChoice) map[uuid.UUID]choiceProbe {
 	out := map[uuid.UUID]choiceProbe{}
-	if a.Cache == nil {
+	if a.Queries == nil || len(choices) == 0 {
 		return out
 	}
-	for _, c := range choices {
+	ids := make([]uuid.UUID, len(choices))
+	for i, c := range choices {
+		ids[i] = c.ID
+	}
+	rows, err := a.Queries.GetChoiceProbes(ctx, ids)
+	if err != nil {
+		if ctx.Err() == nil {
+			a.Log.WarnContext(ctx, "choice probes unavailable", "err", err)
+		}
+		return out
+	}
+	touchBefore := time.Now().Add(-probeTouchEvery)
+	var stale []uuid.UUID
+	for _, r := range rows {
 		var p choiceProbe
-		if ok, err := a.Cache.GetJSON(ctx, choiceProbeKey(c.ID), &p); err == nil && ok {
-			out[c.ID] = p
+		if err := json.Unmarshal(r.Probe, &p); err != nil {
+			continue // probed again, and overwritten
+		}
+		out[r.ChoiceID] = p
+		if r.UsedAt.Before(touchBefore) {
+			stale = append(stale, r.ChoiceID)
+		}
+	}
+	if len(stale) > 0 {
+		if err := a.Queries.TouchChoiceProbes(ctx, db.TouchChoiceProbesParams{Ids: stale, Before: touchBefore}); err != nil && ctx.Err() == nil {
+			a.Log.WarnContext(ctx, "marking choice probes used failed", "err", err)
 		}
 	}
 	return out
@@ -143,7 +171,7 @@ func (a *api) loadChoiceProbes(ctx context.Context, choices []StreamChoice) map[
 // ended.
 func (a *api) probeChoices(ctx context.Context, item uuid.UUID, choices []StreamChoice, wait time.Duration) <-chan struct{} {
 	done := make(chan struct{})
-	if a.ChoiceProber == nil || a.Resolver == nil || a.Cache == nil {
+	if a.ChoiceProber == nil || a.Resolver == nil || a.Cache == nil || a.Queries == nil {
 		close(done)
 		return done
 	}
@@ -204,10 +232,14 @@ func (a *api) probeChoice(ctx context.Context, item uuid.UUID, c StreamChoice) {
 }
 
 // probeHeld resolves and probes one choice of item (holding a slot) and
-// caches the result; concurrent probes of one choice share the work. A
-// choice that serves no video is marked bad, so it's no longer offered or
-// fallen back to; any failure isn't retried for probeFailTTL.
+// stores the result; concurrent probes of one choice share the work, and
+// one stored while this waited for its slot isn't redone. A choice that
+// serves no video is marked bad, so it's no longer offered or fallen back
+// to; any failure isn't retried for probeFailTTL.
 func (a *api) probeHeld(ctx context.Context, item uuid.UUID, c StreamChoice) {
+	if a.Queries == nil || a.Cache == nil {
+		return
+	}
 	_, _, _ = a.probeFlight.Do(c.ID.String(), func() (any, error) {
 		ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 		defer cancel()
@@ -215,6 +247,12 @@ func (a *api) probeHeld(ctx context.Context, item uuid.UUID, c StreamChoice) {
 		// An episode's chapters say where its intro and credits are; a
 		// movie's aren't used, and skipping them saves a read.
 		episode := a.isEpisode(ctx, item)
+		// Details and PlaybackInfo both queue a title's versions: the
+		// second queue's turn often comes after the first probed them
+		// (2026-10-11: a version probed twice on play, 2 s each).
+		if p, ok := a.loadChoiceProbes(ctx, []StreamChoice{c})[c.ID]; ok && (p.ChaptersRead || !episode) {
+			return nil, nil
+		}
 		info, err := a.resolveAndProbe(ctx, c, episode)
 		if err != nil {
 			_ = a.Cache.SetJSON(context.WithoutCancel(ctx), choiceProbeFailKey(c.ID), true, probeFailTTL)
@@ -231,7 +269,12 @@ func (a *api) probeHeld(ctx context.Context, item uuid.UUID, c StreamChoice) {
 		for _, st := range info.Streams {
 			p.Streams = append(p.Streams, mediaStreamRow(st))
 		}
-		if err := a.Cache.SetJSON(ctx, choiceProbeKey(c.ID), p, cache.ProbeTTL); err != nil {
+		raw, err := json.Marshal(p)
+		if err != nil {
+			return nil, err
+		}
+		if err := a.Queries.SaveChoiceProbe(ctx, db.SaveChoiceProbeParams{ChoiceID: c.ID, ItemID: item, Probe: raw}); err != nil {
+			a.Log.WarnContext(ctx, "saving a choice probe failed", "choice", c.ID, "err", err)
 			return nil, err
 		}
 		a.Log.InfoContext(ctx, "probed stream choice", "choice", c.ID, "streams", len(p.Streams), "took", time.Since(start).Round(time.Millisecond))

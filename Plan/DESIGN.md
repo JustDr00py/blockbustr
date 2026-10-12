@@ -360,7 +360,7 @@ Queries live in `internal/store/pg/queries/*.sql` and are compiled with sqlc (`s
 | `sess:{deviceId}` | session JSON (now playing, position, capabilities) | 10 min, refreshed by ping/progress |
 | `sessions` | set of active deviceIds | — |
 | `link:{sourceHash}` | resolved CDN URL | provider-specific, default 4h (RD links ~ 1 day) |
-| `probe:{sourceHash}` | ffprobe JSON (also persisted in PG) | 30 d |
+| `probe:choicefail:{choice}` | an addon version whose probe failed (the probes themselves are in PG: `media_streams` for files, `choice_probes` for addon versions) | 10 min |
 | `stremio:streams:{addon}:{type}:{id}` | addon stream list | 30 min |
 | `stremio:meta:{addon}:{type}:{id}` | addon meta | 24h |
 | `q:gen` | counter bumped by every `LibraryChanged` / `UserDataChanged` event (`events.Bus.Publish`) | — |
@@ -530,7 +530,7 @@ blockbustr's own routes, under `/blockbustr`, admin token required, JSON errors 
     - Stream, HLS and subtitle requests look sources up through it (`loadPlaySources`). If it has expired, they collect again with permissive prefs.
     - The details of a single item list the remembered choices as versions. Lists and details never ask the addons themselves.
   - **Probed choices and audio language (2026-10-07, AIOStreams):**
-    - Multi-audio releases ("iTA-ENG", Russian dubs first) default to another language, and unprobed choices had no tracks to switch to. Ready choices (a direct URL or cached on debrid, never a torrent or `[RD download]`, which would start a download) are now resolved and ffprobed: after a pick, up to 3 at a time across requests, with PlaybackInfo waiting at most 5 s. Opening a title's details probes in the background. A torrent choice is probed after its first successful play. Results are cached per choice for 30 days (`probe:choice:{id}`).
+    - Multi-audio releases ("iTA-ENG", Russian dubs first) default to another language, and unprobed choices had no tracks to switch to. Ready choices (a direct URL or cached on debrid, never a torrent or `[RD download]`, which would start a download) are now resolved and ffprobed: after a pick, up to 3 at a time across requests, with PlaybackInfo waiting at most 5 s. Opening a title's details probes in the background. A torrent choice is probed after its first successful play. Results are stored per choice in Postgres (`choice_probes`, 2026-10-12; Redis `probe:choice:{id}` before, lost on every Redis restart). Reads mark a probe used at most daily, and a daily job drops probes of versions not offered for 30 days; a title's probes go with it. A probe whose turn comes after the same version's probe was stored isn't redone (details and PlaybackInfo both queue a title's versions; live, one version was probed twice on play).
     - A probed choice reports its container, bitrate, runtime and every track (addon subtitles stay at 100+), so clients can switch audio and subtitles, and PlaybackInfo decides direct play or transcode as for any probed source. Its default audio is the first track in the preferred language.
     - **Preferred language:** `stremio.streams.languages`, else `metadata.language`'s ("en-US" → en). A release in the wanted language only ranks slightly (−20) above one that mixes it with others.
     - Live: Conclave and Dune: Part Two (AIOStreams) list up to 18 audio tracks; Russian- or Italian-first releases start in English; probes take 4–13 s each, so a title's first PlaybackInfo may not have them yet.

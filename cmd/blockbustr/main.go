@@ -202,7 +202,7 @@ func run() error {
 		}
 	}()
 
-	go prunePlaybackLog(ctx, queries, log)
+	go pruneDaily(ctx, queries, log)
 	monthly := metrics.NewMonthlyBytes(monthStore{queries}, log)
 	go monthly.Run(ctx, time.Minute)
 
@@ -539,9 +539,13 @@ func newLogger(w io.Writer, c config.Log, buf *logbuf.Buffer) *slog.Logger {
 // playbackLogKeep is how long the playback log keeps a play.
 const playbackLogKeep = 365 * 24 * time.Hour
 
-// prunePlaybackLog drops plays older than playbackLogKeep, at start and
-// daily after.
-func prunePlaybackLog(ctx context.Context, q *sqlcdb.Queries, log *slog.Logger) {
+// choiceProbeKeep is how long an addon version's probe is kept after the
+// version was last offered.
+const choiceProbeKeep = 30 * 24 * time.Hour
+
+// pruneDaily drops plays older than playbackLogKeep and probes of versions
+// not offered for choiceProbeKeep, at start and daily after.
+func pruneDaily(ctx context.Context, q *sqlcdb.Queries, log *slog.Logger) {
 	t := time.NewTicker(24 * time.Hour)
 	defer t.Stop()
 	for {
@@ -555,6 +559,13 @@ func prunePlaybackLog(ctx context.Context, q *sqlcdb.Queries, log *slog.Logger) 
 		// Quota usage only ever looks at this month: a year is plenty.
 		if _, err := q.PruneUserBytes(ctx, time.Now().Add(-playbackLogKeep)); err != nil && ctx.Err() == nil {
 			log.Warn("pruning per-user bytes failed", "err", err)
+		}
+		if n, err := q.PruneChoiceProbes(ctx, time.Now().Add(-choiceProbeKeep)); err != nil {
+			if ctx.Err() == nil {
+				log.Warn("pruning choice probes failed", "err", err)
+			}
+		} else if n > 0 {
+			log.Info("pruned choice probes", "probes", n)
 		}
 		select {
 		case <-ctx.Done():

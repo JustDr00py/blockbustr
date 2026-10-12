@@ -27,6 +27,14 @@ type Chapter struct {
 	Name       string
 }
 
+type ChoiceProbe struct {
+	ChoiceID uuid.UUID
+	ItemID   uuid.UUID
+	Probe    json.RawMessage
+	ProbedAt time.Time
+	UsedAt   time.Time
+}
+
 type DebridAccount struct {
 	ID        uuid.UUID
 	Provider  string

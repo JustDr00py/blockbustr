@@ -17,7 +17,6 @@ const (
 	TokenTTL          = 24 * time.Hour // sliding, refreshed on use
 	SessionTTL        = 10 * time.Minute
 	LinkTTL           = 4 * time.Hour
-	ProbeTTL          = 30 * 24 * time.Hour
 	StremioStreamsTTL = 30 * time.Minute
 	StremioNoneTTL    = 2 * time.Minute // an addon's "no streams": often a cold lookup that timed out upstream
 	StremioMetaTTL    = 24 * time.Hour
@@ -52,7 +51,8 @@ func SessionKey(deviceID string) Key { return Key("sess:" + deviceID) }
 // LinkKey caches a resolved CDN URL for a source.
 func LinkKey(sourceHash string) Key { return Key("link:" + sourceHash) }
 
-// ProbeKey caches ffprobe output for a source.
+// ProbeKey marks a source whose probe failed recently (the probes
+// themselves are in Postgres).
 func ProbeKey(sourceHash string) Key { return Key("probe:" + sourceHash) }
 
 // StremioStreamsKey caches an addon's stream list for one title.
