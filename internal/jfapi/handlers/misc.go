@@ -27,7 +27,7 @@ func (a *api) registerMisc(rt *jfapi.Router) {
 	})
 	for _, p := range []string{
 		"/Items/{itemId}/Collections", "/Items/{itemId}/Intros", "/Users/{userId}/Items/{itemId}/Intros",
-		"/MediaSegments/{itemId}", "/LiveTv/Programs/Recommended",
+		"/LiveTv/Programs/Recommended",
 	} {
 		rt.Get(p, emptyResult)
 	}

@@ -41,6 +41,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/redact"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/secret"
+	"github.com/sysadmin/blockbustr/internal/segments"
 	"github.com/sysadmin/blockbustr/internal/settings"
 	"github.com/sysadmin/blockbustr/internal/store/pg"
 	sqlcdb "github.com/sysadmin/blockbustr/internal/store/pg/db"
@@ -219,6 +220,10 @@ func run() error {
 	if cfg.Search.CinemetaFallback {
 		catalogs.MetaFallback = stremio.CinemetaURL
 	}
+	// Skip times for anime episodes whose versions have no intro chapters:
+	// the MAL mappings load in the background and refresh daily.
+	animeList := &segments.AnimeList{Log: log}
+	skipTimes := &segments.AniSkip{Cache: rc, Log: log}
 	torrents := resolve.PGTorrents{Q: queries}
 	// The debrid accounts, live: the admin UI can change them (P4.3).
 	accounts := provider.NewSet(debrid, debridOrder)
@@ -270,6 +275,7 @@ func run() error {
 		Debrid:       debridAdmin,
 		ChoiceProber: media.Prober{},
 		Logs:         logs,
+		SkipTimes:    skipTimes, AnimeList: animeList,
 	})
 	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -295,6 +301,7 @@ func run() error {
 	// library is first indexed.
 	go scanner.Run(ctx, libs)
 	go catalogs.Run(ctx, cfg.Stremio.SyncInterval)
+	go animeList.Run(ctx)
 	if cfg.Scan.Watch {
 		go func() {
 			if err := scanner.Watch(ctx, libs); err != nil {

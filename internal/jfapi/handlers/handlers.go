@@ -86,6 +86,11 @@ type Deps struct {
 	// ChoiceProber probes addon stream choices for their tracks; nil
 	// leaves them unprobed.
 	ChoiceProber ChoiceProber
+	// SkipTimes and AnimeList give anime episodes skip times when their
+	// version's chapters don't (segments.AniSkip, segments.AnimeList); nil
+	// leaves segments to the chapters.
+	SkipTimes SkipTimes
+	AnimeList AnimeList
 	// Settings holds the admin UI's settings over Config, and serves
 	// /blockbustr/settings; nil uses Config as it is and leaves those
 	// routes out.
@@ -157,6 +162,7 @@ func Register(rt *jfapi.Router, d Deps) {
 	a.registerShows(rt)
 	a.registerNames(rt)
 	a.registerMisc(rt)
+	a.registerSegments(rt)
 	a.registerUserData(rt)
 	a.registerPlayback(rt)
 	a.registerStream(rt)

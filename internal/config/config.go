@@ -39,6 +39,7 @@ type Config struct {
 	Scan      Scan      `yaml:"scan"`
 	Stremio   Stremio   `yaml:"stremio"`
 	Search    Search    `yaml:"search"`
+	Segments  Segments  `yaml:"segments"`
 	Metrics   Metrics   `yaml:"metrics"`
 
 	// Explicit names the keys config.yaml or the environment set, dotted
@@ -59,6 +60,13 @@ type Search struct {
 	Timeout          time.Duration `yaml:"timeout"`           // budget for one search; late sources are left out
 	Retention        time.Duration `yaml:"retention"`         // found titles nobody played or favourited are dropped after this
 	CinemetaFallback bool          `yaml:"cinemeta_fallback"` // Cinemeta for search when no enabled addon has a search catalog, and for series episodes when none serves meta for a tt id
+}
+
+// Segments configures the skippable parts of episodes clients are told of
+// (/MediaSegments: "Skip Intro", "Skip Credits").
+type Segments struct {
+	Chapters bool `yaml:"chapters"` // from a version's chapter markers ("Opening", "Ending")
+	AniSkip  bool `yaml:"aniskip"`  // for anime without them, from api.aniskip.com
 }
 
 // Stremio configures the catalog sync (DESIGN §7.2). Addons themselves are
@@ -261,7 +269,8 @@ func Defaults() Config {
 			Streams:   Streams{Timeout: 6 * time.Second, UHDSlots: 3, HDSlots: 4},
 			Subtitles: Subtitles{PerLanguage: 3},
 		},
-		Search: Search{Enabled: true, Timeout: 3 * time.Second, Retention: 7 * 24 * time.Hour, CinemetaFallback: true},
+		Search:   Search{Enabled: true, Timeout: 3 * time.Second, Retention: 7 * 24 * time.Hour, CinemetaFallback: true},
+		Segments: Segments{Chapters: true, AniSkip: true},
 		Scan: Scan{
 			OnStart: true, Interval: 6 * time.Hour, ProbeTimeout: 2 * time.Minute, MissingGrace: 24 * time.Hour,
 			Watch: true, WatchDelay: 30 * time.Second,

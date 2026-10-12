@@ -37,6 +37,11 @@ type choiceProbe struct {
 	Bitrate      int64
 	RuntimeTicks int64
 	Streams      []db.MediaStream // MediaSourceID set when attached
+	// Chapters are an episode's chapter markers, for its skippable
+	// segments (mediasegments.go); ChaptersRead says they were asked for
+	// (a probe from before, or of a movie, didn't).
+	Chapters     []media.Chapter `json:",omitempty"`
+	ChaptersRead bool            `json:",omitempty"`
 }
 
 const (
@@ -207,7 +212,10 @@ func (a *api) probeHeld(ctx context.Context, item uuid.UUID, c StreamChoice) {
 		ctx, cancel := context.WithTimeout(ctx, probeTimeout)
 		defer cancel()
 		start := time.Now()
-		info, err := a.resolveAndProbe(ctx, c)
+		// An episode's chapters say where its intro and credits are; a
+		// movie's aren't used, and skipping them saves a read.
+		episode := a.isEpisode(ctx, item)
+		info, err := a.resolveAndProbe(ctx, c, episode)
 		if err != nil {
 			_ = a.Cache.SetJSON(context.WithoutCancel(ctx), choiceProbeFailKey(c.ID), true, probeFailTTL)
 			if errors.Is(err, resolve.ErrNotVideo) {
@@ -218,7 +226,8 @@ func (a *api) probeHeld(ctx context.Context, item uuid.UUID, c StreamChoice) {
 			}
 			return nil, err
 		}
-		p := choiceProbe{Container: probedContainer(info.Container), Bitrate: info.Bitrate, RuntimeTicks: int64(info.Duration / 100)}
+		p := choiceProbe{Container: probedContainer(info.Container), Bitrate: info.Bitrate, RuntimeTicks: int64(info.Duration / 100),
+			Chapters: info.Chapters, ChaptersRead: episode}
 		for _, st := range info.Streams {
 			p.Streams = append(p.Streams, mediaStreamRow(st))
 		}
@@ -233,14 +242,14 @@ func (a *api) probeHeld(ctx context.Context, item uuid.UUID, c StreamChoice) {
 // resolveAndProbe resolves c and probes its link. ffprobe finding no media
 // in it is ErrNotVideo once a fresh link says the same: a cached link may
 // have expired onto an error page.
-func (a *api) resolveAndProbe(ctx context.Context, c StreamChoice) (*media.Info, error) {
+func (a *api) resolveAndProbe(ctx context.Context, c StreamChoice, chapters bool) (*media.Info, error) {
 	target := resolve.FromURL(c.Target)
 	for fresh := false; ; fresh = true {
 		link, err := a.probeResolve(ctx, c, target)
 		if err != nil {
 			return nil, err
 		}
-		info, err := a.ChoiceProber.Probe(ctx, link.URL, media.Options{Remote: true, SkipChapters: true})
+		info, err := a.ChoiceProber.Probe(ctx, link.URL, media.Options{Remote: true, SkipChapters: !chapters})
 		if err == nil || !media.IsInvalidData(err) {
 			return info, err
 		}
@@ -274,6 +283,15 @@ func (a *api) probeResolve(ctx context.Context, c StreamChoice, target resolve.S
 		return resolve.Link{}, err
 	}
 	return try()
+}
+
+// isEpisode reports whether item is an episode.
+func (a *api) isEpisode(ctx context.Context, item uuid.UUID) bool {
+	if a.Queries == nil {
+		return false
+	}
+	it, err := a.Queries.GetItem(ctx, item)
+	return err == nil && it.Type == "Episode"
 }
 
 // probedContainer maps ffprobe's format names ("matroska,webm",
