@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io/fs"
 	"log/slog"
-	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -36,14 +36,11 @@ func TestError(t *testing.T) {
 	if Error(nil) != nil {
 		t.Error("nil error not nil")
 	}
-	plain := errors.New("no url")
-	if Error(plain) != plain {
+	if errors.As(Error(errors.New("no url")), new(redacted)) {
 		t.Error("an error without a URL was wrapped")
 	}
-	_, err := http.Get("http://127.0.0.1:1/requestdl?token=" + secret)
-	if err == nil {
-		t.Skip("port 1 answered")
-	}
+	// As http.Client.Do fails.
+	err := &url.Error{Op: "Get", URL: "http://127.0.0.1:1/requestdl?token=" + secret, Err: errors.New("connection refused")}
 	red := Error(err)
 	if strings.Contains(red.Error(), secret) {
 		t.Errorf("token kept: %v", red)
