@@ -111,7 +111,7 @@ func (a *api) videoStream(w http.ResponseWriter, r *http.Request) {
 	}
 	// No token here: the user's caps come with their play session.
 	ps, _ := a.loadPlaySession(r.Context(), q.Get("PlaySessionId"))
-	r = r.WithContext(withVersionCaps(r.Context(), versionCaps{Height: ps.MaxHeight, Size: ps.MaxSize}))
+	r = r.WithContext(withViewer(withVersionCaps(r.Context(), versionCaps{Height: ps.MaxHeight, Size: ps.MaxSize}), ps.UserID))
 	b := &itemBatch{sources: map[uuid.UUID][]db.MediaSource{}, streams: map[uuid.UUID][]db.MediaStream{}}
 	if err := a.loadPlaySources(r.Context(), b, it); err != nil {
 		a.internalError(w, r, err)
@@ -266,6 +266,9 @@ func (a *api) playLink(ctx context.Context, it db.Item, src db.MediaSource, sour
 		target := resolve.FromURL(s.PathOrUrl)
 		link, err := a.Resolver.Resolve(ctx, target)
 		if err == nil {
+			if catalog && s.IsRemote {
+				a.rememberPlayedChoice(ctx, it, s.ID) // whose release the play keeps to (sticky.go)
+			}
 			if catalog && s.IsRemote {
 				// It plays now (a torrent too, once added): probe its tracks
 				// for the next PlaybackInfo, in the background.

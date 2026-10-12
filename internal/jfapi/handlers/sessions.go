@@ -56,6 +56,10 @@ type nowPlaying struct {
 	PlaybackOrder       string
 	LastSaved           time.Time
 	LogID               int64 `json:",omitempty"` // its playback log row; 0: not logged
+	// StartTicks is where the play started; once it has run stickyAfter
+	// past it, the series keeps to its release (ReleaseKept).
+	StartTicks  int64 `json:",omitempty"`
+	ReleaseKept bool  `json:",omitempty"`
 }
 
 // clientSession is a device's session as stored in Redis.
@@ -281,6 +285,7 @@ func (a *api) legacyPlayback(ev playEvent) sessionHandler {
 func (a *api) applyPlayback(r *http.Request, s auth.Session, ev playEvent, rep playReport) {
 	var save bool
 	var prev *nowPlaying
+	var keepRelease *string // the media source whose release the series keeps to
 	a.updateSession(r, s, func(cs *clientSession) {
 		prev = cs.NowPlaying
 		np := cs.NowPlaying
@@ -289,6 +294,9 @@ func (a *api) applyPlayback(r *http.Request, s auth.Session, ev playEvent, rep p
 			// A progress or stop for a play the session doesn't know (it
 			// expired, or the start report never came) is logged too.
 			np.LogID = a.logPlayStart(r.Context(), s, rep)
+			if rep.PositionTicks != nil {
+				np.StartTicks = *rep.PositionTicks
+			}
 		}
 		changed := false
 		if rep.PositionTicks != nil {
@@ -325,6 +333,12 @@ func (a *api) applyPlayback(r *http.Request, s auth.Session, ev playEvent, rep p
 			}
 		}
 		cs.LastPlaybackCheckIn = time.Now()
+		// A play that ran long enough keeps the series to its release
+		// (sticky.go), once per play.
+		if ev != playStart && !np.ReleaseKept && np.PositionTicks-np.StartTicks >= stickyAfterTicks {
+			np.ReleaseKept = true
+			keepRelease = &np.MediaSourceID
+		}
 		switch ev {
 		case playStop:
 			save = !rep.Failed
@@ -361,6 +375,9 @@ func (a *api) applyPlayback(r *http.Request, s auth.Session, ev playEvent, rep p
 	}
 	if save {
 		a.savePlayState(r, s.UserID, rep)
+	}
+	if keepRelease != nil {
+		a.keepSeriesRelease(r.Context(), s.UserID, rep.ItemID, *keepRelease)
 	}
 }
 

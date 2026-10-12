@@ -48,6 +48,9 @@ type StreamChoice struct {
 	Size      int64
 	Height    int    // from the labels (2160, 1080…); 0 when unknown
 	Addon     string `json:",omitempty"` // the addon that offered it, for the playback log
+	// Release is its release group and binge group: a series' later
+	// episodes prefer the one an episode was watched in (Prefs.Sticky).
+	Release stremio.Release `json:",omitzero"`
 	// Duration is the addon's runtime label in seconds, for a title whose
 	// metadata has none (its bitrate estimate needs one).
 	Duration int64 `json:",omitempty"`
@@ -221,7 +224,10 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 		// Every choice offered gets its probe, earlier ones too: a source
 		// without tracks transcodes with software decode (no codec known).
 		// Those over the user's caps aren't theirs to see or play.
-		all := withinCaps(set.All(), capsOf(ctx))
+		// An episode lists the release the user watches the series in
+		// first, as PlaybackInfo ranks it: clients that play the details'
+		// first version (Infuse) keep to it too.
+		all := stickyFirst(withinCaps(set.All(), capsOf(ctx)), a.seriesRelease(ctx, viewerOf(ctx), it))
 		var streams map[uuid.UUID][]db.MediaStream
 		b.sources[it.ID], streams = choiceSources(it, all, set.Subtitles)
 		applyProbes(b.sources[it.ID], streams, a.loadChoiceProbes(ctx, all), a.preferredAudio())
@@ -557,6 +563,7 @@ func streamChoice(item uuid.UUID, r stremio.Ranked, runtime time.Duration) Strea
 	return StreamChoice{
 		ID: uuid.NewSHA1(item, []byte(key)), Name: streamLabel(r, runtime), Target: target,
 		Container: streamContainer(s), Size: r.Info.Size, Height: r.Info.Height, Ready: r.Info.Cached, Addon: r.Addon,
+		Release:  stremio.Release{Group: r.Info.Group, BingeGroup: r.Info.BingeGroup},
 		Duration: int64(r.Info.Duration / time.Second),
 	}
 }

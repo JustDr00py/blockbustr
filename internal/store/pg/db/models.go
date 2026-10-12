@@ -350,3 +350,11 @@ type UserDatum struct {
 	SubtitleStreamIdx     *int32
 	UpdatedAt             time.Time
 }
+
+type UserSeriesRelease struct {
+	UserID       uuid.UUID
+	SeriesID     uuid.UUID
+	ReleaseGroup string
+	BingeGroup   string
+	SetAt        time.Time
+}

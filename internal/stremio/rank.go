@@ -20,19 +20,22 @@ type Info struct {
 	// DVOnly: Dolby Vision with no HDR10 base layer named (a WEB-DL's
 	// profile 5), which shows purple and green on a display without DV.
 	// "DV HDR10", hybrids and remuxes (profile 7) carry an HDR10 base.
-	DVOnly    bool
-	Codec     string   // "hevc", "av1", "h264", "vp9"
-	Size      int64    // bytes
-	Seeders   int      // torrents only
-	Group     string   // release group ("FLUX")
-	Languages []string // ISO 639-1 from flags, plus "multi" for multi-audio
-	Cached    bool     // ready: on a debrid account, or a direct URL nobody marked uncached
-	Debrid    bool     // known cached on a debrid account (marker or check), not just a URL
-	Uncached  bool     // the addon says its debrid service doesn't have it
-	Cam       bool     // CAM/TS/screener rip
-	Remux     bool
-	Audio     string        // "Atmos TrueHD 7.1", "DD+ 5.1"; "" when unlabelled
-	Duration  time.Duration // the addon's runtime ("⏱️ 2h:32m:0s"), for when the title has none
+	DVOnly  bool
+	Codec   string // "hevc", "av1", "h264", "vp9"
+	Size    int64  // bytes
+	Seeders int    // torrents only
+	Group   string // release group ("FLUX")
+	// BingeGroup is the addon's behaviorHints.bingeGroup: streams of a
+	// series' episodes that belong together (same addon, source, quality).
+	BingeGroup string
+	Languages  []string // ISO 639-1 from flags, plus "multi" for multi-audio
+	Cached     bool     // ready: on a debrid account, or a direct URL nobody marked uncached
+	Debrid     bool     // known cached on a debrid account (marker or check), not just a URL
+	Uncached   bool     // the addon says its debrid service doesn't have it
+	Cam        bool     // CAM/TS/screener rip
+	Remux      bool
+	Audio      string        // "Atmos TrueHD 7.1", "DD+ 5.1"; "" when unlabelled
+	Duration   time.Duration // the addon's runtime ("⏱️ 2h:32m:0s"), for when the title has none
 }
 
 var (
@@ -117,6 +120,7 @@ func Parse(s Stream) Info {
 		in.Seeders, _ = strconv.Atoi(m[1])
 	}
 	in.Group = releaseGroup(s.Hints.Filename, details)
+	in.BingeGroup = s.Hints.BingeGroup
 	in.Languages = languages(s.Name + "\n" + details)
 	// The addon's own markers win: a debrid-configured addon (Torrentio
 	// with a key, AIOStreams) gives every stream a URL, and an "[RD
@@ -296,12 +300,40 @@ type Prefs struct {
 	Languages  []string      // preferred audio, ISO 639-1
 	Allow      []string      // release groups to favour
 	Deny       []string      // release groups never offered
+	// Sticky is the release the user last watched an episode of this
+	// series in: later episodes prefer it. Zero for movies.
+	Sticky Release
+}
+
+// Release names a series' release: the addon's binge group when it gives
+// one, and the release group.
+type Release struct {
+	Group, BingeGroup string
+}
+
+// stickyScore is what matching r adds: the same binge group (the addon
+// says the episodes belong together) most, the same release group a little
+// less, so a binge match wins among releases of one group.
+func (r Release) stickyScore(in Info) int {
+	switch {
+	case r.BingeGroup != "" && in.BingeGroup == r.BingeGroup:
+		return scoreSticky
+	case r.Group != "" && strings.EqualFold(in.Group, r.Group):
+		return scoreStickyGroup
+	}
+	return 0
 }
 
 // Score weights. Being playable right away outweighs everything else;
 // then the picture; then how well it fits the client.
 const (
-	scoreCached          = 1000
+	scoreCached = 1000
+	// A series keeps to the release its last episode was watched in: more
+	// than a resolution step (1080p → 2160p: 100) or an allowed group, less
+	// than being playable now, so an uncached match never beats a cached
+	// other release.
+	scoreSticky          = 300
+	scoreStickyGroup     = 250
 	scoreAllowGroup      = 100
 	scoreLangMatch       = 80
 	scoreLangMulti       = 40
@@ -356,6 +388,7 @@ func Score(in Info, p Prefs) (score int, ok bool) {
 	if in.Group != "" && containsFold(p.Allow, in.Group) {
 		score += scoreAllowGroup
 	}
+	score += p.Sticky.stickyScore(in)
 	score += langScore(in.Languages, p.Languages)
 	score += min(in.Seeders/20, maxSeederScore)
 	return score, true

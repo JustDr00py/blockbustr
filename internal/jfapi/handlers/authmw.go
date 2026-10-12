@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/sysadmin/blockbustr/internal/auth"
 	"github.com/sysadmin/blockbustr/internal/jfapi"
 	"github.com/sysadmin/blockbustr/internal/store/pg"
@@ -33,7 +35,7 @@ func (a *api) requireUser(h sessionHandler) http.HandlerFunc {
 		// allows (P4.1).
 		r = r.WithContext(pg.WithAccess(r.Context(), s.Access))
 		r = r.WithContext(context.WithValue(r.Context(), mayDownloadKey{}, !s.NoPlayback && !s.NoDownload))
-		r = r.WithContext(withVersionCaps(r.Context(), versionCaps{Height: s.MaxHeight, Size: s.MaxSize}))
+		r = r.WithContext(withViewer(withVersionCaps(r.Context(), versionCaps{Height: s.MaxHeight, Size: s.MaxSize}), s.UserID))
 		a.touchSession(r, s) // GET /Sessions lists recently active devices
 		h(w, r, s)
 	}
@@ -83,6 +85,20 @@ func withVersionCaps(ctx context.Context, c versionCaps) context.Context {
 func capsOf(ctx context.Context) versionCaps {
 	c, _ := ctx.Value(versionCapsKey{}).(versionCaps)
 	return c
+}
+
+type viewerKey struct{}
+
+// withViewer is ctx with the user the request is for.
+func withViewer(ctx context.Context, user uuid.UUID) context.Context {
+	return context.WithValue(ctx, viewerKey{}, user)
+}
+
+// viewerOf is the user of the request in ctx (set by requireUser, or from
+// the play session for a stream request); uuid.Nil when unknown.
+func viewerOf(ctx context.Context) uuid.UUID {
+	u, _ := ctx.Value(viewerKey{}).(uuid.UUID)
+	return u
 }
 
 // requireAdmin is requireUser plus an administrator check (403 otherwise).

@@ -386,3 +386,55 @@ func TestRankDropsImplausibleSize(t *testing.T) {
 		}
 	}
 }
+
+// A series keeps to the release its last episode was watched in: a version
+// of it ranks above a higher resolution from another group, by binge group
+// or (without one) by release group; never above a version playable now
+// when it isn't; and without one the ranking is as usual.
+func TestRankSticky(t *testing.T) {
+	ep := func(height, group, binge string, cached bool) Offer {
+		return Offer{Stream: Stream{
+			Name: "AIO\n" + height, InfoHash: group + height,
+			Hints: StreamHints{Filename: "Show.S01E02." + height + ".WEB-DL-" + group + ".mkv", BingeGroup: binge},
+		}, Cached: cached}
+	}
+	x := ep("1080p", "GRPX", "aio|1080p|GRPX", true)
+	y := ep("2160p", "GRPY", "aio|2160p|GRPY", true)
+	first := func(offers []Offer, p Prefs) string {
+		t.Helper()
+		r := Rank(offers, p)
+		if len(r) == 0 {
+			t.Fatal("nothing ranked")
+		}
+		return r[0].Info.Group
+	}
+	p := Prefs{HEVC: true, HDR: true}
+	if g := first([]Offer{y, x}, p); g != "GRPY" {
+		t.Fatalf("without stickiness: %s first, want the 2160p", g)
+	}
+	sticky := p
+	sticky.Sticky = Release{Group: "GRPX", BingeGroup: "aio|1080p|GRPX"}
+	if g := first([]Offer{y, x}, sticky); g != "GRPX" {
+		t.Errorf("binge group kept: %s first, want GRPX's 1080p", g)
+	}
+	byGroup := p
+	byGroup.Sticky = Release{Group: "grpx"} // an addon without binge groups; case-insensitive
+	if g := first([]Offer{y, x}, byGroup); g != "GRPX" {
+		t.Errorf("release group kept: %s first, want GRPX", g)
+	}
+	// A binge match beats a release-group-only match.
+	x720 := ep("720p", "GRPX", "other|720p|GRPX", true)
+	if r := Rank([]Offer{x720, x, y}, sticky); r[0].Stream.InfoHash != "GRPX1080p" {
+		t.Errorf("binge match: %s first", r[0].Stream.InfoHash)
+	}
+	// No version of the release: the usual ranking.
+	z := ep("1080p", "GRPZ", "aio|1080p|GRPZ", true)
+	if g := first([]Offer{z, y}, sticky); g != "GRPY" {
+		t.Errorf("release missing: %s first, want the 2160p", g)
+	}
+	// Not cached: a cached other release still wins.
+	xUncached := ep("1080p", "GRPX", "aio|1080p|GRPX", false)
+	if g := first([]Offer{xUncached, y}, sticky); g != "GRPY" {
+		t.Errorf("uncached kept release: %s first, want the cached GRPY", g)
+	}
+}

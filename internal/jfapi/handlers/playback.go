@@ -224,6 +224,7 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	allSources := false
 	if _, _, ok := stremioRef(it); ok && len(rows) == 0 {
 		prefs := streamPrefs(profile, maxBitrate)
+		prefs.Sticky = a.seriesRelease(r.Context(), s.UserID, it)
 		prefs.MaxHeight = minCap(prefs.MaxHeight, s.MaxHeight)
 		prefs.MaxSize = s.MaxSize
 		rows = a.offerStreams(r, b, it, prefs, req.MediaSourceId)
