@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"slices"
 	"strings"
 	"sync"
@@ -52,7 +53,50 @@ const (
 	// on round trips (header reads through the addon's proxy), so many can
 	// run at once: a title's versions finish in about the slowest's time.
 	probeParallel = 8
+	// probeHostParallel bounds the resolves probes send one addon host at
+	// once: AIOStreams answered 6 of 7 resolves fired together with 400.
+	probeHostParallel = 2
+	// refusedRetry is how long a probe waits before asking again after a
+	// refusal that may pass (resolve.Passing).
+	refusedRetry = 750 * time.Millisecond
 )
+
+// hostSlots bounds concurrent requests per host.
+type hostSlots struct {
+	mu    sync.Mutex
+	slots map[string]chan struct{}
+}
+
+// acquire takes one of host's n slots, waiting for one; it returns the
+// release, or false when ctx ends first.
+func (h *hostSlots) acquire(ctx context.Context, host string, n int) (func(), bool) {
+	h.mu.Lock()
+	if h.slots == nil {
+		h.slots = map[string]chan struct{}{}
+	}
+	ch, ok := h.slots[host]
+	if !ok {
+		ch = make(chan struct{}, n)
+		h.slots[host] = ch
+	}
+	h.mu.Unlock()
+	select {
+	case ch <- struct{}{}:
+		return func() { <-ch }, true
+	case <-ctx.Done():
+		return nil, false
+	}
+}
+
+// targetHost is the host a choice's target is resolved through ("" for a
+// magnet: a debrid account, not an addon host).
+func targetHost(target string) string {
+	u, err := url.Parse(target)
+	if err != nil || u.Scheme == "magnet" {
+		return ""
+	}
+	return strings.ToLower(u.Host)
+}
 
 func choiceProbeKey(id uuid.UUID) cache.Key { return cache.ProbeKey("choice:" + id.String()) }
 
@@ -192,7 +236,7 @@ func (a *api) probeHeld(ctx context.Context, item uuid.UUID, c StreamChoice) {
 func (a *api) resolveAndProbe(ctx context.Context, c StreamChoice) (*media.Info, error) {
 	target := resolve.FromURL(c.Target)
 	for fresh := false; ; fresh = true {
-		link, err := a.Resolver.Resolve(ctx, target)
+		link, err := a.probeResolve(ctx, c, target)
 		if err != nil {
 			return nil, err
 		}
@@ -205,6 +249,31 @@ func (a *api) resolveAndProbe(ctx context.Context, c StreamChoice) (*media.Info,
 			return nil, fmt.Errorf("%w: %w", resolve.ErrNotVideo, err)
 		}
 	}
+}
+
+// probeResolve resolves a choice for its probe, at most probeHostParallel
+// at a time per addon host, asking once more after a refusal that may pass.
+func (a *api) probeResolve(ctx context.Context, c StreamChoice, target resolve.Source) (resolve.Link, error) {
+	try := func() (resolve.Link, error) {
+		if host := targetHost(c.Target); host != "" {
+			release, ok := a.probeHosts.acquire(ctx, host, probeHostParallel)
+			if !ok {
+				return resolve.Link{}, ctx.Err()
+			}
+			defer release()
+		}
+		return a.Resolver.Resolve(ctx, target)
+	}
+	link, err := try()
+	if !resolve.Passing(err) {
+		return link, err
+	}
+	select {
+	case <-time.After(refusedRetry):
+	case <-ctx.Done():
+		return resolve.Link{}, err
+	}
+	return try()
 }
 
 // probedContainer maps ffprobe's format names ("matroska,webm",

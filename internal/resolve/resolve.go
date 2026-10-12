@@ -454,7 +454,7 @@ func (r *Resolver) follow(ctx context.Context, target string) (Link, error) {
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
 	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusPartialContent && resp.StatusCode != http.StatusOK {
-		return l, fmt.Errorf("resolve: %s answered %s", resp.Request.URL.Host, resp.Status)
+		return l, &RefusedError{Host: resp.Request.URL.Host, Status: resp.StatusCode, StatusText: resp.Status}
 	}
 	l.URL = resp.Request.URL.String()
 	l.Size = fileSize(resp)
@@ -462,6 +462,34 @@ func (r *Resolver) follow(ctx context.Context, target string) (Link, error) {
 		return l, err
 	}
 	return l, nil
+}
+
+// RefusedError is a followed link's host answering with an error status.
+type RefusedError struct {
+	Host       string
+	Status     int    // 400, 404…
+	StatusText string // "400 Bad Request"
+}
+
+func (e *RefusedError) Error() string {
+	return fmt.Sprintf("resolve: %s answered %s", e.Host, e.StatusText)
+}
+
+// Passing reports whether err is a refusal that may not last: a 4xx other
+// than 404, 410 and 451 (gone, or blocked for good: a debrid service's
+// takedown), or a 5xx. AIOStreams answers a burst of resolves with 400s,
+// a rate limit with 429. Such a refusal says nothing about the version:
+// worth a retry, never a reason to drop it.
+func Passing(err error) bool {
+	var re *RefusedError
+	if !errors.As(err, &re) {
+		return false
+	}
+	switch re.Status {
+	case http.StatusNotFound, http.StatusGone, http.StatusUnavailableForLegalReasons:
+		return false
+	}
+	return re.Status >= 400
 }
 
 // account is the debrid account for name, or nil.

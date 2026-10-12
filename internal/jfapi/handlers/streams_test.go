@@ -177,8 +177,10 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	}
 
 	// The top three, ranked for an H.264 client: the direct URL (ready),
-	// then 4K HEVC (penalised, still the better picture), then 720p. The
-	// denied group and the CAM rip are left out.
+	// then 4K HEVC (penalised, still the better picture), then 720p; the
+	// 4K's label names a codec the client can't play, so it goes after
+	// the 720p, which plays as is. The denied group and the CAM rip are
+	// left out.
 	got := playback(h264Profile)
 	var names []string
 	for _, s := range got.MediaSources {
@@ -186,8 +188,8 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	}
 	want := []string{
 		"1080p H.264 • 1.5 GB",
-		"2160p HDR HEVC • 35.1 GB",
 		"720p H.264 • 1.1 GB",
+		"2160p HDR HEVC • 35.1 GB",
 	}
 	if strings.Join(names, " | ") != strings.Join(want, " | ") {
 		t.Fatalf("sources:\n %q\nwant\n %q", names, want)
@@ -204,8 +206,8 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 			t.Errorf("source %s leaks its target: %s", s.Name, s.Path)
 		}
 	}
-	if srcs[0].Container != "mkv" || srcs[1].Container != "mkv" || srcs[1].Size == 0 {
-		t.Errorf("container/size: %q %q %d", srcs[0].Container, srcs[1].Container, srcs[1].Size)
+	if srcs[0].Container != "mkv" || srcs[2].Container != "mkv" || srcs[2].Size == 0 {
+		t.Errorf("container/size: %q %q %d", srcs[0].Container, srcs[2].Container, srcs[2].Size)
 	}
 
 	// Subtitles in the configured languages (en first, then pt from
@@ -279,7 +281,7 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	}
 	// The torrent goes to the debrid account; while it downloads the
 	// stream is 503 with Retry-After, then it plays.
-	rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+srcs[1].Id, "", "")
+	rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+srcs[2].Id, "", "")
 	if rec.Code != http.StatusServiceUnavailable || rec.Header().Get("Retry-After") == "" {
 		t.Errorf("downloading torrent: %d, Retry-After %q", rec.Code, rec.Header().Get("Retry-After"))
 	}
@@ -287,7 +289,7 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 		t.Errorf("added %v, want the stream's hash", rd.added.Load())
 	}
 	// Its subtitles don't wait for the torrent.
-	subURL := srcs[1].MediaStreams[1].DeliveryUrl
+	subURL := srcs[2].MediaStreams[1].DeliveryUrl
 	if rec := call(t, sf.h, "GET", subURL, "", ""); rec.Code != 200 || !strings.Contains(rec.Body.String(), "Wake up, en2") {
 		t.Errorf("subtitle while downloading: %d %q", rec.Code, rec.Body.String())
 	}
@@ -296,7 +298,7 @@ func TestCatalogStreamsAsMediaSources(t *testing.T) {
 	}
 	rd.ready.Store(true)
 	// A debrid link never reaches the client: proxied.
-	if rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+srcs[1].Id, "", ""); rec.Code != 200 || rec.Body.String() != "matroska bytes" || rec.Header().Get("Location") != "" {
+	if rec := call(t, sf.h, "GET", "/Videos/"+matrix.Id+"/stream?static=true&MediaSourceId="+srcs[2].Id, "", ""); rec.Code != 200 || rec.Body.String() != "matroska bytes" || rec.Header().Get("Location") != "" {
 		t.Errorf("ready torrent: %d %q, Location %q", rec.Code, rec.Body.String(), rec.Header().Get("Location"))
 	}
 	if code := stream(strings.Repeat("0", 31) + "1"); code != 404 {

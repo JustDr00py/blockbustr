@@ -178,6 +178,10 @@ func (a *api) remoteStream(w http.ResponseWriter, r *http.Request, it db.Item, s
 		sourceUnavailable(w, err, http.StatusBadGateway)
 		return
 	}
+	if want != "" && !sameID(want, dto.IDFromUUID(it.ID).String()) && !sameID(want, dto.IDFromUUID(src.ID).String()) {
+		// A picked version is played or fails; never swapped (playLink).
+		a.Log.InfoContext(ctx, "stream served another version than the one asked for", "item", it.ID, "asked", want, "served", src.ID)
+	}
 	_, _, catalog := stremioRef(it)
 	if !resolve.IsPrivate(link) && (!catalog || a.redirectHost(link.URL)) && a.mayRedirect(r, link.URL) {
 		if r.Method != http.MethodHead {
@@ -269,6 +273,11 @@ func (a *api) playLink(ctx context.Context, it db.Item, src db.MediaSource, sour
 			if catalog && s.IsRemote {
 				a.rememberPlayedChoice(ctx, it, s.ID) // whose release the play keeps to (sticky.go)
 			}
+			if s.ID != try[0].ID {
+				// At info, so a swapped version shows without debug logs.
+				a.Log.InfoContext(ctx, "stream fell back to another version", "item", it.ID,
+					"wanted", try[0].ID, "served", s.ID, "reason", firstErr)
+			}
 			if catalog && s.IsRemote {
 				// It plays now (a torrent too, once added): probe its tracks
 				// for the next PlaybackInfo, in the background.
@@ -282,9 +291,13 @@ func (a *api) playLink(ctx context.Context, it db.Item, src db.MediaSource, sour
 		if ctx.Err() != nil {
 			return s, target, link, err
 		}
-		if errors.Is(err, resolve.ErrDownloading) {
+		switch {
+		case errors.Is(err, resolve.ErrDownloading):
 			downloading = true
-		} else if catalog {
+		case resolve.Passing(err):
+			// A burst of 400s or a rate limit says nothing about the
+			// version: it stays offered.
+		case catalog:
 			a.markBadChoice(ctx, it.ID, s.ID)
 		}
 		if firstErr == nil {

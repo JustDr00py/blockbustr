@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -253,9 +254,12 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 	u := urlParams{playSession: playSessionID, device: s.DeviceID, token: jfapi.AuthFrom(r.Context()).Token,
 		audio: session.AudioStreamIndex, subtitle: session.SubtitleStreamIndex}
 
+	needs := needsTranscode(rows, b.streams, profile, opts)
+	transcodes := map[string]bool{} // by media source id, for the final order
 	out := make([]dto.MediaSourceInfo, 0, len(dtos))
 	for i := range dtos {
 		msID := *dtos[i].Id
+		transcodes[msID] = i < len(rows) && needs[rows[i].ID]
 		if !allSources && req.MediaSourceId != nil && *req.MediaSourceId != "" && !sameID(*req.MediaSourceId, msID) &&
 			(i >= len(rows) || !sameID(*req.MediaSourceId, dto.IDFromUUID(rows[i].ID).String())) {
 			continue
@@ -273,27 +277,26 @@ func (a *api) playbackInfo(w http.ResponseWriter, r *http.Request, s auth.Sessio
 		}
 		out = append(out, dtos[i])
 	}
-	// A version that plays as is beats one that needs the transcoder: the
-	// client takes the first source, and switching versions is free where
-	// transcoding spends the CPU. Rank works from addon labels, so an
-	// over-cap source with no size hint can still rank first; its probe
-	// knows better, and this order is where that correction lands. Rank
-	// order is kept within each group, and undecided sources (unprobed,
-	// uncached choices) stay behind the decided ones.
-	playsAsIs := func(ms dto.MediaSourceInfo) bool {
-		d, ok := session.Sources[*ms.Id]
-		return ok && (d.Mode == media.ModeDirect || d.Mode == media.ModeRemux)
-	}
-	slices.SortStableFunc(out, func(a, b dto.MediaSourceInfo) int {
-		switch {
-		case playsAsIs(a) && !playsAsIs(b):
-			return -1
-		case playsAsIs(b) && !playsAsIs(a):
-			return 1
-		}
-		return 0
-	})
+	// A version expected to play as is beats one that needs the
+	// transcoder: the client takes the first source, and switching
+	// versions is free where transcoding spends the CPU. Rank works from
+	// addon labels, so an over-cap source with no size hint can still rank
+	// first; its probe knows better, and this order is where that
+	// correction lands. Rank order is kept within each group, as
+	// playableFirst kept it for the session's Order (the same judgement).
+	slices.SortStableFunc(out, func(a, b dto.MediaSourceInfo) int { return cmpBool(transcodes[*a.Id], transcodes[*b.Id]) })
 	a.logPlaybackInfo(r, profile, maxBitrate, out, session)
+	if len(session.Order) > 0 {
+		// Which version a client asks for (a pick, the item id, or none)
+		// and gets first, at info: whether a client honours its user's pick
+		// shows without debug logs.
+		var first string
+		if len(out) > 0 {
+			first = deref(out[0].Name)
+		}
+		a.Log.InfoContext(r.Context(), "playback info for an addon title", "item", it.ID, "client", jfapi.AuthFrom(r.Context()).Client,
+			"asked", deref(req.MediaSourceId), "offered", len(out), "first", first)
+	}
 	if a.Cache != nil {
 		if err := a.Cache.SetJSON(r.Context(), cache.PlaySessionKey(playSessionID), session, cache.PlaySessionTTL); err != nil {
 			a.internalError(w, r, err)
@@ -395,6 +398,16 @@ func (a *api) offerStreams(r *http.Request, b *itemBatch, it db.Item, prefs stre
 				if sameID(*want, dto.IDFromUUID(c.ID).String()) && !hasChoice(choices, c.ID) {
 					choices = append(choices, c)
 				}
+			}
+		}
+	}
+	// A version the user just picked is probed again though its last probe
+	// failed (a burst of refusals passes): the pick, not an old failure,
+	// decides what plays.
+	if want != nil && *want != "" && !sameID(*want, dto.IDFromUUID(it.ID).String()) && a.Cache != nil {
+		for _, c := range choices {
+			if sameID(*want, dto.IDFromUUID(c.ID).String()) && a.probeFailed(r.Context(), c) {
+				_ = a.Cache.Delete(r.Context(), choiceProbeFailKey(c.ID))
 			}
 		}
 	}
@@ -589,27 +602,66 @@ func transcodingURL(dashedItem, msID, etag string, d media.Decision, u urlParams
 	return "/videos/" + dashedItem + "/master.m3u8?" + strings.Join(p, "&")
 }
 
-// playableFirst puts the sources that play as is for this client (direct
-// play or remux, judged from their probe) ahead of the rest, keeping rank
-// order within each group. Unprobed sources can't be judged and stay
-// behind.
+// playableFirst puts the sources expected to play as is for this client
+// (direct play or remux) ahead of those that need the transcoder, keeping
+// rank order within each group (needsTranscode).
 func playableFirst(rows []db.MediaSource, streams map[uuid.UUID][]db.MediaStream, p media.DeviceProfile, opts media.PlayOptions) []db.MediaSource {
-	asIs := map[uuid.UUID]bool{}
+	needs := needsTranscode(rows, streams, p, opts)
+	out := slices.Clone(rows)
+	slices.SortStableFunc(out, func(a, b db.MediaSource) int { return cmpBool(needs[a.ID], needs[b.ID]) })
+	return out
+}
+
+// cmpBool orders false before true.
+func cmpBool(a, b bool) int {
+	switch {
+	case a == b:
+		return 0
+	case b:
+		return -1
+	}
+	return 1
+}
+
+// needsTranscode reports which sources are expected to need the
+// transcoder for this client: a probed one by its tracks; an unprobed one
+// (an addon version not probed yet, or whose probe was refused) by the
+// codec and height its label names ("1080p HEVC • …"). One whose label
+// names no codec is expected to play as is: its rank decides. Being probed
+// never promotes a version, and a failed probe never demotes one; only a
+// version known bad (markBadChoice) leaves the offer.
+func needsTranscode(rows []db.MediaSource, streams map[uuid.UUID][]db.MediaStream, p media.DeviceProfile, opts media.PlayOptions) map[uuid.UUID]bool {
+	out := make(map[uuid.UUID]bool, len(rows))
 	for _, row := range rows {
-		if hasVideo(streams[row.ID]) {
-			d := media.Decide(p, decisionSource(row, streams[row.ID]), opts)
-			asIs[row.ID] = d.Mode == media.ModeDirect || d.Mode == media.ModeRemux
+		src := decisionSource(row, streams[row.ID])
+		if !hasVideo(streams[row.ID]) {
+			codec, height := labelVideo(row.Name)
+			if codec == "" {
+				continue
+			}
+			src = decisionSource(row, nil)
+			src.Streams = []media.Stream{{Index: 0, Type: media.StreamVideo, Codec: codec, Height: height, IsDefault: true}}
+		}
+		d := media.Decide(p, src, opts)
+		out[row.ID] = d.Mode != media.ModeDirect && d.Mode != media.ModeRemux
+	}
+	return out
+}
+
+// labelHeight finds "1080p" in a version's label.
+var labelHeight = regexp.MustCompile(`\b(\d{3,4})p\b`)
+
+// labelVideo is the video codec (as probes name it: "hevc") and height a
+// version's label names (streamLabel); "" and 0 when it names none.
+func labelVideo(name string) (codec string, height int) {
+	for c, label := range codecLabels {
+		if slices.Contains(strings.Fields(strings.ReplaceAll(name, "•", " ")), label) {
+			codec = c
+			break
 		}
 	}
-	out := slices.Clone(rows)
-	slices.SortStableFunc(out, func(a, b db.MediaSource) int {
-		switch {
-		case asIs[a.ID] && !asIs[b.ID]:
-			return -1
-		case asIs[b.ID] && !asIs[a.ID]:
-			return 1
-		}
-		return 0
-	})
-	return out
+	if m := labelHeight.FindStringSubmatch(name); m != nil {
+		height, _ = strconv.Atoi(m[1])
+	}
+	return codec, height
 }
