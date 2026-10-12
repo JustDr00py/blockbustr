@@ -271,17 +271,35 @@ func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) *prefetch {
 	if _, ok := a.loadStreamSet(ctx, it.ID); ok {
 		return nil
 	}
+	pf := &prefetch{done: make(chan struct{})}
+	if cur, ok := a.prefetches.LoadOrStore(it.ID, pf); ok {
+		// Clients ask for a title's details twice at once: the second
+		// answered at once, without versions, and was the one shown
+		// (2026-10-11). It waits on the first's collection instead.
+		return cur.(*prefetch)
+	}
+	// end tells waiters the collection is over and lets the next start.
+	end := func() (notify bool) {
+		pf.mu.Lock()
+		pf.finished = true
+		notify = pf.notify
+		pf.mu.Unlock()
+		close(pf.done)
+		a.prefetches.Delete(it.ID)
+		return notify
+	}
 	select {
 	case a.prefetch <- struct{}{}:
 	default:
+		end()
 		return nil // enough collections in flight; the next details view retries
 	}
 	lock, ok, err := a.Cache.TryLock(ctx, cache.StreamPrefetchKey(it.ID.String()), cache.StreamPrefetchTTL)
 	if err != nil || !ok {
 		<-a.prefetch
+		end()
 		return nil
 	}
-	pf := &prefetch{done: make(chan struct{})}
 	go func() {
 		pctx := context.WithoutCancel(ctx) // the request may be answered already
 		pick, err := a.pickStreams(pctx, it, streamPrefs(media.DeviceProfile{}, 0))
@@ -290,11 +308,7 @@ func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) *prefetch {
 		// skip their collection.
 		_ = lock.Unlock(pctx)
 		<-a.prefetch
-		pf.mu.Lock()
-		pf.finished = true
-		notify := pf.notify
-		pf.mu.Unlock()
-		close(pf.done)
+		notify := end()
 		if err != nil {
 			a.Log.WarnContext(pctx, "background stream collection failed", "item", it.ID, "err", err)
 			return

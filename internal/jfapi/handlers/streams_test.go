@@ -407,6 +407,40 @@ func TestDetailsPrefetchLockGuarded(t *testing.T) {
 	}
 }
 
+// Clients ask for a title's details twice at once (two connections): both
+// answers list the versions. The second answered at once without them,
+// and that was the one the app showed until the title was opened again
+// (2026-10-11).
+func TestDetailsTwiceAtOnceBothListVersions(t *testing.T) {
+	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
+		{Addon: "A", Stream: stremio.Stream{Name: "1080p", URL: "https://cdn.example/m.mkv"}},
+	}}}
+	sf := newSyncFixture(t, func(d *Deps) { d.Streams = slowStreams{fs, 300 * time.Millisecond} })
+	sf.syncAll(t)
+	matrix := sf.children(t, sf.views(t)["Popular Movies"].Id)[0]
+
+	recs := make([]*httptest.ResponseRecorder, 2)
+	var wg sync.WaitGroup
+	for i := range recs {
+		wg.Go(func() {
+			recs[i] = call(t, sf.h, "GET", "/Items/"+matrix.Id, `MediaBrowser Token="`+captureToken+`"`, "")
+		})
+	}
+	wg.Wait()
+	for i, rec := range recs {
+		var detail struct{ MediaSources []struct{ Name string } }
+		if err := json.Unmarshal(rec.Body.Bytes(), &detail); err != nil || rec.Code != 200 {
+			t.Fatalf("details %d: %d %s", i, rec.Code, rec.Body)
+		}
+		if len(detail.MediaSources) != 1 || !strings.HasPrefix(detail.MediaSources[0].Name, "1080p") {
+			t.Errorf("details %d: versions %+v, want the 1080p", i, detail.MediaSources)
+		}
+	}
+	if n := fs.calls.Load(); n != 1 {
+		t.Errorf("collections: %d, want 1", n)
+	}
+}
+
 // versionNames plays the title and returns its offered version labels.
 func versionNames(t *testing.T, h http.Handler, item, auth, body string) []string {
 	t.Helper()

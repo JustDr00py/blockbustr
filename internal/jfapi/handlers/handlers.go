@@ -120,6 +120,9 @@ type api struct {
 	// prefetch bounds the background stream collections that opening a
 	// title's details starts (prefetchStreamChoices).
 	prefetch chan struct{}
+	// prefetches are the collections in flight, by item, for a second
+	// details request to wait on.
+	prefetches sync.Map
 	// probeSem and probeFlight bound stream choice probes (probeChoice).
 	probeSem    chan struct{}
 	probeFlight singleflight.Group
