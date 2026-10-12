@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 // Info is what a stream's labels say about it. Addons put this in free
@@ -56,8 +58,12 @@ var (
 	reMulti   = regexp.MustCompile(`(?i)\b(multi|dual audio|dual-audio)\b`)
 	// Audio, on the raw text: separators matter ("DDP5.1", "DTS-HD MA").
 	reAtmos    = regexp.MustCompile(`(?i)\batmos\b`)
-	reAudio    = regexp.MustCompile(`(?i)\b(true[- ]?hd|dts[-: .]?x|dts[- .]?hd(?:[- .]?ma)?|dts|ddp|dd\+|e-?ac-?3|dd|ac-?3|aac|flac|opus)(?:\d|\b)`)
-	reChannels = regexp.MustCompile(`(?:^|\D)([1-9]\.[0-2])(?:\D|$)`)
+	reAudio    = regexp.MustCompile(`(?i)\b(true[- ]?hd|dts[-: .]?x|dts[- .]?hd(?:[- .]?ma)?|dts|ddp|dd\+|e-?ac-?3|dd|ac-?3|aac|flac|opus)(?:\d|\b|\W|$)`) // \W: "DD+ 5.1" has no \b after the +
+	reChannels = regexp.MustCompile(`[1-9]\.[0-2]`)
+	// reChannelCue ends the text before a channel layout that follows an
+	// audio codec ("DDP5.1", "TrueHD.7.1", "DTS-HD.MA.5.1", "Atmos 7.1")
+	// or the 🔊 marker (AIOStreams, MediaFusion).
+	reChannelCue = regexp.MustCompile(`(?i)(?:(?:^|[^\p{L}\p{N}])(?:true[- ]?hd|dts[-: .]?x|dts[- .]?hd(?:[- .]?ma)?|dts|ddp|dd\+|e-?ac-?3|dd|ac-?3|aac|flac|opus|atmos)[ .-]?|🔊\s*)$`)
 	// "⏱️ 2h:32m:0s", "2h 32m", "1h:05m"; minutes alone ("95m") too.
 	reDuration = regexp.MustCompile(`(?i)(?:\b(\d{1,2})\s*h[:\s]*)?\b(\d{1,3})\s*m(?:in)?\b(?:[:\s]*(\d{1,2})\s*s\b)?`)
 	// The release group trails the release name: "…x265-FLUX.mkv", "…-FLUX",
@@ -168,14 +174,34 @@ func parseAudio(text string) string {
 			}
 		}
 	}
-	if m := reChannels.FindStringSubmatchIndex(text); m != nil {
-		// Not a size ("2.0 GB").
-		rest := strings.TrimSpace(strings.ToLower(text[m[3]:]))
-		if !strings.HasPrefix(rest, "gb") && !strings.HasPrefix(rest, "mb") && !strings.HasPrefix(rest, "tb") && !strings.HasPrefix(rest, "gib") {
-			parts = append(parts, text[m[2]:m[3]])
-		}
+	if ch := parseChannels(text); ch != "" {
+		parts = append(parts, ch)
 	}
 	return strings.Join(parts, " ")
+}
+
+// parseChannels is the first channel layout ("5.1") the text names after
+// an audio codec or 🔊, or standing alone. A number inside a word isn't
+// one: "eps1.0_hellofriend" (Mr. Robot's episode titles) read as 1.0.
+func parseChannels(text string) string {
+	for _, m := range reChannels.FindAllStringIndex(text, -1) {
+		before, after := text[:m[0]], text[m[1]:]
+		prev, _ := utf8.DecodeLastRuneInString(before)
+		next, _ := utf8.DecodeRuneInString(after)
+		if unicode.IsDigit(prev) || unicode.IsDigit(next) || unicode.IsLetter(next) || next == '_' {
+			continue
+		}
+		// Not a size ("2.0 GB").
+		rest := strings.TrimSpace(strings.ToLower(after))
+		if strings.HasPrefix(rest, "gb") || strings.HasPrefix(rest, "mb") || strings.HasPrefix(rest, "tb") || strings.HasPrefix(rest, "gib") {
+			continue
+		}
+		alone := before == "" || unicode.IsSpace(prev) || strings.ContainsRune("./-", prev)
+		if reChannelCue.MatchString(before) || (alone && (after == "" || unicode.IsSpace(next) || strings.ContainsRune("./-", next))) {
+			return text[m[0]:m[1]]
+		}
+	}
+	return ""
 }
 
 // parseDuration reads a runtime label; 0 when there's none or it's not

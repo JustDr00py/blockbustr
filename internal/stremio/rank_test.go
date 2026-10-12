@@ -266,6 +266,16 @@ func TestParseAudio(t *testing.T) {
 		"Movie 2023 1080p WEB EAC3 5.1":                             "DD+ 5.1",
 		"Movie 2023 1080p x265 💾 2.0 GB":                            "",
 		"Movie.2023.1080p.WEB.h264-ADDS":                            "",
+		"Movie.2023.2160p.BluRay.TrueHD.7.1.Atmos.HEVC":             "Atmos TrueHD 7.1",
+		"Movie 2023 1080p BluRay FLAC 2.0":                          "FLAC 2.0",
+		"Movie 2023 2160p WEB-DL Atmos 7.1":                         "Atmos 7.1",
+		"Movie 2023 1080p 5.1 x264":                                 "5.1",
+		// Episode titles carry version numbers (Mr. Robot's "eps1.0_").
+		"Mr.Robot.S01E01.eps1.0_hellofriend.mov.1080p.BDRemux.rus.ukr.eng.mkv":            "",
+		"Mr.Robot.S01E03.eps1.2_d3bug.mkv.1080p.BluRay.x265.mkv":                          "",
+		"Mr.Robot.S01E01.eps1.0_hellofriend.mov.1080p.AMZN.WEB-DL.DD+5.1.H.264-Telly.mkv": "DD+ 5.1",
+		"🎧 DD+ 🔊 5.1":          "DD+ 5.1",
+		"Movie 1080p 📦 2.0 GB": "",
 	} {
 		if got := parseAudio(text); got != want {
 			t.Errorf("parseAudio(%q) = %q, want %q", text, got, want)
