@@ -226,6 +226,14 @@ func TestStreams(t *testing.T) {
 	if hits.Load() != before+1 {
 		t.Errorf("empty result refetched: %d", hits.Load()-before)
 	}
+	// A retry asks again past a cached "none", but not past cached streams.
+	fresh := FreshNone(t.Context())
+	if _, err := c.Streams(fresh, base, "movie", "tt0000001"); err != nil || hits.Load() != before+2 {
+		t.Errorf("fresh retry past cached none: hits %d, %v", hits.Load()-before, err)
+	}
+	if again, err := c.Streams(fresh, base, "movie", "tt0133093"); err != nil || len(again) != 4 || hits.Load() != before+2 {
+		t.Errorf("fresh retry refetched cached streams: hits %d, %v", hits.Load()-before, err)
+	}
 	// ...but only briefly, so one empty answer doesn't hide the title.
 	opt, err := redis.ParseURL(os.Getenv("BLOCKBUSTR_TEST_REDIS_URL"))
 	if err != nil {

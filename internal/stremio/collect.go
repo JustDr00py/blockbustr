@@ -62,11 +62,13 @@ func (c *Collector) Collect(ctx context.Context, typ, id string) ([]Offer, error
 			defer wg.Done()
 			actx, cancel := context.WithTimeout(ctx, timeout)
 			defer cancel()
+			start := time.Now()
 			streams, err := c.Registry.Client.Streams(actx, ad.base, typ, id)
 			if err != nil {
 				c.Log.Warn("stremio streams failed", "host", ad.row.Host, "type", typ, "id", id, "err", err)
 				return
 			}
+			c.Log.Debug("stremio streams", "host", ad.row.Host, "type", typ, "id", id, "streams", len(streams), "took", time.Since(start))
 			for _, s := range streams {
 				per[i] = append(per[i], Offer{Stream: s, AddonID: ad.row.ID, Addon: ad.manifest.Name, Priority: int(ad.row.Priority)})
 			}

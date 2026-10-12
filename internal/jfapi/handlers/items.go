@@ -317,6 +317,7 @@ func (a *api) withRemoteMatches(r *http.Request, iq pg.ItemQuery, local []db.Ite
 		}
 		return local
 	}
+	a.prefetchSearch(r.Context(), iq.UserID, remote)
 	seen := make(map[uuid.UUID]bool, len(local))
 	for _, it := range local {
 		seen[it.ID] = true

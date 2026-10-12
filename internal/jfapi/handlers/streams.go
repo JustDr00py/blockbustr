@@ -238,29 +238,59 @@ func (a *api) addStreamChoices(ctx context.Context, b *itemBatch, it db.Item, co
 	return nil
 }
 
-// detailsWait is how long a title's details wait for its versions the
-// first time it's opened (AIOStreams answers a new title in 3.5–4 s); a
-// slower collection finishes in the background and tells the clients.
-const detailsWait = 5 * time.Second
+// detailsCap bounds how long a title's details wait for its versions the
+// first time it's opened. AIOStreams answers a title it hasn't looked up
+// yet with nothing (2026-10-12: Grandma's Boy empty at 19:36:07, 11
+// streams on reopening), and Streamyfin builds its version picker from the
+// first details answer only, never refetching on ItemsUpdated: so the
+// details wait through the retries (prefetchRetries), up to this long. A
+// slower collection finishes in the background and tells the clients that
+// listen.
+const detailsCap = 8 * time.Second
+
+// prefetchRetries are when a collection that found nothing is asked
+// again, after its answer; prefetchRecheck is when it's asked a last time,
+// in the background, after those. Variables for tests.
+var (
+	prefetchRetries = []time.Duration{2 * time.Second, 5 * time.Second}
+	prefetchRecheck = 15 * time.Second
+)
 
 // prefetch is a background collection a details request may wait on.
 type prefetch struct {
-	done chan struct{} // closed when the versions are remembered
-	mu   sync.Mutex
+	// done is closed when the versions are remembered, or when the
+	// collection and its retries found none.
+	done chan struct{}
+	// known: the title had no versions lately (cache.StreamNoneKey), so
+	// details answer without waiting for this recheck.
+	known bool
+	mu    sync.Mutex
 	// finished, or notify: whoever comes second publishes ItemsUpdated, so
 	// a details answer that missed the versions is followed by an event.
 	finished, notify bool
 }
 
+// finish closes done (once) and reports whether a waiter gave up first.
+func (pf *prefetch) finish() (notify bool) {
+	pf.mu.Lock()
+	defer pf.mu.Unlock()
+	if !pf.finished {
+		pf.finished = true
+		close(pf.done)
+	}
+	return pf.notify
+}
+
 // prefetchStreamChoices collects a title's streams in the background when
-// its details are opened with no set remembered (TASKS P3.7 follow-up), so
-// the version picker fills without playing first; the details request waits
-// up to detailsWait for it (waitPrefetch). PlaybackInfo still re-picks with
-// the client's profile when played. The lock keeps one collection per
-// title (a client syncing a library opens many details) and throttles
-// retries while an addon fails; the semaphore bounds them across titles.
-// The versions are then probed in the background, and clients are told
-// when their tracks are known.
+// its details are opened with no set remembered (TASKS P3.7 follow-up), or
+// when a search finds it (prefetchSearch), so the version picker fills
+// without playing first; the details request waits up to detailsCap for it
+// (waitPrefetch). PlaybackInfo still re-picks with the client's profile
+// when played. The lock keeps one collection per title (a client syncing a
+// library opens many details) and throttles retries while an addon fails;
+// the semaphore bounds collections across titles. The versions are then
+// probed in the background, and clients are told when their tracks are
+// known.
 func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) *prefetch {
 	if a.Streams == nil || a.Cache == nil {
 		return nil
@@ -271,68 +301,146 @@ func (a *api) prefetchStreamChoices(ctx context.Context, it db.Item) *prefetch {
 	if _, ok := a.loadStreamSet(ctx, it.ID); ok {
 		return nil
 	}
-	pf := &prefetch{done: make(chan struct{})}
+	var none bool
+	known, _ := a.Cache.GetJSON(ctx, cache.StreamNoneKey(it.ID.String()), &none)
+	pf := &prefetch{done: make(chan struct{}), known: known}
 	if cur, ok := a.prefetches.LoadOrStore(it.ID, pf); ok {
 		// Clients ask for a title's details twice at once: the second
 		// answered at once, without versions, and was the one shown
 		// (2026-10-11). It waits on the first's collection instead.
 		return cur.(*prefetch)
 	}
-	// end tells waiters the collection is over and lets the next start.
-	end := func() (notify bool) {
-		pf.mu.Lock()
-		pf.finished = true
-		notify = pf.notify
-		pf.mu.Unlock()
-		close(pf.done)
-		a.prefetches.Delete(it.ID)
-		return notify
-	}
-	select {
-	case a.prefetch <- struct{}{}:
-	default:
-		end()
-		return nil // enough collections in flight; the next details view retries
-	}
 	lock, ok, err := a.Cache.TryLock(ctx, cache.StreamPrefetchKey(it.ID.String()), cache.StreamPrefetchTTL)
 	if err != nil || !ok {
-		<-a.prefetch
-		end()
+		pf.finish()
+		a.prefetches.CompareAndDelete(it.ID, pf)
 		return nil
 	}
-	go func() {
-		pctx := context.WithoutCancel(ctx) // the request may be answered already
-		pick, err := a.pickStreams(pctx, it, streamPrefs(media.DeviceProfile{}, 0))
-		// The slot and lock cover the collection only: probing has its own
-		// bounds, and holding them through it made quickly opened titles
-		// skip their collection.
-		_ = lock.Unlock(pctx)
-		<-a.prefetch
-		notify := end()
-		if err != nil {
-			a.Log.WarnContext(pctx, "background stream collection failed", "item", it.ID, "err", err)
-			return
-		}
-		if len(pick.Choices) == 0 {
-			return
-		}
-		if notify {
-			a.itemUpdated(pctx, it.ID) // the details answer went out without them
-		}
-		// Tracks ready by the time it's played; then tell the clients again.
-		<-a.probeChoices(pctx, it.ID, pick.Choices, 0)
-		a.itemUpdated(pctx, it.ID)
-	}()
+	go a.runPrefetch(context.WithoutCancel(ctx), it, pf, lock) // the request may be answered already
 	return pf
 }
 
-// waitPrefetch waits up to detailsWait for pf. It reports whether the
-// versions are in; if not, the collection notifies clients when they are.
-func (a *api) waitPrefetch(ctx context.Context, pf *prefetch) bool {
-	if pf == nil {
+// runPrefetch collects pf's title, retrying a collection that found
+// nothing (an aggregator's cold lookup): at prefetchRetries while the
+// details may still be waiting, then once at prefetchRecheck after
+// remembering the title has none (cache.StreamNoneKey). The lock is held
+// through the retries, so details opened meanwhile join this lookup; a
+// semaphore slot only through each collection. A title known to have none
+// is collected once, and its lock left to expire: at most one recheck per
+// StreamPrefetchTTL.
+func (a *api) runPrefetch(ctx context.Context, it db.Item, pf *prefetch, lock *cache.Lock) {
+	start, attempts, held := time.Now(), 0, true
+	defer func() {
+		if held {
+			_ = lock.Unlock(ctx)
+		}
+		pf.finish()
+		a.prefetches.CompareAndDelete(it.ID, pf)
+	}()
+	// collect picks once within a slot, waiting up to wait for one (0:
+	// as long as it takes); fresh asks the addons past a cached "none".
+	collect := func(fresh bool, wait time.Duration) (streamSet, bool, error) {
+		if !a.prefetchSlot(wait) {
+			return streamSet{}, false, nil
+		}
+		defer func() { <-a.prefetch }()
+		attempts++
+		pctx := ctx
+		if fresh {
+			pctx = stremio.FreshNone(ctx)
+		}
+		set, err := a.pickStreams(pctx, it, streamPrefs(media.DeviceProfile{}, 0))
+		return set, true, err
+	}
+	logRetried := func(set streamSet) {
+		outcome := "none"
+		if len(set.Choices) > 0 {
+			outcome = "found"
+		}
+		a.Log.InfoContext(ctx, "stream collection retried", "item", it.ID, "attempts", attempts,
+			"streams", len(set.Choices), "took", time.Since(start).Round(time.Millisecond), "outcome", outcome)
+	}
+
+	// A slot frees once a collection is in (bounded by the addon timeout);
+	// one not free by detailsCap leaves the title to its next opening.
+	set, ran, err := collect(pf.known, detailsCap)
+	switch {
+	case !ran:
+		return
+	case err != nil:
+		a.Log.WarnContext(ctx, "background stream collection failed", "item", it.ID, "err", err)
+		return
+	case pf.known:
+		logRetried(set)
+		if len(set.Choices) == 0 {
+			held = false
+			return
+		}
+	case len(set.Choices) == 0:
+		empty := time.Now()
+		for _, d := range prefetchRetries {
+			time.Sleep(time.Until(empty.Add(d)))
+			if set, _, err = collect(true, 0); err != nil || len(set.Choices) > 0 {
+				break
+			}
+		}
+		if err == nil && len(set.Choices) == 0 {
+			// None in time for the details: they answer without, and
+			// the next openings don't wait (but recheck).
+			_ = a.Cache.SetJSON(ctx, cache.StreamNoneKey(it.ID.String()), true, cache.StreamNoneTTL)
+			pf.finish()
+			time.Sleep(prefetchRecheck)
+			set, _, err = collect(true, 0)
+		}
+		if err != nil {
+			a.Log.WarnContext(ctx, "background stream collection failed", "item", it.ID, "attempts", attempts, "err", err)
+		}
+		logRetried(set)
+		if len(set.Choices) == 0 {
+			return
+		}
+	}
+	// The lock covers the collection only: probing has its own bounds,
+	// and holding it through them made quickly opened titles skip their
+	// collection.
+	notify := pf.finish()
+	_ = lock.Unlock(ctx)
+	held = false
+	a.prefetches.CompareAndDelete(it.ID, pf)
+	if notify || attempts > 1 || pf.known {
+		a.itemUpdated(ctx, it.ID) // a details answer may have gone out without them
+	}
+	// Tracks ready by the time it's played; then tell the clients again.
+	<-a.probeChoices(ctx, it.ID, set.Choices, 0)
+	a.itemUpdated(ctx, it.ID)
+}
+
+// prefetchSlot takes a prefetch semaphore slot, waiting up to wait for one
+// (0: as long as it takes). It reports whether it got one.
+func (a *api) prefetchSlot(wait time.Duration) bool {
+	if wait <= 0 {
+		a.prefetch <- struct{}{}
+		return true
+	}
+	t := time.NewTimer(wait)
+	defer t.Stop()
+	select {
+	case a.prefetch <- struct{}{}:
+		return true
+	case <-t.C:
 		return false
 	}
-	t := time.NewTimer(detailsWait)
+}
+
+// waitPrefetch waits up to detailsCap for pf: for its versions, or for its
+// retries to find none. A title known to have none isn't waited for. It
+// reports whether the collection is over; if not, the collection notifies
+// clients when the versions are in.
+func (a *api) waitPrefetch(ctx context.Context, pf *prefetch) bool {
+	if pf == nil || pf.known {
+		return false
+	}
+	t := time.NewTimer(detailsCap)
 	defer t.Stop()
 	select {
 	case <-pf.done:
@@ -347,6 +455,79 @@ func (a *api) waitPrefetch(ctx context.Context, pf *prefetch) bool {
 	}
 	pf.notify = true
 	return false
+}
+
+// searchPrefetch is how many of a search's titles get their streams
+// collected before they're opened.
+const searchPrefetch = 3
+
+// prefetchSearch starts collecting the streams of a search's first titles
+// (a series': its next episode to watch, or S1E1), so an aggregator's cold
+// lookup is under way, or over, when one is opened: its details join the
+// collection in flight. The details' wait counts from their own request.
+func (a *api) prefetchSearch(ctx context.Context, user uuid.UUID, items []db.Item) {
+	if a.Streams == nil || a.Cache == nil {
+		return
+	}
+	ctx = context.WithoutCancel(ctx)
+	n := 0
+	for _, it := range items {
+		if n == searchPrefetch {
+			break
+		}
+		if _, _, ok := stremioRef(it); !ok {
+			continue
+		}
+		n++
+		go func() {
+			if it.Type == "Series" {
+				ep, ok := a.searchEpisode(ctx, user, it)
+				if !ok {
+					return
+				}
+				it = ep
+			}
+			a.prefetchStreamChoices(ctx, it)
+		}()
+	}
+}
+
+// searchEpisode is the episode of a series found by search to collect
+// ahead: the user's next one, or S1E1 when they haven't started it.
+func (a *api) searchEpisode(ctx context.Context, user uuid.UUID, series db.Item) (db.Item, bool) {
+	if a.RemoteSearch != nil {
+		if err := a.RemoteSearch.EnsureEpisodes(ctx, series); err != nil {
+			a.Log.DebugContext(ctx, "search prefetch: series episodes unavailable", "series", series.ID, "err", err)
+			return db.Item{}, false
+		}
+	}
+	next, err := a.Queries.NextUpEpisodeIDs(ctx, db.NextUpEpisodeIDsParams{UserID: user, Lim: 1, SeriesID: &series.ID, IncludeResumable: true})
+	if err == nil && len(next) == 1 {
+		if eps, err := a.Queries.GetItemsByIDs(ctx, []uuid.UUID{next[0].ID}); err == nil && len(eps) == 1 {
+			return eps[0], true
+		}
+	}
+	children, err := a.Queries.ListChildren(ctx, db.ListChildrenParams{ParentID: &series.ID, RowLimit: 1000})
+	if err != nil {
+		return db.Item{}, false
+	}
+	for _, c := range children {
+		switch {
+		case c.Type == "Episode" && deref(c.ParentIndexNumber) == 1 && deref(c.IndexNumber) == 1:
+			return c, true
+		case c.Type == "Season" && deref(c.IndexNumber) == 1:
+			eps, err := a.Queries.ListChildren(ctx, db.ListChildrenParams{ParentID: &c.ID, RowLimit: 1000})
+			if err != nil {
+				return db.Item{}, false
+			}
+			for _, e := range eps {
+				if e.Type == "Episode" && deref(e.IndexNumber) == 1 {
+					return e, true
+				}
+			}
+		}
+	}
+	return db.Item{}, false
 }
 
 // itemUpdated tells clients (WebSocket LibraryChanged, ItemsUpdated) that
@@ -371,21 +552,27 @@ func (a *api) loadPlaySources(ctx context.Context, b *itemBatch, it db.Item) err
 // pickStreams collects and ranks a catalog item's streams for prefs, and
 // its subtitles, in parallel; remembers the best few streams
 // (stremio.streams.top) ahead of earlier choices; and returns this pick:
-// the streams best first, and the subtitles. No streams is not an error:
-// the item keeps its placeholder source.
+// the streams best first, and the subtitles in so far (addSubtitles adds
+// later ones). No streams is not an error: the item keeps its placeholder
+// source.
 func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) (streamSet, error) {
 	typ, ids, ok := a.addonIDs(ctx, it)
 	if !ok || a.Streams == nil {
 		return streamSet{}, nil
 	}
-	var subs []stremio.SubtitleOffer
-	done := make(chan struct{})
+	// Subtitles don't hold the versions up: AIOStreams' often run into the
+	// addon timeout (6 s), past the details' wait (2026-10-12). Those that
+	// miss the pick are added to its set when they come.
+	subsc := make(chan []SubtitleChoice, 1)
 	go func() {
-		defer close(done)
-		var err error
-		if subs, err = a.Streams.Subtitles(ctx, typ, ids[0]); err != nil {
-			a.Log.WarnContext(ctx, "subtitle collection failed", "item", it.ID, "err", err)
+		sctx := context.WithoutCancel(ctx) // the pick may be answered already
+		subs, err := a.Streams.Subtitles(sctx, typ, ids[0])
+		if err != nil {
+			a.Log.WarnContext(sctx, "subtitle collection failed", "item", it.ID, "err", err)
+			close(subsc)
+			return
 		}
+		subsc <- pickSubtitles(subs, a.Config.Stremio.Subtitles.Languages, a.Config.Stremio.Subtitles.PerLanguage)
 	}()
 	var offers []stremio.Offer
 	var err error
@@ -394,7 +581,6 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 			break
 		}
 	}
-	<-done
 	if err != nil {
 		return streamSet{}, err
 	}
@@ -446,11 +632,24 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 	for _, r := range picked {
 		choices = append(choices, streamChoice(it.ID, r, prefs.Runtime))
 	}
-	pick := streamSet{Choices: choices, Subtitles: pickSubtitles(subs, a.Config.Stremio.Subtitles.Languages, a.Config.Stremio.Subtitles.PerLanguage)}
+	// Subtitles cached by the addons are usually in by now; others are
+	// the set's earlier ones until they come.
+	subs, subsIn := []SubtitleChoice(nil), false
+	select {
+	case subs, subsIn = <-subsc:
+	case <-time.After(subtitleGrace):
+	}
+	pick := streamSet{Choices: choices, Subtitles: subs}
 	if len(choices) == 0 || a.Cache == nil {
 		return pick, nil
 	}
+	a.setMu.Lock()
+	defer a.setMu.Unlock()
 	set, _ := a.loadStreamSet(ctx, it.ID)
+	if !subsIn {
+		pick.Subtitles = set.Subtitles
+		go a.addSubtitles(context.WithoutCancel(ctx), it.ID, subsc)
+	}
 	// The previous pick's choices stay one generation back for clients
 	// still on them; the generation before that drops off, so the
 	// remembered list stays bounded however many devices and qualities
@@ -472,7 +671,31 @@ func (a *api) pickStreams(ctx context.Context, it db.Item, prefs stremio.Prefs) 
 			return streamSet{}, err
 		}
 	}
+	_ = a.Cache.Delete(ctx, cache.StreamNoneKey(it.ID.String())) // it has versions after all
 	return pick, nil
+}
+
+// subtitleGrace is how long a pick waits for subtitles once its streams
+// are in.
+const subtitleGrace = 200 * time.Millisecond
+
+// addSubtitles puts the subtitles a pick went without into its title's
+// set when they come; failed (closed) leaves the set's own.
+func (a *api) addSubtitles(ctx context.Context, item uuid.UUID, subsc <-chan []SubtitleChoice) {
+	subs, ok := <-subsc
+	if !ok {
+		return
+	}
+	a.setMu.Lock()
+	defer a.setMu.Unlock()
+	set, ok := a.loadStreamSet(ctx, item)
+	if !ok {
+		return
+	}
+	set.Subtitles = subs
+	if err := a.Cache.SetJSON(ctx, cache.StreamSetKey(item.String()), set, cache.StreamSetTTL); err != nil {
+		a.Log.WarnContext(ctx, "storing subtitles failed", "item", item, "err", err)
+	}
 }
 
 // choiceOwner is the item an addon stream choice id belongs to. Stock

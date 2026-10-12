@@ -1126,7 +1126,7 @@ func (s slowStreams) Collect(ctx context.Context, typ, id string) ([]stremio.Off
 	return s.fakeStreams.Collect(ctx, typ, id)
 }
 
-// An addon slower than detailsWait: the first view keeps the placeholder,
+// An addon slower than detailsCap: the first view keeps the placeholder,
 // and clients are told (ItemsUpdated) once the versions are in.
 func TestDetailsSlowCollectionAnnounced(t *testing.T) {
 	fs := &fakeStreams{offers: map[string][]stremio.Offer{"movie/tt0133093": {
@@ -1134,7 +1134,7 @@ func TestDetailsSlowCollectionAnnounced(t *testing.T) {
 	}}}
 	var bus *events.Bus
 	sf := newSyncFixture(t, func(d *Deps) {
-		d.Streams = slowStreams{fs, detailsWait + time.Second}
+		d.Streams = slowStreams{fs, detailsCap + time.Second}
 		bus = &events.Bus{Cache: d.Cache}
 		d.Events = bus
 	})
@@ -1152,8 +1152,8 @@ func TestDetailsSlowCollectionAnnounced(t *testing.T) {
 	start := time.Now()
 	var detail struct{ MediaSources []struct{ Name string } }
 	getJSON(t, sf.h, "/Items/"+matrix.Id, &detail)
-	if took := time.Since(start); len(detail.MediaSources) != 1 || took < detailsWait || took > detailsWait+time.Second {
-		t.Fatalf("first view: %+v after %s (want the placeholder after ~%s)", detail.MediaSources, took, detailsWait)
+	if took := time.Since(start); len(detail.MediaSources) != 1 || took < detailsCap || took > detailsCap+time.Second {
+		t.Fatalf("first view: %+v after %s (want the placeholder after ~%s)", detail.MediaSources, took, detailsCap)
 	}
 	deadline := time.After(5 * time.Second)
 	for {

@@ -153,7 +153,7 @@ func (c *Client) Streams(ctx context.Context, base, typ, id string) ([]Stream, e
 	var out struct {
 		Streams []Stream `json:"streams"`
 	}
-	if c.cached(ctx, key, &out.Streams) {
+	if c.cached(ctx, key, &out.Streams) && (len(out.Streams) > 0 || !freshNone(ctx)) {
 		return out.Streams, nil
 	}
 	if err := c.get(ctx, base, "stream/"+seg(typ)+"/"+seg(id)+".json", &out); err != nil {
@@ -172,6 +172,17 @@ func (c *Client) Streams(ctx context.Context, base, typ, id string) ([]Stream, e
 	c.store(ctx, key, out.Streams, ttl)
 	return out.Streams, nil
 }
+
+type freshNoneKey struct{}
+
+// FreshNone makes Streams (and so Collector.Collect) ask an addon again
+// where its cached answer is "no streams", for a retry of a title an
+// aggregator hadn't looked up yet. Cached streams are still used.
+func FreshNone(ctx context.Context) context.Context {
+	return context.WithValue(ctx, freshNoneKey{}, true)
+}
+
+func freshNone(ctx context.Context) bool { return ctx.Value(freshNoneKey{}) != nil }
 
 // Subtitles fetches the subtitles offered for a title.
 func (c *Client) Subtitles(ctx context.Context, base, typ, id string) ([]Subtitle, error) {

@@ -26,10 +26,11 @@ const (
 	ScanLockTTL       = 10 * time.Minute
 	QuickConnectTTL   = 10 * time.Minute
 	SearchTTL         = time.Hour
-	PlaySessionTTL    = 24 * time.Hour // a PlaybackInfo decision, read by stream/HLS requests
-	StreamSetTTL      = 12 * time.Hour // addon streams offered for a title, refreshed on PlaybackInfo
-	StreamBadTTL      = 6 * time.Hour  // a stream choice that failed to play isn't offered again for this long
-	StreamPrefetchTTL = time.Minute    // one background collection per title while its details are opened
+	PlaySessionTTL    = 24 * time.Hour   // a PlaybackInfo decision, read by stream/HLS requests
+	StreamSetTTL      = 12 * time.Hour   // addon streams offered for a title, refreshed on PlaybackInfo
+	StreamBadTTL      = 6 * time.Hour    // a stream choice that failed to play isn't offered again for this long
+	StreamPrefetchTTL = time.Minute      // one background collection per title while its details are opened
+	StreamNoneTTL     = 15 * time.Minute // a title whose collection and retries all found nothing
 )
 
 // SessionsKey is the set of active device IDs.
@@ -80,6 +81,10 @@ func StreamBadKey(item string) Key { return Key("streambad:" + item) }
 // StreamPrefetchKey guards one title's background stream collection, started
 // by opening its details without a remembered set (TASKS P3.7 follow-up).
 func StreamPrefetchKey(item string) Key { return Key("lock:streamprefetch:" + item) }
+
+// StreamNoneKey marks a title whose collection, retried, found no streams:
+// its details answer without waiting for another.
+func StreamNoneKey(item string) Key { return Key("streamnone:" + item) }
 
 // StremioMetaKey caches an addon's meta for one title.
 func StremioMetaKey(addon, typ, id string) Key {
