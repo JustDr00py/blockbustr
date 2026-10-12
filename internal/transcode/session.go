@@ -32,6 +32,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sysadmin/blockbustr/internal/redact"
 )
 
 // DefaultSegmentSeconds is the HLS segment length (transcode.segment_seconds).
@@ -581,7 +583,7 @@ func (m *Manager) start(ctx context.Context, id string, opts StartOptions, start
 			ended = "stopped"
 		case err != nil:
 			ended = "failed"
-			s.setState(StateFailed, fmt.Errorf("ffmpeg: %w: %s", err, bytes.TrimSpace(stderr.Bytes())))
+			s.setState(StateFailed, fmt.Errorf("ffmpeg: %w: %s", err, redact.URLs(string(bytes.TrimSpace(stderr.Bytes())))))
 		default:
 			s.setState(StateDone, nil)
 		}

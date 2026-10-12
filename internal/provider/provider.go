@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sysadmin/blockbustr/internal/ratelimit"
+	"github.com/sysadmin/blockbustr/internal/redact"
 )
 
 // Name identifies a provider in URLs, the database and logs.
@@ -160,7 +161,7 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		resp, err := c.HTTP.Do(req)
 		switch {
 		case err != nil:
-			lastErr = err
+			lastErr = redact.Error(err) // TorBox's requestdl takes the key as token=
 		case resp.StatusCode != http.StatusTooManyRequests && resp.StatusCode < 500:
 			return resp, nil
 		default:

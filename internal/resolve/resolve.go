@@ -35,6 +35,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/cache"
 	"github.com/sysadmin/blockbustr/internal/metrics"
 	"github.com/sysadmin/blockbustr/internal/provider"
+	"github.com/sysadmin/blockbustr/internal/redact"
 )
 
 // Kind is what a Source points at.
@@ -275,7 +276,8 @@ func (r *Resolver) Open(ctx context.Context, method, link string, from http.Head
 	if c == nil {
 		c = defaultStream
 	}
-	return c.Do(req)
+	resp, err := c.Do(req)
+	return resp, redact.Error(err) // the link carries the account's key
 }
 
 func (r *Resolver) client() *http.Client {
@@ -390,7 +392,7 @@ func (r *Resolver) follow(ctx context.Context, target string) (Link, error) {
 	req.Header.Set("User-Agent", UserAgent)
 	resp, err := r.client().Do(req)
 	if err != nil {
-		return l, fmt.Errorf("resolve: %w", err)
+		return l, fmt.Errorf("resolve: %w", redact.Error(err))
 	}
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 64<<10))
 	_ = resp.Body.Close()

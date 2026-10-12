@@ -37,6 +37,7 @@ import (
 	"github.com/sysadmin/blockbustr/internal/provider"
 	"github.com/sysadmin/blockbustr/internal/provider/realdebrid"
 	"github.com/sysadmin/blockbustr/internal/provider/torbox"
+	"github.com/sysadmin/blockbustr/internal/redact"
 	"github.com/sysadmin/blockbustr/internal/resolve"
 	"github.com/sysadmin/blockbustr/internal/secret"
 	"github.com/sysadmin/blockbustr/internal/settings"
@@ -470,7 +471,8 @@ func healthURL(listen string) (string, error) {
 const logBufferSize = 5000
 
 // newLogger logs to w at the configured level, and into buf (the Logs
-// page) at buf's level, which starts at the configured one too.
+// page) at buf's level, which starts at the configured one too. URLs are
+// cut to their host in both: addon and debrid URLs carry keys.
 func newLogger(w io.Writer, c config.Log, buf *logbuf.Buffer) *slog.Logger {
 	var level slog.Level
 	_ = level.UnmarshalText([]byte(c.Level)) // validated by config.Validate
@@ -480,7 +482,7 @@ func newLogger(w io.Writer, c config.Log, buf *logbuf.Buffer) *slog.Logger {
 		h = slog.NewJSONHandler(w, opts)
 	}
 	buf.SetLevel(level)
-	return slog.New(buf.Handler(h))
+	return slog.New(redact.Handler(buf.Handler(h)))
 }
 
 // playbackLogKeep is how long the playback log keeps a play.

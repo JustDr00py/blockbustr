@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sysadmin/blockbustr/internal/redact"
 )
 
 // StreamType mirrors Jellyfin's MediaStreamType (and media_streams.type).
@@ -155,7 +157,8 @@ func execFFProbe(ctx context.Context, bin string, args []string) ([]byte, error)
 		if ctx.Err() != nil {
 			return nil, fmt.Errorf("ffprobe: %w", ctx.Err())
 		}
-		return nil, fmt.Errorf("ffprobe: %w: %s", err, strings.TrimSpace(stderr.String()))
+		// ffprobe names its input, a URL with the account's key.
+		return nil, fmt.Errorf("ffprobe: %w: %s", err, redact.URLs(strings.TrimSpace(stderr.String())))
 	}
 	return out.Bytes(), nil
 }

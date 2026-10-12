@@ -261,3 +261,21 @@ func TestProbeHonoursContextDeadline(t *testing.T) {
 		t.Errorf("probe took %v after a 1s deadline", took)
 	}
 }
+
+// ffprobe names its input on failure; a debrid link's key must not reach
+// the error (production: a TorBox token logged with "Invalid data").
+func TestProbeErrorRedactsURL(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "ffprobe")
+	script := "#!/bin/sh\nfor a; do last=$a; done\necho \"$last: Invalid data found when processing input\" >&2\nexit 1\n"
+	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := "https://store-021.tb-cdn.st/dl/1/2?token=SECRET123"
+	_, err := Prober{Binary: bin}.Probe(context.Background(), link, Options{Remote: true})
+	if err == nil {
+		t.Fatal("no error")
+	}
+	if strings.Contains(err.Error(), "SECRET123") || !strings.Contains(err.Error(), "Invalid data") || !strings.Contains(err.Error(), "tb-cdn.st") {
+		t.Errorf("error = %v", err)
+	}
+}
