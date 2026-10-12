@@ -300,6 +300,56 @@ func TestPickFile(t *testing.T) {
 	}
 }
 
+// An addon's name or index pointing at a .txt, a sample or a promo clip
+// gets the feature instead (production: Aliens resolved to "Downloaded
+// from TPB.txt").
+func TestPickFileSkipsJunk(t *testing.T) {
+	const mb = 1 << 20
+	files := []provider.File{
+		{ID: "txt", Path: "Aliens.1986/Downloaded from TPB.txt", SizeBytes: 54},
+		{ID: "main", Path: "Aliens.1986/Aliens.1986.1080p.mkv", SizeBytes: 9000 * mb},
+		{ID: "sample", Path: "Aliens.1986/Sample/aliens-sample.mkv", SizeBytes: 80 * mb},
+		{ID: "promo", Path: "Aliens.1986/Visit-our-site.mp4", SizeBytes: 3 * mb},
+		{ID: "small", Path: "Aliens.1986/Aliens.1986.720p.mkv", SizeBytes: 4000 * mb},
+	}
+	cases := []struct {
+		idx  int
+		name string
+		want string
+	}{
+		{0, "", "main"},                         // index on the .txt
+		{-1, "Downloaded from TPB.txt", "main"}, // name of the .txt
+		{2, "", "main"},                         // index on the sample
+		{-1, "aliens-sample.mkv", "main"},       // name of the sample
+		{3, "", "main"},                         // index on a tiny video
+		{4, "", "small"},                        // a real alternative cut is honoured
+	}
+	for _, c := range cases {
+		if f, ok := pickFile(files, c.idx, c.name); !ok || f.ID != c.want {
+			t.Errorf("pickFile(%d, %q) = %q, want %q", c.idx, c.name, f.ID, c.want)
+		}
+	}
+
+	// A short is played when it's all there is; a sample only as a last
+	// resort, after any other video.
+	short := []provider.File{
+		{ID: "txt", Path: "Short/readme.txt", SizeBytes: 1},
+		{ID: "film", Path: "Short/Short.Film.mp4", SizeBytes: 20 * mb},
+		{ID: "trailer", Path: "Short/Short.Film.Trailer.mp4", SizeBytes: 30 * mb},
+	}
+	for _, idx := range []int{-1, 0} {
+		if f, ok := pickFile(short, idx, ""); !ok || f.ID != "film" {
+			t.Errorf("short, index %d: picked %q, want film", idx, f.ID)
+		}
+	}
+	if f, ok := pickFile(short, 1, ""); !ok || f.ID != "film" {
+		t.Errorf("short, index on it: picked %q", f.ID)
+	}
+	if _, ok := pickFile([]provider.File{{ID: "x", Path: "a.txt", SizeBytes: 9000 * mb}}, 0, "a.txt"); ok {
+		t.Error("picked a .txt by name and index")
+	}
+}
+
 func TestPGTorrents(t *testing.T) {
 	q, pool := testutil.Queries(t)
 	if _, err := pool.Exec(t.Context(), `INSERT INTO debrid_accounts (provider, api_key_enc) VALUES ('realdebrid', '\x00'), ('torbox', '\x00')`); err != nil {

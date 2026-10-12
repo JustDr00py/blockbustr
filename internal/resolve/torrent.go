@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -247,25 +248,49 @@ var videoExts = map[string]bool{".mkv": true, ".mp4": true, ".m4v": true, ".avi"
 
 func isVideo(name string) bool { return videoExts[strings.ToLower(path.Ext(name))] }
 
+// minVideoBytes is the size below which a video is likely junk (a promo
+// clip, a sample left unnamed) when the torrent has a bigger one.
+const minVideoBytes = 50 << 20
+
+// sampleRe finds samples and trailers by name, folders included.
+var sampleRe = regexp.MustCompile(`(?i)(?:^|[^a-z0-9])(?:samples?|trailers?)(?:[^a-z0-9]|$)`)
+
+func isSample(f provider.File) bool { return sampleRe.MatchString(f.Path) }
+
+// isMain reports whether f looks like the feature: a video, not a sample,
+// not tiny (an unknown size isn't tiny).
+func isMain(f provider.File) bool {
+	return isVideo(f.Path) && !isSample(f) && (f.SizeBytes <= 0 || f.SizeBytes >= minVideoBytes)
+}
+
 // pickFile chooses the file a stream means: the one named like the addon's
 // filename, else the one at its index (Stremio's fileIdx counts every file
 // in torrent order, as the accounts list them once all are selected), else
-// the largest video.
+// the largest video. Only videos are picked, and while the torrent has a
+// main video (isMain) samples and tiny videos aren't either: an addon's
+// name or index can point at a .txt or a sample, and a short is still
+// played when it's all there is.
 func pickFile(files []provider.File, idx int, name string) (provider.File, bool) {
+	hasMain := slices.ContainsFunc(files, isMain)
+	ok := func(f provider.File) bool { return isVideo(f.Path) && (!hasMain || isMain(f)) }
 	if name != "" {
 		for _, f := range files {
-			if strings.EqualFold(path.Base(f.Path), path.Base(name)) {
+			if strings.EqualFold(path.Base(f.Path), path.Base(name)) && ok(f) {
 				return f, true
 			}
 		}
 	}
-	if idx >= 0 && idx < len(files) && isVideo(files[idx].Path) {
+	if idx >= 0 && idx < len(files) && ok(files[idx]) {
 		return files[idx], true
 	}
+	// The largest acceptable video, one that isn't a sample first.
 	var best provider.File
 	found := false
 	for _, f := range files {
-		if isVideo(f.Path) && (!found || f.SizeBytes > best.SizeBytes) {
+		if !ok(f) {
+			continue
+		}
+		if !found || isSample(best) && !isSample(f) || isSample(best) == isSample(f) && f.SizeBytes > best.SizeBytes {
 			best, found = f, true
 		}
 	}
