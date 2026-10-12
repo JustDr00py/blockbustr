@@ -205,6 +205,19 @@ var mediaTypeItems = map[string][]string{"video": {"Movie", "Episode"}}
 // folderTypes are the item types Jellyfin reports with IsFolder true.
 const folderTypes = "('CollectionFolder','Folder','Series','Season','BoxSet')"
 
+// inLibraries is the condition that item i is in one of libs (a uuid[]
+// expression): its own library, or one of the catalog libraries listing it
+// (library_ids).
+func inLibraries(libs string) string {
+	return "(i.library_id = ANY(" + libs + ") OR i.library_ids && " + libs + ")"
+}
+
+// folderLibrary is the library of folder (a placeholder for an item id);
+// NULL when it isn't a library folder, which no library_ids contains.
+func folderLibrary(folder string) string {
+	return "(SELECT f.library_id FROM items f WHERE f.id = " + folder + " AND f.type = 'CollectionFolder')"
+}
+
 // from adds q's filters to b and returns the FROM … WHERE clause over items
 // i (with libraries l and the user's user_data ud), plus the placeholder of
 // the user argument. Other queries reuse it to range over the same items.
@@ -217,7 +230,7 @@ func (q ItemQuery) from(b *sqlBuilder) (from, user string) {
 	if !q.reachesDiscover() {
 		libs += " AND l.kind <> 'discover'"
 	}
-	b.and("i.library_id = ANY(ARRAY(SELECT l.id FROM libraries l WHERE " + libs + "))")
+	b.and(inLibraries("ARRAY(SELECT l.id FROM libraries l WHERE " + libs + ")"))
 	b.and("i.missing_since IS NULL")
 	q.Access.apply(b)
 
@@ -227,10 +240,15 @@ func (q ItemQuery) from(b *sqlBuilder) (from, user string) {
 		// top_parent_id is the library folder for every descendant; below a
 		// library the hierarchy is at most Series → Season → Episode.
 		// The seasons' ids are an array (= ANY), not a hashed subplan, so
-		// every branch can use an index (TASKS P4.5).
-		b.and(fmt.Sprintf("(i.top_parent_id = %[1]s OR i.parent_id = %[1]s OR i.parent_id = ANY(ARRAY(SELECT s.id FROM items s WHERE s.parent_id = %[1]s)))", p))
+		// every branch can use an index (TASKS P4.5). A catalog title (and
+		// its seasons and episodes) is in every library it's listed in.
+		b.and(fmt.Sprintf("(i.top_parent_id = %[1]s OR i.parent_id = %[1]s OR i.parent_id = ANY(ARRAY(SELECT s.id FROM items s WHERE s.parent_id = %[1]s))"+
+			" OR i.library_ids @> ARRAY[%[2]s])", p, folderLibrary(p)))
 	case q.ParentID != nil:
-		b.and("i.parent_id = " + b.arg(*q.ParentID))
+		// A library's own titles, and the catalog titles at home in another
+		// library that it lists too.
+		p := b.arg(*q.ParentID)
+		b.and(fmt.Sprintf("(i.parent_id = %[1]s OR (i.canonical_key IS NOT NULL AND i.library_ids @> ARRAY[%[2]s]))", p, folderLibrary(p)))
 	case !q.Recursive && len(q.IDs) == 0:
 		b.and("i.type = 'CollectionFolder'") // the user root's children are the libraries
 	}

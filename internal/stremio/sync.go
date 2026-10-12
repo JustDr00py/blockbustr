@@ -67,6 +67,10 @@ type Syncer struct {
 	// enabled addon serves meta for its IMDb id: streaming-service
 	// catalogs list "tt…" ids, and AIOStreams' meta covers only its own.
 	MetaFallback string
+	// IMDb (TMDB) finds the IMDb id of a title a catalog lists by its TMDB
+	// id, so it's the same item as in catalogs listing "tt…" ids; nil, or
+	// without a key, leaves it keyed by its TMDB id.
+	IMDb IMDbResolver
 
 	once     sync.Once
 	trigger  chan struct{}
@@ -302,19 +306,21 @@ func (s *Syncer) syncCatalog(ctx context.Context, ad addonInfo, sources []addonI
 	w := &catalogWriter{s: s, q: q, lib: lib, folder: &folder, addon: ad.row.ID}
 	var series []Meta
 	var seriesIDs []uuid.UUID
-	for _, m := range metas {
-		id, err := w.title(ctx, m, row.CatalogType)
+	for i, m := range metas {
+		id, home, err := w.title(ctx, m, row.CatalogType, i)
 		if err != nil {
 			return err
 		}
-		if row.CatalogType == "series" {
+		// A series' episodes come from its home library's catalog only:
+		// another catalog may list them by other ids.
+		if row.CatalogType == "series" && home {
 			series, seriesIDs = append(series, m), append(seriesIDs, id)
 		}
 	}
 	if len(series) > 0 {
 		w.episodes(ctx, series, seriesIDs, sources)
 	}
-	missing, err := q.MarkUnseenMissing(ctx, db.MarkUnseenMissingParams{LibraryID: lib.ID, ScanStart: &dbStart})
+	missing, err := s.retire(ctx, q, lib.ID, dbStart)
 	if err != nil {
 		return err
 	}
@@ -322,7 +328,11 @@ func (s *Syncer) syncCatalog(ctx context.Context, ad addonInfo, sources []addonI
 	if grace <= 0 {
 		grace = DefaultMissingGrace
 	}
-	deleted, err := q.DeleteMissingBefore(ctx, db.DeleteMissingBeforeParams{LibraryID: lib.ID, Cutoff: ptr(dbStart.Add(-grace))})
+	cutoff := dbStart.Add(-grace)
+	if err := q.DeleteMissingMemberships(ctx, db.DeleteMissingMembershipsParams{LibraryID: lib.ID, Cutoff: &cutoff}); err != nil {
+		return err
+	}
+	deleted, err := q.DeleteMissingBefore(ctx, db.DeleteMissingBeforeParams{LibraryID: lib.ID, Cutoff: &cutoff})
 	if err != nil {
 		return err
 	}
@@ -437,9 +447,105 @@ func optString(s string) *string {
 
 func ptr[T any](v T) *T { return &v }
 
-// title upserts a movie or series and, while the catalog still owns its
-// metadata, its artwork.
-func (w *catalogWriter) title(ctx context.Context, m Meta, catalogType string) (uuid.UUID, error) {
+// retire ends the sync of a library whose catalog was read from dbStart:
+// titles it no longer lists leave it (and move home if it was theirs),
+// titles in no catalog any more and episodes not written are missing, and
+// seasons and episodes follow their titles. It returns how many titles
+// and episodes went missing.
+func (s *Syncer) retire(ctx context.Context, q *db.Queries, lib uuid.UUID, dbStart time.Time) (int64, error) {
+	titles, err := q.MarkUnseenMemberships(ctx, db.MarkUnseenMembershipsParams{LibraryID: lib, ScanStart: dbStart})
+	if err != nil {
+		return 0, err
+	}
+	episodes, err := q.MarkUnseenEpisodesMissing(ctx, db.MarkUnseenEpisodesMissingParams{LibraryID: lib, ScanStart: &dbStart})
+	if err != nil {
+		return 0, err
+	}
+	if err := q.RehomeTitles(ctx, lib); err != nil {
+		return 0, err
+	}
+	if err := q.RefreshTitleLibraries(ctx, lib); err != nil {
+		return 0, err
+	}
+	return titles + episodes, q.SyncTitleDescendants(ctx, lib)
+}
+
+// IMDbResolver finds a TMDB title's IMDb id (tmdb.Client).
+type IMDbResolver interface {
+	Enabled() bool
+	IMDbID(ctx context.Context, mediaType string, tmdbID int) (string, error)
+}
+
+// TitleKey is a title's canonical_key, one item per key whichever catalogs
+// list it: "movie:tt…" by its IMDb id, else "movie:tmdb:…", else the
+// addon's own id. catalogType is "movie" or "series".
+func TitleKey(catalogType, imdb string, tmdb int, id string) string {
+	switch {
+	case imdb != "":
+		return catalogType + ":" + imdb
+	case tmdb > 0:
+		return catalogType + ":tmdb:" + strconv.Itoa(tmdb)
+	}
+	return catalogType + ":id:" + id
+}
+
+// titleIDs are the IMDb and TMDB ids a catalog entry carries: IMDb from
+// imdb_id or a "tt" id, TMDB from Cinemeta's moviedb_id or a "tmdb:" id.
+func titleIDs(m Meta) (imdb string, tmdb int) {
+	imdb = m.IMDbID
+	if imdb == "" && strings.HasPrefix(m.ID, "tt") {
+		imdb = m.ID
+	}
+	if n, err := strconv.Atoi(string(m.MovieDBID)); err == nil && n > 0 {
+		tmdb = n
+	} else if rest, ok := strings.CutPrefix(m.ID, "tmdb:"); ok {
+		if n, err := strconv.Atoi(rest); err == nil && n > 0 {
+			tmdb = n
+		}
+	}
+	return imdb, tmdb
+}
+
+// imdbFor is the IMDb id of a TMDB title, remembered for imdbKeep (a day
+// when it has none); "" when it can't be found.
+func (s *Syncer) imdbFor(ctx context.Context, catalogType string, tmdb int) string {
+	if s.IMDb == nil || !s.IMDb.Enabled() {
+		return ""
+	}
+	mediaType := "movie"
+	if catalogType == "series" {
+		mediaType = "tv"
+	}
+	key := cache.Key("tmdbimdb:" + mediaType + ":" + strconv.Itoa(tmdb))
+	var imdb string
+	if s.Cache != nil {
+		if ok, err := s.Cache.GetJSON(ctx, key, &imdb); err == nil && ok {
+			return imdb
+		}
+	}
+	imdb, err := s.IMDb.IMDbID(ctx, mediaType, tmdb)
+	if err != nil {
+		imdb = ""
+	}
+	if s.Cache != nil && ctx.Err() == nil {
+		keep := imdbKeep
+		if imdb == "" {
+			keep = 24 * time.Hour
+		}
+		_ = s.Cache.SetJSON(ctx, key, imdb, keep)
+	}
+	return imdb
+}
+
+// imdbKeep is how long a TMDB title's IMDb id is remembered.
+const imdbKeep = 30 * 24 * time.Hour
+
+// title upserts a movie or series, one item per title whichever catalogs
+// list it, and records that it's in this library at position. home
+// reports whether this library is its home (its catalog writes the
+// episodes); while the catalog still owns its metadata there, it also
+// sets its artwork.
+func (w *catalogWriter) title(ctx context.Context, m Meta, catalogType string, position int) (id uuid.UUID, home bool, err error) {
 	typ := "Movie"
 	if catalogType == "series" {
 		typ = "Series"
@@ -448,20 +554,46 @@ func (w *catalogWriter) title(ctx context.Context, m Meta, catalogType string) (
 	if y := m.Year(); y > 0 {
 		year = ptr(int32(y))
 	}
+	imdb, tmdb := titleIDs(m)
+	if imdb == "" && tmdb > 0 {
+		if imdb = w.s.imdbFor(ctx, catalogType, tmdb); imdb != "" {
+			// Keyed by its TMDB id until now: the same item from here on.
+			if err := w.q.RekeyTitle(ctx, db.RekeyTitleParams{
+				NewKey: TitleKey(catalogType, imdb, tmdb, m.ID), OldKey: TitleKey(catalogType, "", tmdb, m.ID),
+			}); err != nil {
+				return uuid.Nil, false, err
+			}
+		}
+	}
+	ids := map[string]string{}
+	if imdb != "" {
+		ids["Imdb"] = imdb
+	}
+	if tmdb > 0 {
+		ids["Tmdb"] = strconv.Itoa(tmdb)
+	}
+	pids, _ := json.Marshal(ids)
+	newID := uuid.New()
+	if imdb != "" {
+		newID = DiscoverID(imdb) // as a search finds it
+	}
 	name := strings.TrimSpace(m.Name)
-	res, err := w.q.UpsertStremioItem(ctx, db.UpsertStremioItemParams{
-		LibraryID: w.lib.ID, ParentID: w.folder, TopParentID: w.folder, Type: typ,
+	res, err := w.q.UpsertStremioTitle(ctx, db.UpsertStremioTitleParams{
+		ID: newID, LibraryID: w.lib.ID, FolderID: w.folder, Type: typ,
 		Name: name, SortName: library.SortName(name), Path: ptr("stremio:" + catalogType + ":" + m.ID),
-		StremioRef: w.ref(catalogType, m.ID), ProductionYear: year, PremiereDate: date(m.Released),
-		Overview: optString(m.Description), ProviderIds: providerIDs(m),
+		StremioRef: w.ref(catalogType, m.ID), CanonicalKey: ptr(TitleKey(catalogType, imdb, tmdb, m.ID)),
+		ProductionYear: year, PremiereDate: date(m.Released), Overview: optString(m.Description), ProviderIds: pids,
 	})
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, false, err
+	}
+	if err := w.q.UpsertItemLibrary(ctx, db.UpsertItemLibraryParams{ItemID: res.ID, LibraryID: w.lib.ID, Position: int32(position)}); err != nil {
+		return uuid.Nil, false, err
 	}
 	if res.CatalogOwned {
 		err = w.artwork(ctx, res.ID, map[string]string{"Primary": m.Poster, "Backdrop": m.Background, "Logo": m.Logo})
 	}
-	return res.ID, err
+	return res.ID, res.Home, err
 }
 
 // artwork replaces an item's remote images with the catalog's.

@@ -361,7 +361,7 @@ func (d *Discover) upsert(ctx context.Context, w *catalogWriter, f found, typ, i
 	w.addon = f.Addon
 	res, err := w.q.UpsertDiscoverItem(ctx, db.UpsertDiscoverItemParams{
 		ID: DiscoverID(imdb), LibraryID: w.lib.ID, Type: typ, Name: name, SortName: library.SortName(name),
-		Path: ptr("stremio:" + f.Type + ":" + imdb), StremioRef: w.ref(f.Type, imdb),
+		Path: ptr("stremio:" + f.Type + ":" + imdb), StremioRef: w.ref(f.Type, imdb), CanonicalKey: ptr(TitleKey(f.Type, imdb, 0, imdb)),
 		ProductionYear: year, PremiereDate: date(m.Released), Overview: optString(m.Description), ProviderIds: providerIDs(m),
 	})
 	if err != nil {

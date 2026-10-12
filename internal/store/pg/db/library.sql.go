@@ -461,7 +461,7 @@ func (q *Queries) ListChapters(ctx context.Context, itemID uuid.UUID) ([]Chapter
 }
 
 const listLibraryItems = `-- name: ListLibraryItems :many
-SELECT id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language FROM items WHERE library_id = $1 ORDER BY type, path NULLS FIRST, index_number NULLS FIRST
+SELECT id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language, canonical_key, library_ids FROM items WHERE library_id = $1 ORDER BY type, path NULLS FIRST, index_number NULLS FIRST
 `
 
 // For tests and admin views: every item of a library in a stable order.
@@ -510,6 +510,8 @@ func (q *Queries) ListLibraryItems(ctx context.Context, libraryID uuid.UUID) ([]
 			&i.MetadataRefreshedAt,
 			&i.MetadataSource,
 			&i.OriginalLanguage,
+			&i.CanonicalKey,
+			&i.LibraryIds,
 		); err != nil {
 			return nil, err
 		}

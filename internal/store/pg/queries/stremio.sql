@@ -121,6 +121,129 @@ ON CONFLICT (library_id, path) WHERE path IS NOT NULL DO UPDATE SET
     missing_since       = NULL
 RETURNING id, (coalesce(metadata_source, 'none') = 'none')::boolean AS catalog_owned;
 
+-- name: UpsertStremioTitle :one
+-- A catalog movie or series: one item per title (canonical_key), whichever
+-- catalogs list it. Its home library's catalog (or the first catalog to
+-- list a title found by search) sets its path, addon ref and, until
+-- metadata is applied (TMDB), its name, year and overview; any catalog
+-- merges in provider ids and keeps it fresh. home reports whether this is
+-- its home: that catalog writes its episodes.
+INSERT INTO items (id, library_id, parent_id, top_parent_id, type, name, sort_name, source_kind,
+                   path, stremio_ref, canonical_key, production_year, premiere_date, overview,
+                   provider_ids, date_last_refreshed)
+VALUES (@id, @library_id, @folder_id, @folder_id, @type, @name, @sort_name, 'stremio',
+        @path, @stremio_ref, @canonical_key, sqlc.narg('production_year'), sqlc.narg('premiere_date'),
+        sqlc.narg('overview'), @provider_ids, now())
+ON CONFLICT (canonical_key) WHERE canonical_key IS NOT NULL DO UPDATE SET
+    library_id    = CASE WHEN items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.library_id ELSE items.library_id END,
+    parent_id     = CASE WHEN items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.parent_id ELSE items.parent_id END,
+    top_parent_id = CASE WHEN items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.top_parent_id ELSE items.top_parent_id END,
+    path          = CASE WHEN items.library_id = EXCLUDED.library_id
+                           OR items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.path ELSE items.path END,
+    stremio_ref   = CASE WHEN items.library_id = EXCLUDED.library_id
+                           OR items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.stremio_ref ELSE items.stremio_ref END,
+    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.name ELSE items.name END,
+    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.sort_name ELSE items.sort_name END,
+    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.production_year ELSE items.production_year END,
+    premiere_date   = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.premiere_date ELSE items.premiere_date END,
+    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.overview ELSE items.overview END,
+    provider_ids        = items.provider_ids || EXCLUDED.provider_ids,
+    date_last_refreshed = now(),
+    is_missing          = false,
+    missing_since       = NULL
+RETURNING id, (coalesce(metadata_source, 'none') = 'none' AND library_id = @library_id)::boolean AS catalog_owned,
+          (library_id = @library_id)::boolean AS home;
+
+-- name: RekeyTitle :exec
+-- A title first keyed by its TMDB id, now that its IMDb id is known; left
+-- alone if another item already has that key.
+UPDATE items i SET canonical_key = @new_key::text
+WHERE i.canonical_key = @old_key::text
+  AND NOT EXISTS (SELECT 1 FROM items o WHERE o.canonical_key = @new_key::text);
+
+-- name: UpsertItemLibrary :exec
+-- A catalog sync saw the title: it's (still) in the library.
+INSERT INTO item_libraries (item_id, library_id, position, seen_at)
+VALUES (@item_id, @library_id, @position, now())
+ON CONFLICT (item_id, library_id) DO UPDATE SET
+    position = EXCLUDED.position, seen_at = now(), missing_since = NULL;
+
+-- name: MarkUnseenMemberships :execrows
+-- Titles the catalog sync that started at @scan_start didn't see: they left
+-- the catalog (the library), not necessarily the others.
+UPDATE item_libraries SET missing_since = coalesce(missing_since, now())
+WHERE library_id = @library_id AND seen_at < @scan_start;
+
+-- name: DeleteMissingMemberships :exec
+DELETE FROM item_libraries WHERE library_id = @library_id AND missing_since < @cutoff;
+
+-- name: RehomeTitles :exec
+-- Titles of the library whose home isn't a live, enabled library of theirs
+-- any more move to one that is (the most recently seen): its catalog writes
+-- their episodes from now on. Titles in no such library stay put.
+UPDATE items i SET library_id = n.library_id, parent_id = n.folder_id, top_parent_id = n.folder_id
+FROM (
+    SELECT DISTINCT ON (t.id) t.id, il.library_id, f.id AS folder_id
+    FROM items t
+    JOIN item_libraries il ON il.item_id = t.id AND il.missing_since IS NULL
+    JOIN libraries l ON l.id = il.library_id AND l.enabled
+    JOIN items f ON f.library_id = il.library_id AND f.type = 'CollectionFolder'
+    WHERE t.canonical_key IS NOT NULL
+      AND (t.library_id = @library_id
+           OR EXISTS (SELECT 1 FROM item_libraries m WHERE m.item_id = t.id AND m.library_id = @library_id))
+      AND NOT EXISTS (SELECT 1 FROM item_libraries h JOIN libraries hl ON hl.id = h.library_id AND hl.enabled
+                      WHERE h.item_id = t.id AND h.library_id = t.library_id AND h.missing_since IS NULL)
+    ORDER BY t.id, il.seen_at DESC, il.library_id
+) n
+WHERE i.id = n.id;
+
+-- name: RefreshTitleLibraries :exec
+-- The library's titles' library_ids are the libraries they're live in; a
+-- title live in none is missing (deleted after the grace, like a file).
+-- Titles found by search (in no catalog) aren't the library's.
+UPDATE items t SET
+    library_ids   = coalesce(live.ids, '{}'),
+    is_missing    = live.ids IS NULL,
+    missing_since = CASE WHEN live.ids IS NULL THEN coalesce(t.missing_since, now()) END
+FROM (
+    SELECT c.id, (SELECT array_agg(il.library_id ORDER BY il.library_id) FROM item_libraries il
+                  WHERE il.item_id = c.id AND il.missing_since IS NULL) AS ids
+    FROM items c
+    WHERE c.canonical_key IS NOT NULL
+      AND (c.library_id = @library_id
+           OR EXISTS (SELECT 1 FROM item_libraries m WHERE m.item_id = c.id AND m.library_id = @library_id))
+) live
+WHERE t.id = live.id
+  AND (t.library_ids, t.is_missing) IS DISTINCT FROM (coalesce(live.ids, '{}'), live.ids IS NULL);
+
+-- name: SyncTitleDescendants :exec
+-- Seasons and episodes follow their title: its home and its libraries.
+UPDATE items c SET library_id = t.library_id, top_parent_id = t.top_parent_id, library_ids = t.library_ids
+FROM items t
+WHERE t.canonical_key IS NOT NULL
+  AND (t.library_id = @library_id
+       OR EXISTS (SELECT 1 FROM item_libraries m WHERE m.item_id = t.id AND m.library_id = @library_id))
+  AND c.type IN ('Season', 'Episode')
+  AND (c.parent_id = t.id OR c.parent_id IN (SELECT s.id FROM items s WHERE s.parent_id = t.id AND s.type = 'Season'))
+  AND (c.library_id, c.top_parent_id, c.library_ids) IS DISTINCT FROM (t.library_id, t.top_parent_id, t.library_ids);
+
+-- name: MarkUnseenEpisodesMissing :execrows
+-- Episodes the sync that started at @scan_start didn't write (titles are
+-- missing by their libraries: RefreshTitleLibraries).
+UPDATE items SET is_missing = true, missing_since = coalesce(missing_since, now())
+WHERE library_id = @library_id AND type = 'Episode' AND path IS NOT NULL
+  AND (date_last_refreshed IS NULL OR date_last_refreshed < @scan_start);
+
 -- name: TouchStremioEpisodes :exec
 -- Keeps a series' episodes when its meta couldn't be fetched this sync, so
 -- an addon hiccup doesn't mark them missing.
@@ -139,22 +262,27 @@ RETURNING *;
 -- A search result, keyed by path like a catalog title but with the id the
 -- caller derives (UUIDv5 of its IMDb id), so the same title always has the
 -- same id even after it was cleaned up and found again. Searching it again
--- keeps it (date_last_refreshed).
-INSERT INTO items (id, library_id, type, name, sort_name, source_kind, path, stremio_ref,
+-- keeps it (date_last_refreshed). A title a catalog has is that item (one
+-- per canonical_key), left to its catalogs; one that left them all is
+-- kept here instead.
+INSERT INTO items (id, library_id, type, name, sort_name, source_kind, path, stremio_ref, canonical_key,
                    production_year, premiere_date, overview, provider_ids, date_last_refreshed)
-VALUES (@id, @library_id, @type, @name, @sort_name, 'stremio', @path, @stremio_ref,
+VALUES (@id, @library_id, @type, @name, @sort_name, 'stremio', @path, @stremio_ref, @canonical_key,
         sqlc.narg('production_year'), sqlc.narg('premiere_date'), sqlc.narg('overview'), @provider_ids, now())
-ON CONFLICT (library_id, path) WHERE path IS NOT NULL DO UPDATE SET
-    stremio_ref     = EXCLUDED.stremio_ref,
-    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.name ELSE items.name END,
-    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.sort_name ELSE items.sort_name END,
-    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.production_year ELSE items.production_year END,
-    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN coalesce(EXCLUDED.overview, items.overview) ELSE items.overview END,
+ON CONFLICT (canonical_key) WHERE canonical_key IS NOT NULL DO UPDATE SET
+    library_id      = CASE WHEN items.library_ids = '{}' THEN EXCLUDED.library_id ELSE items.library_id END,
+    parent_id       = CASE WHEN items.library_ids = '{}' THEN NULL ELSE items.parent_id END,
+    top_parent_id   = CASE WHEN items.library_ids = '{}' THEN NULL ELSE items.top_parent_id END,
+    stremio_ref     = CASE WHEN items.library_ids = '{}' THEN EXCLUDED.stremio_ref ELSE items.stremio_ref END,
+    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_ids = '{}' THEN EXCLUDED.name ELSE items.name END,
+    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_ids = '{}' THEN EXCLUDED.sort_name ELSE items.sort_name END,
+    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_ids = '{}' THEN EXCLUDED.production_year ELSE items.production_year END,
+    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_ids = '{}' THEN coalesce(EXCLUDED.overview, items.overview) ELSE items.overview END,
     provider_ids    = items.provider_ids || EXCLUDED.provider_ids,
     date_last_refreshed = now(),
     is_missing      = false,
     missing_since   = NULL
-RETURNING id, (coalesce(metadata_source, 'none') = 'none')::boolean AS catalog_owned;
+RETURNING id, (coalesce(metadata_source, 'none') = 'none' AND library_id = @library_id)::boolean AS catalog_owned;
 
 -- name: LibraryItemsByImdb :many
 -- Titles already in an enabled library (not discover) with these IMDb ids:

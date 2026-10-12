@@ -64,9 +64,19 @@ type DisplayPreference struct {
 	UpdatedAt time.Time
 }
 
+type EpisodeMap struct {
+	OldID uuid.UUID
+	NewID uuid.UUID
+}
+
 type Genre struct {
 	ID   uuid.UUID
 	Name string
+}
+
+type IDMap struct {
+	OldID uuid.UUID
+	NewID interface{}
 }
 
 type Image struct {
@@ -117,12 +127,22 @@ type Item struct {
 	MetadataRefreshedAt *time.Time
 	MetadataSource      *string
 	OriginalLanguage    *string
+	CanonicalKey        *string
+	LibraryIds          []uuid.UUID
 }
 
 type ItemGenre struct {
 	ItemID    uuid.UUID
 	GenreID   uuid.UUID
 	SortOrder int32
+}
+
+type ItemLibrary struct {
+	ItemID       uuid.UUID
+	LibraryID    uuid.UUID
+	Position     int32
+	SeenAt       time.Time
+	MissingSince *time.Time
 }
 
 type ItemPerson struct {
@@ -212,6 +232,20 @@ type MediaStream struct {
 	ExternalPath      *string
 }
 
+type MergedUserDatum struct {
+	UserID                uuid.UUID
+	ItemID                interface{}
+	Played                bool
+	PlayCount             int32
+	PlaybackPositionTicks interface{}
+	IsFavorite            bool
+	Rating                interface{}
+	LastPlayedAt          interface{}
+	AudioStreamIdx        interface{}
+	SubtitleStreamIdx     interface{}
+	UpdatedAt             interface{}
+}
+
 type Person struct {
 	ID          uuid.UUID
 	Name        string
@@ -278,6 +312,11 @@ type StremioCatalog struct {
 type Studio struct {
 	ID   uuid.UUID
 	Name string
+}
+
+type TitleMap struct {
+	OldID uuid.UUID
+	NewID interface{}
 }
 
 type User struct {

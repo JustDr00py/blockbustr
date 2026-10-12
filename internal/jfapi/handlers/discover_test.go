@@ -164,9 +164,16 @@ func TestSearchBeyondLibrary(t *testing.T) {
 		t.Errorf("episodes: %q", names(eps.Items))
 	}
 
-	// A series in the library is found as itself, not as a discover copy.
-	if got := search("thrones", "Series"); len(got) != 1 || got[0].Id == dto.IDFromUUID(stremio.DiscoverID("tt0944947")).String() {
-		t.Errorf("thrones: %+v", got)
+	// A series in the library is found as itself, not as a discover copy:
+	// one item per title (with the id a search would give it).
+	found := search("thrones", "Series")
+	if len(found) != 1 || found[0].Id != dto.IDFromUUID(stremio.DiscoverID("tt0944947")).String() {
+		t.Fatalf("thrones: %+v", found)
+	}
+	var thrones struct{ Overview string }
+	getJSON(t, sf.h, "/Items/"+found[0].Id, &thrones)
+	if strings.HasPrefix(thrones.Overview, "Not in any library") {
+		t.Errorf("thrones is a discover copy: %q", thrones.Overview)
 	}
 
 	// Cleanup: titles not found again within the retention go, unless

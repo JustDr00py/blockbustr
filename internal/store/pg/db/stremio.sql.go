@@ -84,6 +84,20 @@ func (q *Queries) CreateStremioLibrary(ctx context.Context, arg CreateStremioLib
 	return i, err
 }
 
+const deleteMissingMemberships = `-- name: DeleteMissingMemberships :exec
+DELETE FROM item_libraries WHERE library_id = $1 AND missing_since < $2
+`
+
+type DeleteMissingMembershipsParams struct {
+	LibraryID uuid.UUID
+	Cutoff    *time.Time
+}
+
+func (q *Queries) DeleteMissingMemberships(ctx context.Context, arg DeleteMissingMembershipsParams) error {
+	_, err := q.db.Exec(ctx, deleteMissingMemberships, arg.LibraryID, arg.Cutoff)
+	return err
+}
+
 const deleteStaleDiscoverItems = `-- name: DeleteStaleDiscoverItems :execrows
 DELETE FROM items i
 USING libraries l
@@ -271,7 +285,7 @@ func (q *Queries) InsertStremioAddon(ctx context.Context, arg InsertStremioAddon
 }
 
 const libraryItemsByImdb = `-- name: LibraryItemsByImdb :many
-SELECT i.id, i.library_id, i.parent_id, i.top_parent_id, i.type, i.name, i.original_title, i.sort_name, i.forced_sort_name, i.index_number, i.index_number_end, i.parent_index_number, i.production_year, i.premiere_date, i.end_date, i.overview, i.tagline, i.official_rating, i.community_rating, i.critic_rating, i.runtime_ticks, i.provider_ids, i.source_kind, i.path, i.strm_url, i.stremio_ref, i.etag, i.date_created, i.date_modified, i.date_last_refreshed, i.is_missing, i.missing_since, i.metadata_refreshed_at, i.metadata_source, i.original_language FROM items i JOIN libraries l ON l.id = i.library_id
+SELECT i.id, i.library_id, i.parent_id, i.top_parent_id, i.type, i.name, i.original_title, i.sort_name, i.forced_sort_name, i.index_number, i.index_number_end, i.parent_index_number, i.production_year, i.premiere_date, i.end_date, i.overview, i.tagline, i.official_rating, i.community_rating, i.critic_rating, i.runtime_ticks, i.provider_ids, i.source_kind, i.path, i.strm_url, i.stremio_ref, i.etag, i.date_created, i.date_modified, i.date_last_refreshed, i.is_missing, i.missing_since, i.metadata_refreshed_at, i.metadata_source, i.original_language, i.canonical_key, i.library_ids FROM items i JOIN libraries l ON l.id = i.library_id
 WHERE l.enabled AND l.kind <> 'discover' AND i.missing_since IS NULL
   AND i.type = ANY($1::text[]) AND i.provider_ids ->> 'Imdb' = ANY($2::text[])
 `
@@ -328,6 +342,8 @@ func (q *Queries) LibraryItemsByImdb(ctx context.Context, arg LibraryItemsByImdb
 			&i.MetadataRefreshedAt,
 			&i.MetadataSource,
 			&i.OriginalLanguage,
+			&i.CanonicalKey,
+			&i.LibraryIds,
 		); err != nil {
 			return nil, err
 		}
@@ -452,6 +468,116 @@ func (q *Queries) ListSyncCatalogs(ctx context.Context) ([]ListSyncCatalogsRow, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const markUnseenEpisodesMissing = `-- name: MarkUnseenEpisodesMissing :execrows
+UPDATE items SET is_missing = true, missing_since = coalesce(missing_since, now())
+WHERE library_id = $1 AND type = 'Episode' AND path IS NOT NULL
+  AND (date_last_refreshed IS NULL OR date_last_refreshed < $2)
+`
+
+type MarkUnseenEpisodesMissingParams struct {
+	LibraryID uuid.UUID
+	ScanStart *time.Time
+}
+
+// Episodes the sync that started at @scan_start didn't write (titles are
+// missing by their libraries: RefreshTitleLibraries).
+func (q *Queries) MarkUnseenEpisodesMissing(ctx context.Context, arg MarkUnseenEpisodesMissingParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markUnseenEpisodesMissing, arg.LibraryID, arg.ScanStart)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const markUnseenMemberships = `-- name: MarkUnseenMemberships :execrows
+UPDATE item_libraries SET missing_since = coalesce(missing_since, now())
+WHERE library_id = $1 AND seen_at < $2
+`
+
+type MarkUnseenMembershipsParams struct {
+	LibraryID uuid.UUID
+	ScanStart time.Time
+}
+
+// Titles the catalog sync that started at @scan_start didn't see: they left
+// the catalog (the library), not necessarily the others.
+func (q *Queries) MarkUnseenMemberships(ctx context.Context, arg MarkUnseenMembershipsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markUnseenMemberships, arg.LibraryID, arg.ScanStart)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const refreshTitleLibraries = `-- name: RefreshTitleLibraries :exec
+UPDATE items t SET
+    library_ids   = coalesce(live.ids, '{}'),
+    is_missing    = live.ids IS NULL,
+    missing_since = CASE WHEN live.ids IS NULL THEN coalesce(t.missing_since, now()) END
+FROM (
+    SELECT c.id, (SELECT array_agg(il.library_id ORDER BY il.library_id) FROM item_libraries il
+                  WHERE il.item_id = c.id AND il.missing_since IS NULL) AS ids
+    FROM items c
+    WHERE c.canonical_key IS NOT NULL
+      AND (c.library_id = $1
+           OR EXISTS (SELECT 1 FROM item_libraries m WHERE m.item_id = c.id AND m.library_id = $1))
+) live
+WHERE t.id = live.id
+  AND (t.library_ids, t.is_missing) IS DISTINCT FROM (coalesce(live.ids, '{}'), live.ids IS NULL)
+`
+
+// The library's titles' library_ids are the libraries they're live in; a
+// title live in none is missing (deleted after the grace, like a file).
+// Titles found by search (in no catalog) aren't the library's.
+func (q *Queries) RefreshTitleLibraries(ctx context.Context, libraryID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, refreshTitleLibraries, libraryID)
+	return err
+}
+
+const rehomeTitles = `-- name: RehomeTitles :exec
+UPDATE items i SET library_id = n.library_id, parent_id = n.folder_id, top_parent_id = n.folder_id
+FROM (
+    SELECT DISTINCT ON (t.id) t.id, il.library_id, f.id AS folder_id
+    FROM items t
+    JOIN item_libraries il ON il.item_id = t.id AND il.missing_since IS NULL
+    JOIN libraries l ON l.id = il.library_id AND l.enabled
+    JOIN items f ON f.library_id = il.library_id AND f.type = 'CollectionFolder'
+    WHERE t.canonical_key IS NOT NULL
+      AND (t.library_id = $1
+           OR EXISTS (SELECT 1 FROM item_libraries m WHERE m.item_id = t.id AND m.library_id = $1))
+      AND NOT EXISTS (SELECT 1 FROM item_libraries h JOIN libraries hl ON hl.id = h.library_id AND hl.enabled
+                      WHERE h.item_id = t.id AND h.library_id = t.library_id AND h.missing_since IS NULL)
+    ORDER BY t.id, il.seen_at DESC, il.library_id
+) n
+WHERE i.id = n.id
+`
+
+// Titles of the library whose home isn't a live, enabled library of theirs
+// any more move to one that is (the most recently seen): its catalog writes
+// their episodes from now on. Titles in no such library stay put.
+func (q *Queries) RehomeTitles(ctx context.Context, libraryID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, rehomeTitles, libraryID)
+	return err
+}
+
+const rekeyTitle = `-- name: RekeyTitle :exec
+UPDATE items i SET canonical_key = $1::text
+WHERE i.canonical_key = $2::text
+  AND NOT EXISTS (SELECT 1 FROM items o WHERE o.canonical_key = $1::text)
+`
+
+type RekeyTitleParams struct {
+	NewKey string
+	OldKey string
+}
+
+// A title first keyed by its TMDB id, now that its IMDb id is known; left
+// alone if another item already has that key.
+func (q *Queries) RekeyTitle(ctx context.Context, arg RekeyTitleParams) error {
+	_, err := q.db.Exec(ctx, rekeyTitle, arg.NewKey, arg.OldKey)
+	return err
 }
 
 const renameCatalogLibrary = `-- name: RenameCatalogLibrary :one
@@ -598,6 +724,23 @@ func (q *Queries) SetStremioCatalogLibrary(ctx context.Context, arg SetStremioCa
 	return err
 }
 
+const syncTitleDescendants = `-- name: SyncTitleDescendants :exec
+UPDATE items c SET library_id = t.library_id, top_parent_id = t.top_parent_id, library_ids = t.library_ids
+FROM items t
+WHERE t.canonical_key IS NOT NULL
+  AND (t.library_id = $1
+       OR EXISTS (SELECT 1 FROM item_libraries m WHERE m.item_id = t.id AND m.library_id = $1))
+  AND c.type IN ('Season', 'Episode')
+  AND (c.parent_id = t.id OR c.parent_id IN (SELECT s.id FROM items s WHERE s.parent_id = t.id AND s.type = 'Season'))
+  AND (c.library_id, c.top_parent_id, c.library_ids) IS DISTINCT FROM (t.library_id, t.top_parent_id, t.library_ids)
+`
+
+// Seasons and episodes follow their title: its home and its libraries.
+func (q *Queries) SyncTitleDescendants(ctx context.Context, libraryID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, syncTitleDescendants, libraryID)
+	return err
+}
+
 const touchStremioEpisodes = `-- name: TouchStremioEpisodes :exec
 UPDATE items SET date_last_refreshed = now()
 WHERE library_id = $1 AND type = 'Episode' AND missing_since IS NULL
@@ -644,21 +787,24 @@ func (q *Queries) UpdateStremioAddon(ctx context.Context, arg UpdateStremioAddon
 }
 
 const upsertDiscoverItem = `-- name: UpsertDiscoverItem :one
-INSERT INTO items (id, library_id, type, name, sort_name, source_kind, path, stremio_ref,
+INSERT INTO items (id, library_id, type, name, sort_name, source_kind, path, stremio_ref, canonical_key,
                    production_year, premiere_date, overview, provider_ids, date_last_refreshed)
-VALUES ($1, $2, $3, $4, $5, 'stremio', $6, $7,
-        $8, $9, $10, $11, now())
-ON CONFLICT (library_id, path) WHERE path IS NOT NULL DO UPDATE SET
-    stremio_ref     = EXCLUDED.stremio_ref,
-    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.name ELSE items.name END,
-    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.sort_name ELSE items.sort_name END,
-    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN EXCLUDED.production_year ELSE items.production_year END,
-    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' THEN coalesce(EXCLUDED.overview, items.overview) ELSE items.overview END,
+VALUES ($1, $2, $3, $4, $5, 'stremio', $6, $7, $8,
+        $9, $10, $11, $12, now())
+ON CONFLICT (canonical_key) WHERE canonical_key IS NOT NULL DO UPDATE SET
+    library_id      = CASE WHEN items.library_ids = '{}' THEN EXCLUDED.library_id ELSE items.library_id END,
+    parent_id       = CASE WHEN items.library_ids = '{}' THEN NULL ELSE items.parent_id END,
+    top_parent_id   = CASE WHEN items.library_ids = '{}' THEN NULL ELSE items.top_parent_id END,
+    stremio_ref     = CASE WHEN items.library_ids = '{}' THEN EXCLUDED.stremio_ref ELSE items.stremio_ref END,
+    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_ids = '{}' THEN EXCLUDED.name ELSE items.name END,
+    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_ids = '{}' THEN EXCLUDED.sort_name ELSE items.sort_name END,
+    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_ids = '{}' THEN EXCLUDED.production_year ELSE items.production_year END,
+    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_ids = '{}' THEN coalesce(EXCLUDED.overview, items.overview) ELSE items.overview END,
     provider_ids    = items.provider_ids || EXCLUDED.provider_ids,
     date_last_refreshed = now(),
     is_missing      = false,
     missing_since   = NULL
-RETURNING id, (coalesce(metadata_source, 'none') = 'none')::boolean AS catalog_owned
+RETURNING id, (coalesce(metadata_source, 'none') = 'none' AND library_id = $2)::boolean AS catalog_owned
 `
 
 type UpsertDiscoverItemParams struct {
@@ -669,6 +815,7 @@ type UpsertDiscoverItemParams struct {
 	SortName       string
 	Path           *string
 	StremioRef     json.RawMessage
+	CanonicalKey   *string
 	ProductionYear *int32
 	PremiereDate   *time.Time
 	Overview       *string
@@ -683,7 +830,9 @@ type UpsertDiscoverItemRow struct {
 // A search result, keyed by path like a catalog title but with the id the
 // caller derives (UUIDv5 of its IMDb id), so the same title always has the
 // same id even after it was cleaned up and found again. Searching it again
-// keeps it (date_last_refreshed).
+// keeps it (date_last_refreshed). A title a catalog has is that item (one
+// per canonical_key), left to its catalogs; one that left them all is
+// kept here instead.
 func (q *Queries) UpsertDiscoverItem(ctx context.Context, arg UpsertDiscoverItemParams) (UpsertDiscoverItemRow, error) {
 	row := q.db.QueryRow(ctx, upsertDiscoverItem,
 		arg.ID,
@@ -693,6 +842,7 @@ func (q *Queries) UpsertDiscoverItem(ctx context.Context, arg UpsertDiscoverItem
 		arg.SortName,
 		arg.Path,
 		arg.StremioRef,
+		arg.CanonicalKey,
 		arg.ProductionYear,
 		arg.PremiereDate,
 		arg.Overview,
@@ -701,6 +851,25 @@ func (q *Queries) UpsertDiscoverItem(ctx context.Context, arg UpsertDiscoverItem
 	var i UpsertDiscoverItemRow
 	err := row.Scan(&i.ID, &i.CatalogOwned)
 	return i, err
+}
+
+const upsertItemLibrary = `-- name: UpsertItemLibrary :exec
+INSERT INTO item_libraries (item_id, library_id, position, seen_at)
+VALUES ($1, $2, $3, now())
+ON CONFLICT (item_id, library_id) DO UPDATE SET
+    position = EXCLUDED.position, seen_at = now(), missing_since = NULL
+`
+
+type UpsertItemLibraryParams struct {
+	ItemID    uuid.UUID
+	LibraryID uuid.UUID
+	Position  int32
+}
+
+// A catalog sync saw the title: it's (still) in the library.
+func (q *Queries) UpsertItemLibrary(ctx context.Context, arg UpsertItemLibraryParams) error {
+	_, err := q.db.Exec(ctx, upsertItemLibrary, arg.ItemID, arg.LibraryID, arg.Position)
+	return err
 }
 
 const upsertStremioCatalog = `-- name: UpsertStremioCatalog :exec
@@ -798,5 +967,92 @@ func (q *Queries) UpsertStremioItem(ctx context.Context, arg UpsertStremioItemPa
 	)
 	var i UpsertStremioItemRow
 	err := row.Scan(&i.ID, &i.CatalogOwned)
+	return i, err
+}
+
+const upsertStremioTitle = `-- name: UpsertStremioTitle :one
+INSERT INTO items (id, library_id, parent_id, top_parent_id, type, name, sort_name, source_kind,
+                   path, stremio_ref, canonical_key, production_year, premiere_date, overview,
+                   provider_ids, date_last_refreshed)
+VALUES ($1, $2, $3, $3, $4, $5, $6, 'stremio',
+        $7, $8, $9, $10, $11,
+        $12, $13, now())
+ON CONFLICT (canonical_key) WHERE canonical_key IS NOT NULL DO UPDATE SET
+    library_id    = CASE WHEN items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.library_id ELSE items.library_id END,
+    parent_id     = CASE WHEN items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.parent_id ELSE items.parent_id END,
+    top_parent_id = CASE WHEN items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.top_parent_id ELSE items.top_parent_id END,
+    path          = CASE WHEN items.library_id = EXCLUDED.library_id
+                           OR items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.path ELSE items.path END,
+    stremio_ref   = CASE WHEN items.library_id = EXCLUDED.library_id
+                           OR items.library_id IN (SELECT d.id FROM libraries d WHERE d.kind = 'discover')
+                         THEN EXCLUDED.stremio_ref ELSE items.stremio_ref END,
+    name            = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.name ELSE items.name END,
+    sort_name       = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.sort_name ELSE items.sort_name END,
+    production_year = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.production_year ELSE items.production_year END,
+    premiere_date   = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.premiere_date ELSE items.premiere_date END,
+    overview        = CASE WHEN coalesce(items.metadata_source, 'none') = 'none' AND items.library_id = EXCLUDED.library_id
+                           THEN EXCLUDED.overview ELSE items.overview END,
+    provider_ids        = items.provider_ids || EXCLUDED.provider_ids,
+    date_last_refreshed = now(),
+    is_missing          = false,
+    missing_since       = NULL
+RETURNING id, (coalesce(metadata_source, 'none') = 'none' AND library_id = $2)::boolean AS catalog_owned,
+          (library_id = $2)::boolean AS home
+`
+
+type UpsertStremioTitleParams struct {
+	ID             uuid.UUID
+	LibraryID      uuid.UUID
+	FolderID       *uuid.UUID
+	Type           string
+	Name           string
+	SortName       string
+	Path           *string
+	StremioRef     json.RawMessage
+	CanonicalKey   *string
+	ProductionYear *int32
+	PremiereDate   *time.Time
+	Overview       *string
+	ProviderIds    json.RawMessage
+}
+
+type UpsertStremioTitleRow struct {
+	ID           uuid.UUID
+	CatalogOwned bool
+	Home         bool
+}
+
+// A catalog movie or series: one item per title (canonical_key), whichever
+// catalogs list it. Its home library's catalog (or the first catalog to
+// list a title found by search) sets its path, addon ref and, until
+// metadata is applied (TMDB), its name, year and overview; any catalog
+// merges in provider ids and keeps it fresh. home reports whether this is
+// its home: that catalog writes its episodes.
+func (q *Queries) UpsertStremioTitle(ctx context.Context, arg UpsertStremioTitleParams) (UpsertStremioTitleRow, error) {
+	row := q.db.QueryRow(ctx, upsertStremioTitle,
+		arg.ID,
+		arg.LibraryID,
+		arg.FolderID,
+		arg.Type,
+		arg.Name,
+		arg.SortName,
+		arg.Path,
+		arg.StremioRef,
+		arg.CanonicalKey,
+		arg.ProductionYear,
+		arg.PremiereDate,
+		arg.Overview,
+		arg.ProviderIds,
+	)
+	var i UpsertStremioTitleRow
+	err := row.Scan(&i.ID, &i.CatalogOwned, &i.Home)
 	return i, err
 }

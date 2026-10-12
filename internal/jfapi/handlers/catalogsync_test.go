@@ -29,6 +29,23 @@ type fakeCinemeta struct {
 	failAll bool // every request but the manifest 500s
 	noMeta  bool // meta requests 500
 	paths   []string
+	// extra serves more catalogs, by name ("movie/imdbRating"): their
+	// first page lists the metas, later pages nothing.
+	extra map[string][]map[string]any
+}
+
+// extraCatalog is the page of an extra catalog p asks for; nil if it
+// isn't one.
+func (f *fakeCinemeta) extraCatalog(p string) []map[string]any {
+	for name, metas := range f.extra {
+		switch {
+		case strings.HasSuffix(p, "/catalog/"+name+".json"):
+			return metas
+		case strings.Contains(p, "/catalog/"+name+"/skip="):
+			return []map[string]any{}
+		}
+	}
+	return nil
 }
 
 func newFakeCinemeta(t *testing.T) (*fakeCinemeta, string) {
@@ -82,6 +99,8 @@ func newFakeCinemeta(t *testing.T) (*fakeCinemeta, string) {
 			_, _ = w.Write([]byte(`{"metas":[]}`))
 		case strings.HasSuffix(p, "/meta/series/tt0944947.json") && !f.noMeta:
 			_, _ = w.Write(seriesMeta)
+		case strings.Contains(p, "/catalog/") && f.extraCatalog(p) != nil:
+			_ = json.NewEncoder(w).Encode(map[string]any{"metas": f.extraCatalog(p)})
 		default:
 			w.WriteHeader(500)
 		}

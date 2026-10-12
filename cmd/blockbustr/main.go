@@ -192,7 +192,7 @@ func run() error {
 	}
 	catalogs := &stremio.Syncer{
 		Registry: addons, Cache: rc, Log: log, Pages: cfg.Stremio.CatalogPages,
-		MissingGrace: cfg.Scan.MissingGrace, Refresh: refresher.Refresh, Events: bus,
+		MissingGrace: cfg.Scan.MissingGrace, Refresh: refresher.Refresh, Events: bus, IMDb: tmdbClient,
 	}
 	if cfg.Search.CinemetaFallback {
 		catalogs.MetaFallback = stremio.CinemetaURL

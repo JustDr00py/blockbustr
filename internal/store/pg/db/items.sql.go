@@ -28,7 +28,7 @@ INSERT INTO items (library_id, parent_id, top_parent_id, type, name, sort_name,
 VALUES ($1, $2, $3, $4, $5, $6,
         $7, $8, $9,
         $10, $11, $12)
-RETURNING id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language
+RETURNING id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language, canonical_key, library_ids
 `
 
 type CreateItemParams struct {
@@ -100,6 +100,8 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, e
 		&i.MetadataRefreshedAt,
 		&i.MetadataSource,
 		&i.OriginalLanguage,
+		&i.CanonicalKey,
+		&i.LibraryIds,
 	)
 	return i, err
 }
@@ -134,7 +136,7 @@ func (q *Queries) CreateLibrary(ctx context.Context, arg CreateLibraryParams) (L
 }
 
 const getItem = `-- name: GetItem :one
-SELECT id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language FROM items WHERE id = $1
+SELECT id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language, canonical_key, library_ids FROM items WHERE id = $1
 `
 
 func (q *Queries) GetItem(ctx context.Context, id uuid.UUID) (Item, error) {
@@ -176,12 +178,14 @@ func (q *Queries) GetItem(ctx context.Context, id uuid.UUID) (Item, error) {
 		&i.MetadataRefreshedAt,
 		&i.MetadataSource,
 		&i.OriginalLanguage,
+		&i.CanonicalKey,
+		&i.LibraryIds,
 	)
 	return i, err
 }
 
 const listChildren = `-- name: ListChildren :many
-SELECT id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language FROM items
+SELECT id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language, canonical_key, library_ids FROM items
 WHERE parent_id = $1
 ORDER BY coalesce(forced_sort_name, sort_name), id
 LIMIT $3 OFFSET $2
@@ -239,6 +243,8 @@ func (q *Queries) ListChildren(ctx context.Context, arg ListChildrenParams) ([]I
 			&i.MetadataRefreshedAt,
 			&i.MetadataSource,
 			&i.OriginalLanguage,
+			&i.CanonicalKey,
+			&i.LibraryIds,
 		); err != nil {
 			return nil, err
 		}

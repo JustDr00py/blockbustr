@@ -44,7 +44,7 @@ func (q *Queries) ChildCountsForItems(ctx context.Context, ids []uuid.UUID) ([]C
 
 const getItemsByIDs = `-- name: GetItemsByIDs :many
 
-SELECT id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language FROM items WHERE id = ANY($1::uuid[])
+SELECT id, library_id, parent_id, top_parent_id, type, name, original_title, sort_name, forced_sort_name, index_number, index_number_end, parent_index_number, production_year, premiere_date, end_date, overview, tagline, official_rating, community_rating, critic_rating, runtime_ticks, provider_ids, source_kind, path, strm_url, stremio_ref, etag, date_created, date_modified, date_last_refreshed, is_missing, missing_since, metadata_refreshed_at, metadata_source, original_language, canonical_key, library_ids FROM items WHERE id = ANY($1::uuid[])
 `
 
 // Batch loads for building BaseItemDtos (TASKS P1.19): one query per kind of
@@ -94,6 +94,8 @@ func (q *Queries) GetItemsByIDs(ctx context.Context, ids []uuid.UUID) ([]Item, e
 			&i.MetadataRefreshedAt,
 			&i.MetadataSource,
 			&i.OriginalLanguage,
+			&i.CanonicalKey,
+			&i.LibraryIds,
 		); err != nil {
 			return nil, err
 		}
